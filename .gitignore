@@ -1,6 +1,3 @@
 /.idea/
-/saturation.egg-info/dependency_links.txt
-/saturation.egg-info/PKG-INFO
-/saturation.egg-info/requires.txt
-/saturation.egg-info/SOURCES.txt
-/saturation.egg-info/top_level.txt
+/saturation.egg-info/
+/notebooks/.ipynb_checkpoints/*
