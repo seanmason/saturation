@@ -14,6 +14,9 @@ setup(name='saturation',
       install_requires=[
             'pandas==1.4.3',
             'numpy==1.23.0',
-            'pytest==7.1.2'
+            'pytest==7.1.2',
+            'seaborn==0.11.2',
+            'matplotlib==3.5.2',
+            'scikit-learn==1.1.1'
       ]
       )
