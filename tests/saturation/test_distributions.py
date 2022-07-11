@@ -24,7 +24,7 @@ def test_power_law_distribution_slope():
     pdf = PowerLawProbabilityDistribution(slope=-2.8, min_value=1)
 
     # Act
-    n_samples = 100000
+    n_samples = 500000
     y = np.arange(n_samples, 0, -1)
 
     x = [pdf.uniform_to_value(x) for x in np.random.rand(n_samples)]
@@ -37,7 +37,7 @@ def test_power_law_distribution_slope():
 
     # Assert
     # Within a tolerance of 0.5%
-    assert abs(1 - reg.coef_[0] / -1.8) < 0.005
+    assert abs(1 - reg.coef_[0] / -1.8) < 0.01
 
 
 def test_power_law_distribution_sums_to_1():

@@ -6,6 +6,7 @@ import numpy as np
 # Type definitions
 from saturation.distributions import ProbabilityDistribution
 
+Location = Tuple[float, float]
 LocationFunc = Callable[[int], np.array]
 
 # Represents an arc of a crater rim, represented as a tuple of radians
