@@ -1,7 +1,7 @@
 import numpy as np
 
 from saturation.distributions import ProbabilityDistribution
-from saturation.simulation import get_crater_location, get_craters
+from saturation.simulation import get_crater_locations, get_craters
 
 
 class DummyProbabilityDistribution(ProbabilityDistribution):
@@ -20,40 +20,30 @@ class DummyProbabilityDistribution(ProbabilityDistribution):
         return self.probability_to_value_result
 
 
-def test_get_crater_location():
+def test_get_crater_locations():
     # Act
-    result = get_crater_location()
+    result = get_crater_locations(10)
 
     # Assert
-    assert np.shape(result) == (2, 2)
-
-
-def test_get_craters_yields_infinitely():
-    # Arrange
-    distribution = DummyProbabilityDistribution()
-
-    # Act
-    result = [next(get_craters(distribution)) for _ in range(5)]
-
-    # Assert
-    assert len(result) == 5
+    assert np.shape(result) == (10, 2)
 
 
 def test_get_craters_uses_probability_distribution_and_location_func():
     # Arrange
-    def location_func():
-        return 7, 13
+    def location_func(n_craters):
+        return np.array([7, 13] * n_craters).reshape(n_craters, 2)
+
     distribution = DummyProbabilityDistribution()
     distribution.uniform_to_value_result = 37
 
     # Act
-    result = next(get_craters(distribution, location_func=location_func))
+    result = get_craters(1, distribution, location_func=location_func)
 
     # Assert
-    assert result.id == 1
-    assert result.location == (7, 13)
-    assert result.radius == 37
-    assert result.rim_segments == [(0, 2 * np.pi)]
+    first = result.loc[1]
+    assert first.x == 7
+    assert first.y == 13
+    assert first.radius == 37
 
 
 def test_get_craters_ids_increase():
@@ -61,8 +51,7 @@ def test_get_craters_ids_increase():
     distribution = DummyProbabilityDistribution()
 
     # Act
-    iterator = get_craters(distribution)
-    result = [next(iterator).id for _ in range(5)]
+    result = get_craters(10, distribution)
 
     # Assert
-    assert result == list(range(1, 6))
+    assert list(result.index) == list(range(1, 11))

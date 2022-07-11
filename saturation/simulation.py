@@ -1,48 +1,40 @@
-from dataclasses import dataclass
-from typing import Tuple, Iterable, Iterator, Callable
+from typing import Tuple, Iterable, Callable
 
+import pandas as pd
 import numpy as np
 
 # Type definitions
 from saturation.distributions import ProbabilityDistribution
 
-Location = Tuple[float, float]
-LocationFunc = Callable[[], Location]
+LocationFunc = Callable[[int], np.array]
 
 # Represents an arc of a crater rim, represented as a tuple of radians
 RimSegment = Tuple[float, float]
 RimSegments = Iterable[RimSegment]
 
 
-@dataclass(frozen=True, kw_only=True)
-class Crater:
+def get_crater_locations(n_craters: int) -> np.array:
     """
-    Attributes representing a 2D crater for use in simulations.
-    Rim segments are represented in tuples of radians.
+    Returns n_craters crater locations, uniformly distributed on [0, 1]
     """
-    id: int
-    location: Location
-    radius: float
-    rim_segments: RimSegments
+    return np.random.rand(n_craters, 2)
 
 
-def get_crater_location() -> Location:
+def get_craters(n_craters: int,
+                size_distribution: ProbabilityDistribution,
+                location_func: LocationFunc = get_crater_locations) -> pd.DataFrame:
     """
-    Returns a uniform random crater location with (x, y) in [0, 1]
+    Returns a dataframe of n_craters, including (x, y) center locations and radii.
     """
-    r = np.random.rand(2)
-    return r[0], r[1]
+    ids = np.arange(1, n_craters + 1)
+    locations = location_func(n_craters)
+    radii = [size_distribution.uniform_to_value(x) for x in np.random.rand(n_craters)]
+    data_dict = {
+        'id': ids,
+        'x': locations[:, 0],
+        'y': locations[:, 1],
+        'radius': radii
+    }
+    data = pd.DataFrame(data_dict).set_index(['id'])
 
-
-def get_craters(size_distribution: ProbabilityDistribution,
-                location_func: LocationFunc = get_crater_location) -> Iterator[Crater]:
-    """
-    Returns an infinite iterator of craters. Uses the supplied distribution to generate crater radii.
-    """
-    crater_id = 1
-    while True:
-        yield Crater(id=crater_id,
-                     location=location_func(),
-                     radius=size_distribution.uniform_to_value(np.random.random()),
-                     rim_segments=[(0, 2 * np.pi)])
-        crater_id += 1
+    return data
