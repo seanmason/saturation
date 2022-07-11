@@ -46,6 +46,11 @@ def get_intersection_arc(center1: Location,
     Returns the intersection arc (in radians) of the circle defined by center2 and r2 on the circle
     defined by center1 and r1.
     """
+    # Circle 1 is completely encompassed by circle 2
+    distance = np.sqrt((center1[0] - center2[0])**2 + (center1[1] - center2[1])**2)
+    if distance + r1 < r2:
+        return 0, 2 * np.pi
+
     i1, i2 = get_xy_intersection(center1, center2, r1, r2)
 
     # np.arctan2 gets us the result in the correct quadrant
