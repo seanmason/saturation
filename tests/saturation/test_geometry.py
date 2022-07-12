@@ -32,8 +32,8 @@ def test_get_intersection_arc():
     # Circle centered at (20, 10) with radius 10
     result = get_intersection_arc(
         (10, 10),
-        (20, 10),
         10,
+        (20, 10),
         10
     )
 
@@ -48,8 +48,8 @@ def test_get_intersection_arc_reversed():
     # The circles are reversed; the result should still be the same arc.
     result = get_intersection_arc(
         (20, 10),
-        (10, 10),
         10,
+        (10, 10),
         10
     )
 
@@ -64,8 +64,8 @@ def test_get_intersection_arc_overlap():
     # Circle 2 completely encompasses circle 1
     result = get_intersection_arc(
         (10, 10),
-        (10, 10),
         1,
+        (10, 10),
         10
     )
 

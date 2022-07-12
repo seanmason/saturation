@@ -3,15 +3,10 @@ from typing import Tuple, Iterable, Callable
 import pandas as pd
 import numpy as np
 
-# Type definitions
 from saturation.distributions import ProbabilityDistribution
 
-Location = Tuple[float, float]
+# Type definitions
 LocationFunc = Callable[[int], np.array]
-
-# Represents an arc of a crater rim, represented as a tuple of radians
-RimSegment = Tuple[float, float]
-RimSegments = Iterable[RimSegment]
 
 
 def get_crater_locations(n_craters: int) -> np.array:
@@ -23,12 +18,14 @@ def get_crater_locations(n_craters: int) -> np.array:
 
 def get_craters(n_craters: int,
                 size_distribution: ProbabilityDistribution,
+                scale: float,
                 location_func: LocationFunc = get_crater_locations) -> pd.DataFrame:
     """
     Returns a dataframe of n_craters, including (x, y) center locations and radii.
+    Scale defines the maximum size of the terrain.
     """
     ids = np.arange(1, n_craters + 1)
-    locations = location_func(n_craters)
+    locations = location_func(n_craters) * scale
     radii = [size_distribution.uniform_to_value(x) for x in np.random.rand(n_craters)]
     data_dict = {
         'id': ids,

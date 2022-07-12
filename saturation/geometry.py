@@ -1,13 +1,14 @@
 from typing import Tuple
 
+import pandas as pd
 import numpy as np
-
-from saturation.simulation import Location
-
 
 # Type definitions
 # Arc in radians
 Arc = Tuple[float, float]
+
+# (x, y) location
+Location = Tuple[float, float]
 
 
 def get_xy_intersection(center1: Location,
@@ -39,8 +40,8 @@ def get_xy_intersection(center1: Location,
 
 
 def get_intersection_arc(center1: Location,
-                         center2: Location,
                          r1: float,
+                         center2: Location,
                          r2: float) -> Arc:
     """
     Returns the intersection arc (in radians) of the circle defined by center2 and r2 on the circle
@@ -79,3 +80,41 @@ def get_intersection_arc(center1: Location,
         theta2 = tmp
 
     return theta1, theta2
+
+
+def get_erased_rim_arcs(craters: pd.DataFrame, effective_radius_multiplier: float) -> pd.DataFrame:
+    """
+    Returns the erased rim arcs resulting from a supplied sequence of craters.
+    effective_radius_multiplier specifies a multiplier on the size of a newly-formed
+    crater at removing other craters' rims.
+    """
+    min_id = min(craters.index)
+    max_id = max(craters.index)
+
+    deletions = []
+    for new_id in range(min_id, max_id + 1):
+        new_crater = craters.loc[new_id]
+        new_x = new_crater.x
+        new_y = new_crater.y
+        new_radius = new_crater.radius * effective_radius_multiplier
+
+        filtered = craters.loc[range(1, new_id)]
+
+        # Filter to only circles that intersect
+        distance = np.sqrt((filtered.x - new_x) ** 2 + (filtered.y - new_y) ** 2)
+        filtered = filtered[(distance < filtered.radius + new_radius) & (distance + new_radius > filtered.radius)]
+
+        for row in filtered.itertuples():
+            arc = get_intersection_arc((row.x, row.y),
+                                       row.radius,
+                                       (new_x, new_y),
+                                       new_radius)
+
+            deletions.append({
+                'impacting_id': new_id,
+                'impacted_id': row.Index,
+                'theta1': arc[0],
+                'theta2': arc[1]
+            })
+
+    return pd.DataFrame(deletions)

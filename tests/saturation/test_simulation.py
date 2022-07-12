@@ -37,12 +37,12 @@ def test_get_craters_uses_probability_distribution_and_location_func():
     distribution.uniform_to_value_result = 37
 
     # Act
-    result = get_craters(1, distribution, location_func=location_func)
+    result = get_craters(1, distribution, 2, location_func=location_func)
 
     # Assert
     first = result.iloc[0]
-    assert first.x == 7
-    assert first.y == 13
+    assert first.x == 14
+    assert first.y == 26
     assert first.radius == 37
 
 
@@ -51,7 +51,7 @@ def test_get_craters_ids_increase():
     distribution = DummyProbabilityDistribution()
 
     # Act
-    result = get_craters(10, distribution)
+    result = get_craters(10, distribution, 2)
 
     # Assert
     assert list(result.id) == list(range(1, 11))
