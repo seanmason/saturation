@@ -91,7 +91,7 @@ def get_erased_rim_arcs(craters: pd.DataFrame, effective_radius_multiplier: floa
     min_id = min(craters.index)
     max_id = max(craters.index)
 
-    deletions = []
+    erased_arcs = []
     for new_id in range(min_id, max_id + 1):
         new_crater = craters.loc[new_id]
         new_x = new_crater.x
@@ -110,11 +110,11 @@ def get_erased_rim_arcs(craters: pd.DataFrame, effective_radius_multiplier: floa
                                        (new_x, new_y),
                                        new_radius)
 
-            deletions.append({
+            erased_arcs.append({
                 'impacting_id': new_id,
                 'impacted_id': row.Index,
                 'theta1': arc[0],
                 'theta2': arc[1]
             })
 
-    return pd.DataFrame(deletions)
+    return pd.DataFrame(erased_arcs)

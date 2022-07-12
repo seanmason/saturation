@@ -33,6 +33,6 @@ def get_craters(n_craters: int,
         'y': locations[:, 1],
         'radius': radii
     }
-    data = pd.DataFrame(data_dict)
+    data = pd.DataFrame(data_dict).set_index(['id'])
 
     return data

@@ -54,4 +54,4 @@ def test_get_craters_ids_increase():
     result = get_craters(10, distribution, 2)
 
     # Assert
-    assert list(result.id) == list(range(1, 11))
+    assert list(result.index) == list(range(1, 11))

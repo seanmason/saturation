@@ -1,7 +1,9 @@
 import numpy as np
 from typing import Tuple
+
+import pandas as pd
 from numpy.testing import assert_almost_equal
-from saturation.geometry import get_xy_intersection, get_intersection_arc
+from saturation.geometry import get_xy_intersection, get_intersection_arc, get_erased_rim_arcs
 
 
 def assert_tuples_equal(t1: Tuple[float, float], t2: Tuple[float, float]):
@@ -73,3 +75,69 @@ def test_get_intersection_arc_overlap():
     # The math is again ugly, this is just for regression purposes.
     expected = 0, 2 * np.pi
     assert_tuples_equal(result, expected)
+
+
+def test_get_erased_rim_arcs_complete_overlap():
+    # Arrange
+    # The second circle completely encompasses the first
+    data = [
+        {'id': 1, 'x': 10, 'y': 10, 'radius': 1},
+        {'id': 2, 'x': 10, 'y': 10, 'radius': 10},
+    ]
+    craters = pd.DataFrame(data).set_index(['id'])
+
+    # Act
+    result = get_erased_rim_arcs(craters, 1.0)
+
+    # Assert
+    assert result.shape[0] == 1
+
+    first_result = result.iloc[0]
+    assert first_result.impacting_id == 2
+    assert first_result.impacted_id == 1
+    assert first_result.theta1 == 0
+    assert first_result.theta2 == 2 * np.pi
+
+
+def test_get_erased_rim_arcs_overlap():
+    # Arrange
+    # The second circle intersects the rim of the first
+    data = [
+        {'id': 1, 'x': 10, 'y': 10, 'radius': 10},
+        {'id': 2, 'x': 20, 'y': 10, 'radius': 10},
+    ]
+    craters = pd.DataFrame(data).set_index(['id'])
+
+    # Act
+    result = get_erased_rim_arcs(craters, 1.0)
+
+    # Assert
+    assert result.shape[0] == 1
+
+    first_result = result.iloc[0]
+    assert first_result.impacting_id == 2
+    assert first_result.impacted_id == 1
+    assert first_result.theta1 == 5.235987755982989
+    assert first_result.theta2 == 1.0471975511965976
+
+
+def test_get_erased_rim_arcs_larger_overlap_with_effective_size():
+    # Arrange
+    # The second circle intersects the rim of the first
+    data = [
+        {'id': 1, 'x': 10, 'y': 10, 'radius': 10},
+        {'id': 2, 'x': 20, 'y': 10, 'radius': 10},
+    ]
+    craters = pd.DataFrame(data).set_index(['id'])
+
+    # Act
+    result = get_erased_rim_arcs(craters, 1.3)
+
+    # Assert
+    assert result.shape[0] == 1
+
+    first_result = result.iloc[0]
+    assert first_result.impacting_id == 2
+    assert first_result.impacted_id == 1
+    assert first_result.theta1 == 4.868016433728875
+    assert first_result.theta2 == 1.415168873450711
