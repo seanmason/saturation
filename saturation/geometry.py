@@ -118,3 +118,31 @@ def get_erased_rim_arcs(craters: pd.DataFrame, effective_radius_multiplier: floa
             })
 
     return pd.DataFrame(erased_arcs)
+
+
+def calculate_areal_density(craters: pd.DataFrame, terrain_size: int, margin: int) -> float:
+    """
+    Calculates the areal density of the craters.
+    """
+    terrain = np.zeros((terrain_size - 2 * margin, terrain_size - 2 * margin), dtype=bool)
+
+    for row in craters.itertuples():
+        place_circle((row.x, row.y), row.radius, terrain, margin)
+
+    return terrain.mean()
+
+
+def place_circle(center: Location, radius: float, terrain: np.array, margin: int):
+    terrain_size = terrain.shape[0]
+
+    x_min = int(max(center[0] - radius, margin))
+    x_max = int(min(center[0] + radius, terrain_size - 1))
+    y_min = int(max(center[1] - radius, margin))
+    y_max = int(min(center[1] + radius, terrain_size - 1))
+
+    limit = int(radius ** 2)
+
+    for x in range(x_min, x_max + 1):
+        for y in range(y_min, y_max + 1):
+            if (x - center[0]) ** 2 + (y - center[1]) ** 2 <= limit:
+                terrain[x - margin, y - margin] = True
