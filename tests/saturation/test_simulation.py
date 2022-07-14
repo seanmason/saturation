@@ -6,18 +6,18 @@ from saturation.simulation import get_crater_locations, get_craters
 
 class DummyProbabilityDistribution(ProbabilityDistribution):
     def __init__(self):
-        self.uniform_to_value_result = 0
-        self.value_to_probability_result = 0
-        self.probability_to_value_result = 0
+        self.inverse_cdf_result = 0
+        self.pdf_result = 0
+        self.cdf_result = 0
 
-    def uniform_to_value(self, uniform: float) -> float:
-        return self.uniform_to_value_result
+    def inverse_cdf(self, uniform: float) -> float:
+        return self.inverse_cdf_result
 
-    def value_to_probability(self, x: float) -> float:
-        return self.value_to_probability_result
+    def pdf(self, x: float) -> float:
+        return self.pdf_result
 
-    def probability_to_value(self, p: float) -> float:
-        return self.probability_to_value_result
+    def cdf(self, p: float) -> float:
+        return self.cdf_result
 
 
 def test_get_crater_locations():
@@ -34,15 +34,15 @@ def test_get_craters_uses_probability_distribution_and_location_func():
         return np.array([7, 13] * n_craters).reshape(n_craters, 2)
 
     distribution = DummyProbabilityDistribution()
-    distribution.uniform_to_value_result = 37
+    distribution.inverse_cdf_result = 37
 
     # Act
-    result = get_craters(1, distribution, location_func=location_func)
+    result = get_craters(1, distribution, 2, location_func=location_func)
 
     # Assert
-    first = result.loc[1]
-    assert first.x == 7
-    assert first.y == 13
+    first = result.iloc[0]
+    assert first.x == 14
+    assert first.y == 26
     assert first.radius == 37
 
 
@@ -51,7 +51,7 @@ def test_get_craters_ids_increase():
     distribution = DummyProbabilityDistribution()
 
     # Act
-    result = get_craters(10, distribution)
+    result = get_craters(10, distribution, 2)
 
     # Assert
     assert list(result.index) == list(range(1, 11))

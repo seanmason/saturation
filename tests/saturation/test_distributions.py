@@ -1,4 +1,5 @@
 import numpy as np
+from numpy.testing import assert_almost_equal
 from sklearn.linear_model import LinearRegression
 
 from saturation.distributions import PowerLawProbabilityDistribution
@@ -6,14 +7,25 @@ from saturation.distributions import PowerLawProbabilityDistribution
 
 def test_power_law_distribution_round_trip():
     # Arrange
-    pdf = PowerLawProbabilityDistribution(slope=-3, min_value=1)
+    distribution = PowerLawProbabilityDistribution(slope=-3, min_value=1)
 
     # Act
-    p = pdf.value_to_probability(1.5)
-    result = pdf.probability_to_value(p)
+    cumulative = distribution.cdf(1.5)
+    result = distribution.inverse_cdf(cumulative)
 
     # Assert
     assert result == 1.5
+
+
+def test_power_law_distribution_inverse_cdf_max_value_respected():
+    # Arrange
+    distribution = PowerLawProbabilityDistribution(slope=-2.8, min_value=1, max_value=10)
+
+    # Act
+    result = distribution.inverse_cdf(1)
+
+    # Assert
+    assert_almost_equal(result, 10)
 
 
 def test_power_law_distribution_slope():
@@ -21,13 +33,13 @@ def test_power_law_distribution_slope():
     The slope in log-log space should equal the CDF's slope.
     """
     # Arrange
-    pdf = PowerLawProbabilityDistribution(slope=-2.8, min_value=1)
+    distribution = PowerLawProbabilityDistribution(slope=-2.8, min_value=1)
 
     # Act
-    n_samples = 100000
+    n_samples = 500000
     y = np.arange(n_samples, 0, -1)
 
-    x = [pdf.uniform_to_value(x) for x in np.random.rand(n_samples)]
+    x = [distribution.inverse_cdf(x) for x in np.random.rand(n_samples)]
     x = sorted(x)
 
     ln_x = np.reshape(np.log(x), newshape=(len(x), 1))
@@ -37,20 +49,21 @@ def test_power_law_distribution_slope():
 
     # Assert
     # Within a tolerance of 0.5%
-    assert abs(1 - reg.coef_[0] / -1.8) < 0.005
+    assert abs(1 - reg.coef_[0] / -1.8) < 0.01
 
 
-def test_power_law_distribution_sums_to_1():
+def test_power_law_distribution_pdf_sums_to_1():
     # Arrange
     min_value = 5
-    step_size = 0.001
-    steps = 1000000
-    pdf = PowerLawProbabilityDistribution(slope=-2.8, min_value=min_value)
+    max_value = 100
+    steps = 100000
+    distribution = PowerLawProbabilityDistribution(slope=-2.8, min_value=min_value, max_value=max_value)
 
     # Act
     # Analytical integral via right-handed Riemann sum
+    step_size = (max_value - min_value) / steps
     test_values = [min_value + (x + 1) * step_size for x in range(steps)]
-    result = sum([pdf.value_to_probability(x) * step_size for x in test_values])
+    result = sum([distribution.pdf(x) * step_size for x in test_values])
 
     # Assert
     # Should be within 0.1%
