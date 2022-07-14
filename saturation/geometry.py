@@ -1,4 +1,4 @@
-from typing import Tuple
+from typing import Tuple, List
 
 import pandas as pd
 import numpy as np
@@ -48,7 +48,7 @@ def get_intersection_arc(center1: Location,
     defined by center1 and r1.
     """
     # Circle 1 is completely encompassed by circle 2
-    distance = np.sqrt((center1[0] - center2[0])**2 + (center1[1] - center2[1])**2)
+    distance = np.sqrt((center1[0] - center2[0]) ** 2 + (center1[1] - center2[1]) ** 2)
     if distance + r1 < r2:
         return 0, 2 * np.pi
 
@@ -71,10 +71,10 @@ def get_intersection_arc(center1: Location,
     midpoint = (theta1 + theta2) / 2
     midpoint_x = center1[0] + r1 * np.cos(midpoint)
     midpoint_y = center1[1] + r1 * np.sin(midpoint)
-    test_value = (center2[0] - midpoint_x)**2 + (center2[1] - midpoint_y)**2
+    test_value = (center2[0] - midpoint_x) ** 2 + (center2[1] - midpoint_y) ** 2
 
     # If our test point is not within circle2, reverse our thetas
-    if test_value >= r2**2:
+    if test_value >= r2 ** 2:
         tmp = theta1
         theta1 = theta2
         theta2 = tmp
@@ -111,8 +111,8 @@ def get_erased_rim_arcs(craters: pd.DataFrame, effective_radius_multiplier: floa
                                        new_radius)
 
             erased_arcs.append({
-                'impacting_id': new_id,
-                'impacted_id': row.Index,
+                'new_id': new_id,
+                'old_id': row.Index,
                 'theta1': arc[0],
                 'theta2': arc[1]
             })
@@ -120,19 +120,7 @@ def get_erased_rim_arcs(craters: pd.DataFrame, effective_radius_multiplier: floa
     return pd.DataFrame(erased_arcs)
 
 
-def calculate_areal_density(craters: pd.DataFrame, terrain_size: int, margin: int) -> float:
-    """
-    Calculates the areal density of the craters.
-    """
-    terrain = np.zeros((terrain_size - 2 * margin, terrain_size - 2 * margin), dtype=bool)
-
-    for row in craters.itertuples():
-        place_circle((row.x, row.y), row.radius, terrain, margin)
-
-    return terrain.mean()
-
-
-def place_circle(center: Location, radius: float, terrain: np.array, margin: int):
+def place_circle_on_terrain(center: Location, radius: float, terrain: np.array, margin: int):
     terrain_size = terrain.shape[0]
 
     x_min = int(max(center[0] - radius, margin))
@@ -146,3 +134,57 @@ def place_circle(center: Location, radius: float, terrain: np.array, margin: int
         for y in range(y_min, y_max + 1):
             if (x - center[0]) ** 2 + (y - center[1]) ** 2 <= limit:
                 terrain[x - margin, y - margin] = True
+
+
+def calculate_areal_density(craters: pd.DataFrame, terrain_size: int, margin: int) -> float:
+    """
+    Calculates the areal density of the craters.
+    """
+    terrain = np.zeros((terrain_size - 2 * margin, terrain_size - 2 * margin), dtype=bool)
+
+    for row in craters.itertuples():
+        place_circle_on_terrain((row.x, row.y), row.radius, terrain, margin)
+
+    return terrain.mean()
+
+
+def normalize_arcs(arcs: List[Arc]) -> List[Arc]:
+    """
+    Splits arcs that cross zero into two arcs.
+    Assumes all arcs are in range [0, 2*pi]
+    """
+    result = []
+    for arc in arcs:
+        if arc[0] > arc[1]:
+            result.append((arc[0], 2 * np.pi))
+            result.append((0, arc[1]))
+        else:
+            result.append(arc)
+
+    return result
+
+
+def merge_arcs(arcs: List[Arc]) -> List[Arc]:
+    """
+    Merges arcs, accounting for overlaps.
+    Assumes that arcs do not cross 0/2*pi
+    """
+    arcs.sort(key=lambda x: x[0])
+
+    result = []
+    for arc in arcs:
+        if not result or result[-1][1] < arc[0]:
+            result.append(arc)
+        else:
+            result[-1] = (result[-1][0], max(result[-1][1], arc[1]))
+
+    return result
+
+
+def calculate_rim_percentage_remaining(erased_arcs: List[Arc]) -> float:
+    """
+    Calculates the percentage of rim remaining, given a set of erased arcs.
+    """
+    normalized_arcs = normalize_arcs(erased_arcs)
+    merged_arcs = merge_arcs(normalized_arcs)
+    return 1 - sum([x[1] - x[0] for x in merged_arcs]) / (2 * np.pi)

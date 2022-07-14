@@ -6,6 +6,22 @@ import matplotlib.pyplot as plt
 from saturation.geometry import Location, Arc
 
 
+def plot_circle(center: Location,
+                radius: float,
+                axes_subplot,
+                fill: bool = False,
+                color: str = 'black',
+                lw: float = 1):
+    """
+    Plots the specified circle on the supplied subplot.
+    """
+    axes_subplot.add_patch(matplotlib.patches.Circle(center,
+                                                     radius=radius,
+                                                     color=color,
+                                                     fill=fill,
+                                                     lw=lw))
+
+
 def plot_arc(center: Location,
              radius: float,
              arc: Arc,
@@ -38,12 +54,14 @@ def plot_up_to_crater(crater_id: int,
     ax.set_xlim([0, scale])
     ax.set_ylim([0, scale])
 
+    # Plot craters
     for row in craters.loc[range(1, crater_id + 1)].itertuples():
-        plot_arc((row.x, row.y), row.radius, (0, 2 * np.pi), ax)
+        plot_circle((row.x, row.y), row.radius, ax)
 
-    filtered_erased_rim_arcs = erased_rim_arcs[erased_rim_arcs.impacting_id <= crater_id]
+    # Plot erased rim arcs
+    filtered_erased_rim_arcs = erased_rim_arcs[erased_rim_arcs.new_id <= crater_id]
     for row in filtered_erased_rim_arcs.itertuples():
-        old_crater = craters.loc[row.impacted_id]
+        old_crater = craters.loc[row.old_id]
 
         plot_arc((old_crater.x, old_crater.y),
                  old_crater.radius,

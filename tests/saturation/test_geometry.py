@@ -3,7 +3,9 @@ from typing import Tuple
 
 import pandas as pd
 from numpy.testing import assert_almost_equal
-from saturation.geometry import get_xy_intersection, get_intersection_arc, get_erased_rim_arcs, calculate_areal_density
+
+from saturation.geometry import get_xy_intersection, get_intersection_arc, get_erased_rim_arcs, calculate_areal_density, \
+    merge_arcs, calculate_rim_percentage_remaining
 
 
 def assert_tuples_equal(t1: Tuple[float, float], t2: Tuple[float, float]):
@@ -93,8 +95,8 @@ def test_get_erased_rim_arcs_complete_overlap():
     assert result.shape[0] == 1
 
     first_result = result.iloc[0]
-    assert first_result.impacting_id == 2
-    assert first_result.impacted_id == 1
+    assert first_result.new_id == 2
+    assert first_result.old_id == 1
     assert first_result.theta1 == 0
     assert first_result.theta2 == 2 * np.pi
 
@@ -115,8 +117,8 @@ def test_get_erased_rim_arcs_overlap():
     assert result.shape[0] == 1
 
     first_result = result.iloc[0]
-    assert first_result.impacting_id == 2
-    assert first_result.impacted_id == 1
+    assert first_result.new_id == 2
+    assert first_result.old_id == 1
     assert first_result.theta1 == 5.235987755982989
     assert first_result.theta2 == 1.0471975511965976
 
@@ -137,8 +139,8 @@ def test_get_erased_rim_arcs_larger_overlap_with_effective_size():
     assert result.shape[0] == 1
 
     first_result = result.iloc[0]
-    assert first_result.impacting_id == 2
-    assert first_result.impacted_id == 1
+    assert first_result.new_id == 2
+    assert first_result.old_id == 1
     assert first_result.theta1 == 4.868016433728875
     assert first_result.theta2 == 1.415168873450711
 
@@ -157,7 +159,7 @@ def test_calculate_areal_density_no_edges():
 
     # Assert
     # It won't be exact, because of discretization, but it should be close.
-    expected = craters.iloc[0].radius ** 2 * np.pi / terrain_size**2
+    expected = craters.iloc[0].radius ** 2 * np.pi / terrain_size ** 2
     assert abs(1 - result / expected) < 1e-3
 
 
@@ -198,5 +200,90 @@ def test_calculate_areal_density_uses_both_margins():
     # It won't be exact, because of discretization, but it should be close.
     crater1_area = craters.iloc[0].radius ** 2 * np.pi / 4
     crater2_area = craters.iloc[1].radius ** 2 * np.pi / 4
-    expected = (crater1_area + crater2_area) / (terrain_size - 2 * margin)**2
+    expected = (crater1_area + crater2_area) / (terrain_size - 2 * margin) ** 2
     assert abs(1 - result / expected) < 1e-2
+
+
+def test_merge_arcs_with_no_overlap():
+    # Arrange
+    arcs = [
+        (1, 2),
+        (3, 4)
+    ]
+
+    # Act
+    results = merge_arcs(arcs)
+
+    # Assert
+    assert results == [(1, 2), (3, 4)]
+
+
+def test_merge_arcs_with_overlap():
+    # Arrange
+    arcs = [
+        (1, 3),
+        (2, 4)
+    ]
+
+    # Act
+    results = merge_arcs(arcs)
+
+    # Assert
+    assert results == [(1, 4)]
+
+
+def test_merge_arcs_multiple_overlap():
+    # Arrange
+    arcs = [
+        (0, 4),
+        (1, 3),
+        (2, 3.5)
+    ]
+
+    # Act
+    results = merge_arcs(arcs)
+
+    # Assert
+    assert results == [(0, 4)]
+
+
+def test_calculate_rim_percentage_remaining_single_arc():
+    # Arrange
+    arcs = [
+        (0, np.pi)
+    ]
+
+    # Act
+    result = calculate_rim_percentage_remaining(arcs)
+
+    # Assert
+    assert result == 0.5
+
+
+def test_calculate_rim_percentage_remaining_single_arc_across_zero():
+    # Arrange
+    arcs = [
+        (-np.pi / 2, np.pi / 2)
+    ]
+
+    # Act
+    result = calculate_rim_percentage_remaining(arcs)
+
+    # Assert
+    assert result == 0.5
+
+
+def test_calculate_rim_percentage_remaining_multiple_arcs_across_zero():
+    # Arrange
+    arcs = [
+        (-np.pi / 2, np.pi / 4),
+        (-np.pi / 4, np.pi / 4),
+        (-np.pi / 8, np.pi / 8),
+        (np.pi / 8, np.pi / 2),
+    ]
+
+    # Act
+    result = calculate_rim_percentage_remaining(arcs)
+
+    # Assert
+    assert result == 0.5
