@@ -82,14 +82,19 @@ def get_intersection_arc(center1: Location,
     return theta1, theta2
 
 
-def get_erased_rim_arcs(craters: pd.DataFrame, effective_radius_multiplier: float) -> pd.DataFrame:
+def get_erased_rim_arcs(craters: pd.DataFrame,
+                        min_crater_radius: float,
+                        effective_radius_multiplier: float) -> pd.DataFrame:
     """
     Returns the erased rim arcs resulting from a supplied sequence of craters.
     effective_radius_multiplier specifies a multiplier on the size of a newly-formed
     crater at removing other craters' rims.
+    Erased rim arcs will only result for craters with radii greater than min_crater_radius
     """
     min_id = min(craters.index)
     max_id = max(craters.index)
+
+    crater_ids_larger_than_min = [x.Index for x in craters.itertuples() if x.radius >= min_crater_radius]
 
     erased_arcs = []
     for new_id in range(min_id, max_id + 1):
@@ -98,11 +103,13 @@ def get_erased_rim_arcs(craters: pd.DataFrame, effective_radius_multiplier: floa
         new_y = new_crater.y
         new_radius = new_crater.radius * effective_radius_multiplier
 
-        filtered = craters.loc[range(1, new_id)]
+        # Filter to only circles with radius greater than the threshold
+        filtered = craters.loc[[x for x in crater_ids_larger_than_min if x < new_id]]
 
-        # Filter to only circles that intersect
+        # Further filter to only those that intersect
         distance = np.sqrt((filtered.x - new_x) ** 2 + (filtered.y - new_y) ** 2)
-        filtered = filtered[(distance < filtered.radius + new_radius) & (distance + new_radius > filtered.radius)]
+        filtered = filtered[(distance < filtered.radius + new_radius)
+                            & (distance + new_radius > filtered.radius)]
 
         for row in filtered.itertuples():
             arc = get_intersection_arc((row.x, row.y),
@@ -136,12 +143,12 @@ def place_circle_on_terrain(center: Location, radius: float, terrain: np.array, 
                 terrain[x - margin, y - margin] = True
 
 
-def calculate_areal_density(craters: pd.DataFrame, terrain_size: int, margin: int) -> float:
+def calculate_areal_density(craters: pd.DataFrame, terrain: np.array, margin: int) -> float:
     """
     Calculates the areal density of the craters.
+    The terrain is represented as a numpy array of bools.
+    It is passed in as a performance enhancement.
     """
-    terrain = np.zeros((terrain_size - 2 * margin, terrain_size - 2 * margin), dtype=bool)
-
     for row in craters.itertuples():
         place_circle_on_terrain((row.x, row.y), row.radius, terrain, margin)
 

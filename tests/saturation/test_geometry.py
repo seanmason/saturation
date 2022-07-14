@@ -89,7 +89,7 @@ def test_get_erased_rim_arcs_complete_overlap():
     craters = pd.DataFrame(data).set_index(['id'])
 
     # Act
-    result = get_erased_rim_arcs(craters, 1.0)
+    result = get_erased_rim_arcs(craters, 0.0, 1.0)
 
     # Assert
     assert result.shape[0] == 1
@@ -111,7 +111,7 @@ def test_get_erased_rim_arcs_overlap():
     craters = pd.DataFrame(data).set_index(['id'])
 
     # Act
-    result = get_erased_rim_arcs(craters, 1.0)
+    result = get_erased_rim_arcs(craters, 0.0, 1.0)
 
     # Assert
     assert result.shape[0] == 1
@@ -133,7 +133,7 @@ def test_get_erased_rim_arcs_larger_overlap_with_effective_size():
     craters = pd.DataFrame(data).set_index(['id'])
 
     # Act
-    result = get_erased_rim_arcs(craters, 1.3)
+    result = get_erased_rim_arcs(craters, 0.0, 1.3)
 
     # Assert
     assert result.shape[0] == 1
@@ -145,6 +145,24 @@ def test_get_erased_rim_arcs_larger_overlap_with_effective_size():
     assert first_result.theta2 == 1.415168873450711
 
 
+def test_get_erased_rim_arcs_does_not_generate_arcs_for_small_craters():
+    # Arrange
+    # The first circle is too small to generate erased arcs.
+    # The third cuts the second, despite being too small to have its own rim erased.
+    data = [
+        {'id': 1, 'x': 10, 'y': 10, 'radius': 1},
+        {'id': 2, 'x': 20, 'y': 10, 'radius': 10},
+        {'id': 3, 'x': 10, 'y': 10, 'radius': 1},
+    ]
+    craters = pd.DataFrame(data).set_index(['id'])
+
+    # Act
+    result = get_erased_rim_arcs(craters, 2.0, 1.3)
+
+    # Assert
+    assert result.shape[0] == 1
+
+
 def test_calculate_areal_density_no_edges():
     # Arrange
     # A single crater that does not hit the edges
@@ -153,9 +171,11 @@ def test_calculate_areal_density_no_edges():
     ]
     craters = pd.DataFrame(data).set_index(['id'])
     terrain_size = 1000
+    margin = 0
+    terrain = np.zeros((terrain_size - 2 * margin, terrain_size - 2 * margin))
 
     # Act
-    result = calculate_areal_density(craters, terrain_size, 0)
+    result = calculate_areal_density(craters, terrain, margin)
 
     # Assert
     # It won't be exact, because of discretization, but it should be close.
@@ -172,9 +192,10 @@ def test_calculate_areal_density_uses_margin():
         {'id': 1, 'x': margin, 'y': margin, 'radius': 200},
     ]
     craters = pd.DataFrame(data).set_index(['id'])
+    terrain = np.zeros((terrain_size - 2 * margin, terrain_size - 2 * margin))
 
     # Act
-    result = calculate_areal_density(craters, terrain_size, margin)
+    result = calculate_areal_density(craters, terrain, margin)
 
     # Assert
     # It won't be exact, because of discretization, but it should be close.
@@ -192,9 +213,10 @@ def test_calculate_areal_density_uses_both_margins():
         {'id': 2, 'x': terrain_size - 2 * margin - 1, 'y': terrain_size - 2 * margin - 1, 'radius': 500},
     ]
     craters = pd.DataFrame(data).set_index(['id'])
+    terrain = np.zeros((terrain_size - 2 * margin, terrain_size - 2 * margin))
 
     # Act
-    result = calculate_areal_density(craters, terrain_size, margin)
+    result = calculate_areal_density(craters, terrain, margin)
 
     # Assert
     # It won't be exact, because of discretization, but it should be close.
