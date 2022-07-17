@@ -9,9 +9,9 @@ class ProbabilityDistribution(ABC):
     """
 
     @abstractmethod
-    def inverse_cdf(self, p: float) -> float:
+    def uniform_to_density(self, u: float) -> float:
         """
-        Converts a random uniform value on [0, 1] to a value in the distribution
+        Converts a random uniform value on [0, 1] to a density in the distribution
         """
         pass
 
@@ -51,8 +51,8 @@ class PowerLawProbabilityDistribution(ProbabilityDistribution):
         else:
             self._max_uniform = 1
 
-    def inverse_cdf(self, p: float) -> float:
-        return self._min_value * (1 - p * self._max_uniform) ** (1 / (1 + self._slope))
+    def uniform_to_density(self, u: float) -> float:
+        return self._min_value * (1 - u * self._max_uniform) ** (1 / (1 + self._slope))
 
     def cdf(self, x: float) -> float:
         return 1 - self._constant / (-self._slope - 1) * x ** (self._slope + 1)

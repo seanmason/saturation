@@ -4,7 +4,7 @@ from typing import Tuple
 import pandas as pd
 from numpy.testing import assert_almost_equal
 
-from saturation.geometry import get_xy_intersection, get_intersection_arc, get_erased_rim_arcs, calculate_areal_density, \
+from saturation.geometry import get_xy_intersection, get_intersection_arc, get_erased_rim_arcs, \
     merge_arcs, calculate_rim_percentage_remaining
 
 
@@ -161,69 +161,6 @@ def test_get_erased_rim_arcs_does_not_generate_arcs_for_small_craters():
 
     # Assert
     assert result.shape[0] == 1
-
-
-def test_calculate_areal_density_no_edges():
-    # Arrange
-    # A single crater that does not hit the edges
-    data = [
-        {'id': 1, 'x': 100, 'y': 100, 'radius': 100},
-    ]
-    craters = pd.DataFrame(data).set_index(['id'])
-    terrain_size = 1000
-    margin = 0
-    terrain = np.zeros((terrain_size - 2 * margin, terrain_size - 2 * margin))
-
-    # Act
-    result = calculate_areal_density(craters, terrain, margin)
-
-    # Assert
-    # It won't be exact, because of discretization, but it should be close.
-    expected = craters.iloc[0].radius ** 2 * np.pi / terrain_size ** 2
-    assert abs(1 - result / expected) < 1e-3
-
-
-def test_calculate_areal_density_uses_margin():
-    # Arrange
-    # A single crater that has a quarter of its area within the margin
-    terrain_size = 5000
-    margin = 100
-    data = [
-        {'id': 1, 'x': margin, 'y': margin, 'radius': 200},
-    ]
-    craters = pd.DataFrame(data).set_index(['id'])
-    terrain = np.zeros((terrain_size - 2 * margin, terrain_size - 2 * margin))
-
-    # Act
-    result = calculate_areal_density(craters, terrain, margin)
-
-    # Assert
-    # It won't be exact, because of discretization, but it should be close.
-    expected = craters.iloc[0].radius ** 2 * np.pi / 4 / (terrain_size - 2 * margin - 1) ** 2
-    assert abs(1 - result / expected) < 1e-2
-
-
-def test_calculate_areal_density_uses_both_margins():
-    # Arrange
-    # Two craters that have a quarter of each's area within the margin
-    terrain_size = 5000
-    margin = 100
-    data = [
-        {'id': 1, 'x': margin, 'y': margin, 'radius': 200},
-        {'id': 2, 'x': terrain_size - 2 * margin - 1, 'y': terrain_size - 2 * margin - 1, 'radius': 500},
-    ]
-    craters = pd.DataFrame(data).set_index(['id'])
-    terrain = np.zeros((terrain_size - 2 * margin, terrain_size - 2 * margin))
-
-    # Act
-    result = calculate_areal_density(craters, terrain, margin)
-
-    # Assert
-    # It won't be exact, because of discretization, but it should be close.
-    crater1_area = craters.iloc[0].radius ** 2 * np.pi / 4
-    crater2_area = craters.iloc[1].radius ** 2 * np.pi / 4
-    expected = (crater1_area + crater2_area) / (terrain_size - 2 * margin) ** 2
-    assert abs(1 - result / expected) < 1e-2
 
 
 def test_merge_arcs_with_no_overlap():

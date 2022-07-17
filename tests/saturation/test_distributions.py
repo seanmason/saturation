@@ -11,7 +11,7 @@ def test_power_law_distribution_round_trip():
 
     # Act
     cumulative = distribution.cdf(1.5)
-    result = distribution.inverse_cdf(cumulative)
+    result = distribution.uniform_to_density(cumulative)
 
     # Assert
     assert result == 1.5
@@ -22,7 +22,7 @@ def test_power_law_distribution_inverse_cdf_max_value_respected():
     distribution = PowerLawProbabilityDistribution(slope=-2.8, min_value=1, max_value=10)
 
     # Act
-    result = distribution.inverse_cdf(1)
+    result = distribution.uniform_to_density(1)
 
     # Assert
     assert_almost_equal(result, 10)
@@ -39,7 +39,7 @@ def test_power_law_distribution_slope():
     n_samples = 500000
     y = np.arange(n_samples, 0, -1)
 
-    x = [distribution.inverse_cdf(x) for x in np.random.rand(n_samples)]
+    x = [distribution.uniform_to_density(x) for x in np.random.rand(n_samples)]
     x = sorted(x)
 
     ln_x = np.reshape(np.log(x), newshape=(len(x), 1))
