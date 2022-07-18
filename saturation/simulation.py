@@ -4,6 +4,7 @@ import pandas as pd
 import numpy as np
 
 from saturation.areal_density import ArealDensityCalculator
+from saturation.crater_record import CraterRecord
 from saturation.distributions import ProbabilityDistribution, PowerLawProbabilityDistribution
 
 # Type definitions
@@ -27,7 +28,7 @@ def get_craters(n_craters: int,
     Returns a dataframe of n_craters, including (x, y) center locations and radii.
     Scale defines the maximum size of the terrain.
     """
-    ids = np.arange(1, n_craters + 1)
+    ids = np.arange(1, n_craters + 1, dtype=int)
     locations = location_func(n_craters) * scale
     radii = [size_distribution.uniform_to_density(x) for x in np.random.rand(n_craters)]
     data_dict = {
@@ -39,23 +40,6 @@ def get_craters(n_craters: int,
     data = pd.DataFrame(data_dict).set_index(['id'])
 
     return data
-
-
-def get_craters_to_remove(erased_rim_arcs: pd.DataFrame, minimum_rim_percentage: float) -> List[int]:
-    """
-    Given a set of craters, the corresponding rim arcs that have been erased, and a minimum rim percentage,
-    returns the set of craters that should be removed from the record.
-    """
-    result = []
-
-    groups = erased_rim_arcs.groupby(['old_id'])
-    for group in groups:
-        erased_arcs_list = group[1][['theta1', 'theta2']].values
-        percent_remaining = calculate_rim_percentage_remaining(erased_arcs_list)
-        if percent_remaining < minimum_rim_percentage:
-            result.append(group[0])
-
-    return result
 
 
 def run_simulation(n_craters: int,
@@ -80,42 +64,39 @@ def run_simulation(n_craters: int,
     """
     min_crater_radius_for_stats = min_crater_radius * min_crater_radius_multiplier_for_stats
 
-    # Generate our terrain
     areal_density_calculator = ArealDensityCalculator(terrain_size, terrain_size // 10)
 
     # Get craters according to the SFD
     craters = get_craters(n_craters, size_distribution, terrain_size)
-    erased_rim_arcs = get_erased_rim_arcs(craters, min_crater_radius_for_stats, effective_radius_multiplier)
+
+    # The crater record handles removal of craters rims and the record
+    # of what craters remain at a given point in time.
+    crater_record = CraterRecord(craters,
+                                 min_crater_radius_for_stats,
+                                 min_rim_percentage,
+                                 effective_radius_multiplier)
 
     # Simulation loop, one new crater at a time.
-    crater_record_ids = list()
     stats_calculated_crater_count = 0
     for crater_row in craters.itertuples():
         crater_id = crater_row.Index
 
-        if crater_row.radius >= min_crater_radius_for_stats:
-            crater_record_ids.append(crater_id)
-            stats_calculated_crater_count += 1
-
-        # Handle crater removals
-        filtered_erased_arcs_groups = erased_rim_arcs[(erased_rim_arcs.new_id <= crater_id)
-                                                      & erased_rim_arcs.old_id.isin(crater_record_ids)]
-        to_remove = get_craters_to_remove(filtered_erased_arcs_groups, min_rim_percentage)
-        crater_record_ids = [x for x in crater_record_ids if x not in to_remove]
+        removed_crater_ids = crater_record.update(crater_id)
 
         # Calculate statistics
         if crater_row.radius >= min_crater_radius_for_stats:
-            areal_density_calculator.update(craters.loc[[crater_id]], craters.loc[to_remove])
+            stats_calculated_crater_count += 1
+            areal_density_calculator.update(craters.loc[[crater_id]], craters.loc[removed_crater_ids])
             areal_density = areal_density_calculator.get_areal_density()
 
-            output_file.write(f'{crater_id},{len(crater_record_ids)},{areal_density}\n')
+            output_file.write(f'{crater_id},{len(crater_record.get_crater_ids())},{areal_density}\n')
 
         if crater_id % 500 == 0:
-            print(f'{crater_id},{stats_calculated_crater_count},{len(crater_record_ids)},{areal_density}')
+            print(f'{crater_id},{stats_calculated_crater_count},{len(crater_record.get_crater_ids())},{areal_density}')
 
 
 if __name__ == '__main__':
-    n_craters = 30000
+    n_craters = 10000
     slope = -2
     terrain_size = 12500
     min_crater_radius = 2.5

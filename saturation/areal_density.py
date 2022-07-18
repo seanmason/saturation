@@ -5,7 +5,7 @@ import numpy as np
 from numba import njit
 
 
-@njit(fastmath=True)
+@njit()
 def _get_mins_and_maxes(x: float,
                         y: float,
                         radius: float,
@@ -23,7 +23,7 @@ def _get_mins_and_maxes(x: float,
     return x_min, x_max, y_min, y_max
 
 
-@njit(fastmath=True)
+@njit()
 def _increment_terrain(x: float,
                        y: float,
                        radius: float,
@@ -43,7 +43,7 @@ def _increment_terrain(x: float,
                 terrain[test_x - margin, test_y - margin] += increment
 
 
-@njit(fastmath=True)
+@njit()
 def _get_cratered_area(x: float,
                        y: float,
                        radius: float,
@@ -58,7 +58,7 @@ def _get_cratered_area(x: float,
                             y_min - margin:y_max - margin + 1])
 
 
-@njit(fastmath=True)
+@njit()
 def _update(new_craters: np.array,
             new_erased_craters: np.array,
             terrain: np.array,

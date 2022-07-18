@@ -5,7 +5,7 @@ import pandas as pd
 from numpy.testing import assert_almost_equal
 
 from saturation.geometry import get_xy_intersection, get_intersection_arc, get_erased_rim_arcs, \
-    merge_arcs, calculate_rim_percentage_remaining
+    merge_arcs, calculate_rim_percentage_remaining, SortedArcList
 
 
 def assert_tuples_equal(t1: Tuple[float, float], t2: Tuple[float, float]):
@@ -165,10 +165,10 @@ def test_get_erased_rim_arcs_does_not_generate_arcs_for_small_craters():
 
 def test_merge_arcs_with_no_overlap():
     # Arrange
-    arcs = [
+    arcs = SortedArcList([
         (1, 2),
         (3, 4)
-    ]
+    ])
 
     # Act
     results = merge_arcs(arcs)
@@ -179,10 +179,10 @@ def test_merge_arcs_with_no_overlap():
 
 def test_merge_arcs_with_overlap():
     # Arrange
-    arcs = [
+    arcs = SortedArcList([
         (1, 3),
         (2, 4)
-    ]
+    ])
 
     # Act
     results = merge_arcs(arcs)
@@ -193,11 +193,11 @@ def test_merge_arcs_with_overlap():
 
 def test_merge_arcs_multiple_overlap():
     # Arrange
-    arcs = [
+    arcs = SortedArcList([
         (0, 4),
         (1, 3),
         (2, 3.5)
-    ]
+    ])
 
     # Act
     results = merge_arcs(arcs)
