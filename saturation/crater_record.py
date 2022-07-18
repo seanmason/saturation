@@ -23,16 +23,23 @@ class CraterRecord(object):
         self._crater_ids = []
 
         # Contains distances between all craters in the record
-        self._distances = defaultdict(lambda: dict())
+        self._calculate_distances()
 
         self._erased_crater_ids = []
         self._erased_arcs = defaultdict(lambda: SortedArcList())
 
-    def _get_distance(self, first_id: int, second_id: int) -> float:
-        first = self._all_craters.loc[first_id]
-        second = self._all_craters.loc[second_id]
-
-        return np.sqrt((first.x - second.x)**2 + (first.y - second.y)**2)
+    def _calculate_distances(self):
+        """
+        Calculates the distances between all craters above the minimum radius.
+        """
+        filtered = self._all_craters[self._all_craters.radius >= self._min_crater_radius_for_stats].reset_index()
+        merged = pd.merge(filtered, filtered, how='cross', suffixes=('_old', '_new'))
+        merged = merged[merged.id_old != merged.id_new]
+        merged['distance'] = np.sqrt((merged.x_old - merged.x_new)**2 + (merged.y_old - merged.y_new)**2)
+        self._distances = merged[['id_old', 'id_new', 'distance']].rename(columns={
+            'id_old': 'first_id',
+            'id_new': 'second_id'
+        }).set_index(['first_id', 'second_id']).copy()
 
     def _update_rim_arcs_and_erased_craters(self, new_crater_id: int) -> List[int]:
         """
@@ -85,16 +92,20 @@ class CraterRecord(object):
         if crater.radius >= self._min_crater_radius_for_stats:
             self._crater_ids.append(new_crater_id)
 
-            # # Update distances
-            # for old_crater_id in self._crater_ids:
-            #     distance = self._get_distance(new_crater_id, old_crater_id)
-            #     self._distances[old_crater_id][new_crater_id] = distance
-            #     self._distances[new_crater_id][old_crater_id] = distance
-
         return removed_crater_ids
 
+    def get_distances(self) -> np.array:
+        if not self._crater_ids:
+            return np.array([])
+
+        last_crater_id = self._crater_ids[-1]
+        first_index = [x for x in self._crater_ids if x <= last_crater_id]
+        second_index = [x for x in self._crater_ids if x < last_crater_id]
+        result = self._distances.loc[first_index].loc[second_index].values
+        return result.squeeze(1)
+
     def get_distance(self, first_crater_id: int, second_crater_id: int) -> float:
-        return self._distances[first_crater_id][second_crater_id]
+        return self._distances.loc[first_crater_id][second_crater_id]
 
     def get_craters(self) -> pd.DataFrame:
         return self._all_craters.loc[self._crater_ids]
