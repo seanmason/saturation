@@ -15,13 +15,29 @@ class CraterRecord(object):
                  all_craters: pd.DataFrame,
                  min_crater_radius_for_stats: float,
                  min_rim_percentage: float,
-                 effective_radius_multiplier: float):
+                 effective_radius_multiplier: float,
+                 terrain_size: int,
+                 margin: int):
         self._all_craters = all_craters
         self._min_crater_radius_for_stats = min_crater_radius_for_stats
         self._min_rim_percentage = min_rim_percentage
         self._effective_radius_multiplier = effective_radius_multiplier
 
+        self._min_x = margin
+        self._min_y = margin
+        self._max_x = terrain_size - 2 * margin - 1
+        self._max_y = terrain_size - 2 * margin - 1
+
+        self._craters_in_region = self._all_craters[
+            (self._all_craters.radius >= self._min_crater_radius_for_stats)
+            & (self._all_craters.x >= self._min_x)
+            & (self._all_craters.y >= self._min_y)
+            & (self._all_craters.x <= self._max_x)
+            & (self._all_craters.y <= self._max_y)
+        ].copy()
+
         self._crater_ids = []
+        self._crater_ids_set = set()
         self._erased_crater_ids = []
         self._erased_arcs = defaultdict(lambda: SortedArcList())
 
@@ -31,9 +47,9 @@ class CraterRecord(object):
         """
         Calculates the distances between all craters above the minimum radius.
         """
-        filtered = self._all_craters[self._all_craters.radius >= self._min_crater_radius_for_stats].reset_index()
+        filtered = self._craters_in_region.reset_index()
         merged = pd.merge(filtered, filtered, how='cross', suffixes=('_old', '_new'))
-        merged = merged[merged.id_old != merged.id_new]
+        merged = merged[merged.id_new != merged.id_old]
         merged['distance'] = np.sqrt((merged.x_old - merged.x_new)**2 + (merged.y_old - merged.y_new)**2)
         self._distances = merged[['id_old', 'id_new', 'distance']].rename(columns={
             'id_old': 'first_id',
@@ -73,6 +89,7 @@ class CraterRecord(object):
             if remaining_rim_percentage < self._min_rim_percentage:
                 removed_crater_ids.append(old_id)
                 self._crater_ids.remove(old_id)
+                self._crater_ids_set.remove(old_id)
                 self._erased_crater_ids.append(old_id)
 
         return removed_crater_ids
@@ -90,16 +107,17 @@ class CraterRecord(object):
         # Add the new crater if it is large enough.
         if crater.radius >= self._min_crater_radius_for_stats:
             self._crater_ids.append(new_crater_id)
+            self._crater_ids_set.add(new_crater_id)
 
         return removed_crater_ids
 
-    def get_distances(self, crater_id: int) -> np.array:
+    def get_nearest_neighbor_distances(self) -> np.array:
         """
-        Returns all distances for the specified crater.
+        Returns nearest neighbor distances for all craters in the record.
         """
-        second_index = [x for x in self._crater_ids if x < crater_id]
-        result = self._distances.loc[crater_id].loc[second_index].values
-        return result.squeeze(1)
+        result = self._distances.loc[self._distances.index.get_level_values(0).isin(self._crater_ids_set)
+                                     & self._distances.index.get_level_values(1).isin(self._crater_ids_set)].groupby(level=1).min().values
+        return result.squeeze(axis=1)
 
     def get_craters(self) -> pd.DataFrame:
         """

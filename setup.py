@@ -18,7 +18,7 @@ setup(name='saturation',
             'seaborn==0.11.2',
             'matplotlib==3.5.2',
             'scikit-learn==1.1.1',
-            'numba',
-            'sortedcontainers'
+            'numba==0.55.2',
+            'sortedcontainers==2.4.0'
       ]
       )
