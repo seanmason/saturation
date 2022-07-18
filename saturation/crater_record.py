@@ -54,7 +54,7 @@ class CraterRecord(object):
         self._distances = merged[['id_old', 'id_new', 'distance']].rename(columns={
             'id_old': 'first_id',
             'id_new': 'second_id'
-        }).set_index(['first_id', 'second_id']).copy()
+        }).copy()
 
     def _update_rim_arcs_and_erased_craters(self, new_crater_id: int) -> List[int]:
         """
@@ -115,9 +115,10 @@ class CraterRecord(object):
         """
         Returns nearest neighbor distances for all craters in the record.
         """
-        result = self._distances.loc[self._distances.index.get_level_values(0).isin(self._crater_ids_set)
-                                     & self._distances.index.get_level_values(1).isin(self._crater_ids_set)].groupby(level=1).min().values
-        return result.squeeze(axis=1)
+        result = self._distances[self._distances.first_id.isin(self._crater_ids_set)]
+        result = result[result.second_id.isin(self._crater_ids_set)][['first_id', 'distance']]\
+            .groupby(['first_id']).min().values
+        return result
 
     def get_craters(self) -> pd.DataFrame:
         """
