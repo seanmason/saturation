@@ -2,6 +2,7 @@ from typing import Tuple, List
 
 import pandas as pd
 import numpy as np
+from sortedcontainers import SortedKeyList
 
 # Type definitions
 # Arc in radians
@@ -9,6 +10,23 @@ Arc = Tuple[float, float]
 
 # (x, y) location
 Location = Tuple[float, float]
+
+
+class SortedArcList(SortedKeyList[Arc]):
+    def __init__(self, iterable=None):
+        super(SortedArcList, self).__init__(iterable=iterable, key=lambda x: x[0])
+
+    def reverse(self):
+        super().reverse()
+
+    def append(self, value):
+        super().append(value)
+
+    def extend(self, values):
+        super().extend(values)
+
+    def insert(self, index, value):
+        super().insert(index, value)
 
 
 def get_xy_intersection(center1: Location,
@@ -94,7 +112,7 @@ def get_erased_rim_arcs(craters: pd.DataFrame,
     min_id = min(craters.index)
     max_id = max(craters.index)
 
-    crater_ids_larger_than_min = [x.Index for x in craters.itertuples() if x.radius >= min_crater_radius]
+    crater_ids_larger_than_min = craters[craters.radius >= min_crater_radius].index
 
     erased_arcs = []
     for new_id in range(min_id, max_id + 1):
@@ -104,22 +122,22 @@ def get_erased_rim_arcs(craters: pd.DataFrame,
         new_radius = new_crater.radius * effective_radius_multiplier
 
         # Filter to only circles with radius greater than the threshold
-        filtered = craters.loc[[x for x in crater_ids_larger_than_min if x < new_id]]
+        filtered = craters.loc[crater_ids_larger_than_min[crater_ids_larger_than_min < new_id]]
 
         # Further filter to only those that intersect
         distance = np.sqrt((filtered.x - new_x) ** 2 + (filtered.y - new_y) ** 2)
         filtered = filtered[(distance < filtered.radius + new_radius)
-                            & (distance + new_radius > filtered.radius)]
+                            & (distance + new_radius > filtered.radius)].reset_index()
 
-        for row in filtered.itertuples():
-            arc = get_intersection_arc((row.x, row.y),
-                                       row.radius,
+        for row in filtered[['x', 'y', 'radius', 'id']].values:
+            arc = get_intersection_arc((row[0], row[1]),
+                                       row[2],
                                        (new_x, new_y),
                                        new_radius)
 
             erased_arcs.append({
                 'new_id': new_id,
-                'old_id': row.Index,
+                'old_id': int(row[3]),
                 'theta1': arc[0],
                 'theta2': arc[1]
             })
@@ -127,63 +145,35 @@ def get_erased_rim_arcs(craters: pd.DataFrame,
     return pd.DataFrame(erased_arcs)
 
 
-def place_circle_on_terrain(center: Location, radius: float, terrain: np.array, margin: int):
-    terrain_size = terrain.shape[0]
-
-    x_min = int(max(center[0] - radius, margin))
-    x_max = int(min(center[0] + radius, terrain_size - 1))
-    y_min = int(max(center[1] - radius, margin))
-    y_max = int(min(center[1] + radius, terrain_size - 1))
-
-    limit = int(radius ** 2)
-
-    for x in range(x_min, x_max + 1):
-        for y in range(y_min, y_max + 1):
-            if (x - center[0]) ** 2 + (y - center[1]) ** 2 <= limit:
-                terrain[x - margin, y - margin] = True
-
-
-def calculate_areal_density(craters: pd.DataFrame, terrain: np.array, margin: int) -> float:
-    """
-    Calculates the areal density of the craters.
-    The terrain is represented as a numpy array of bools.
-    It is passed in as a performance enhancement.
-    """
-    for row in craters.itertuples():
-        place_circle_on_terrain((row.x, row.y), row.radius, terrain, margin)
-
-    return terrain.mean()
-
-
-def normalize_arcs(arcs: List[Arc]) -> List[Arc]:
+def normalize_arcs(arcs: List[Arc]) -> SortedArcList[Arc]:
     """
     Splits arcs that cross zero into two arcs.
     Assumes all arcs are in range [0, 2*pi]
     """
-    result = []
+    result = SortedArcList()
     for arc in arcs:
         if arc[0] > arc[1]:
-            result.append((arc[0], 2 * np.pi))
-            result.append((0, arc[1]))
+            result.add((arc[0], 2 * np.pi))
+            result.add((0, arc[1]))
         else:
-            result.append(arc)
+            result.add(arc)
 
     return result
 
 
-def merge_arcs(arcs: List[Arc]) -> List[Arc]:
+def merge_arcs(arcs: SortedArcList) -> SortedArcList:
     """
     Merges arcs, accounting for overlaps.
     Assumes that arcs do not cross 0/2*pi
     """
-    arcs.sort(key=lambda x: x[0])
-
-    result = []
+    result = SortedArcList()
     for arc in arcs:
         if not result or result[-1][1] < arc[0]:
-            result.append(arc)
+            result.add(arc)
         else:
-            result[-1] = (result[-1][0], max(result[-1][1], arc[1]))
+            last = result[-1]
+            del result[-1]
+            result.add((last[0], max(last[1], arc[1])))
 
     return result
 
@@ -192,6 +182,6 @@ def calculate_rim_percentage_remaining(erased_arcs: List[Arc]) -> float:
     """
     Calculates the percentage of rim remaining, given a set of erased arcs.
     """
-    normalized_arcs = normalize_arcs(erased_arcs)
+    normalized_arcs = SortedArcList(normalize_arcs(erased_arcs))
     merged_arcs = merge_arcs(normalized_arcs)
     return 1 - sum([x[1] - x[0] for x in merged_arcs]) / (2 * np.pi)
