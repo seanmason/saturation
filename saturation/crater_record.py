@@ -85,11 +85,11 @@ class CraterRecord(object):
         if crater.radius >= self._min_crater_radius_for_stats:
             self._crater_ids.append(new_crater_id)
 
-            # Update distances
-            for old_crater_id in self._crater_ids:
-                distance = self._get_distance(new_crater_id, old_crater_id)
-                self._distances[old_crater_id][new_crater_id] = distance
-                self._distances[new_crater_id][old_crater_id] = distance
+            # # Update distances
+            # for old_crater_id in self._crater_ids:
+            #     distance = self._get_distance(new_crater_id, old_crater_id)
+            #     self._distances[old_crater_id][new_crater_id] = distance
+            #     self._distances[new_crater_id][old_crater_id] = distance
 
         return removed_crater_ids
 

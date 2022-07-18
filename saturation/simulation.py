@@ -96,7 +96,7 @@ def run_simulation(n_craters: int,
 
 
 if __name__ == '__main__':
-    n_craters = 10000
+    n_craters = 30000
     slope = -2
     terrain_size = 12500
     min_crater_radius = 2.5
