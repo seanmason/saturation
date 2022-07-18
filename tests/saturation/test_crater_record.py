@@ -95,22 +95,6 @@ def test_update_leaves_partially_removed_craters():
     pd.testing.assert_frame_equal(craters, result)
 
 
-def test_get_distances_no_craters():
-    # Arrange
-    craters = pd.DataFrame([], columns=['x', 'y', 'radius', 'id']).set_index(['id'])
-    record = CraterRecord(
-        craters,
-        min_crater_radius_for_stats=10,
-        min_rim_percentage=0.5,
-        effective_radius_multiplier=1.0
-    )
-
-    # Act
-    result = record.get_distances()
-
-    # Assert
-    assert len(result) == 0
-
 
 def test_get_distances_two_craters():
     # Arrange
@@ -130,8 +114,34 @@ def test_get_distances_two_craters():
     # Act
     record.update(1)
     record.update(2)
-    result = record.get_distances()
+    result = record.get_distances(2)
 
     # Assert
     assert result == np.array([100.])
 
+
+def test_get_distances_three_craters_one_destroyed():
+    # Arrange
+    # Three overlapping craters
+    # Third crater destroys the first.
+    data = [
+        {'id': 1, 'x': 100, 'y': 100, 'radius': 10},
+        {'id': 2, 'x': 100, 'y': 200, 'radius': 10},
+        {'id': 3, 'x': 100, 'y': 110, 'radius': 50},
+    ]
+    craters = pd.DataFrame(data).set_index(['id'])
+    record = CraterRecord(
+        craters,
+        min_crater_radius_for_stats=10,
+        min_rim_percentage=0.5,
+        effective_radius_multiplier=1.0
+    )
+
+    # Act
+    record.update(1)
+    record.update(2)
+    record.update(3)
+    result = record.get_distances(3)
+
+    # Assert
+    assert result == np.array([90.])

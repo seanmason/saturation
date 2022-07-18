@@ -20,13 +20,12 @@ class CraterRecord(object):
         self._min_crater_radius_for_stats = min_crater_radius_for_stats
         self._min_rim_percentage = min_rim_percentage
         self._effective_radius_multiplier = effective_radius_multiplier
+
         self._crater_ids = []
-
-        # Contains distances between all craters in the record
-        self._calculate_distances()
-
         self._erased_crater_ids = []
         self._erased_arcs = defaultdict(lambda: SortedArcList())
+
+        self._calculate_distances()
 
     def _calculate_distances(self):
         """
@@ -94,21 +93,22 @@ class CraterRecord(object):
 
         return removed_crater_ids
 
-    def get_distances(self) -> np.array:
-        if not self._crater_ids:
-            return np.array([])
-
-        last_crater_id = self._crater_ids[-1]
-        first_index = [x for x in self._crater_ids if x <= last_crater_id]
-        second_index = [x for x in self._crater_ids if x < last_crater_id]
-        result = self._distances.loc[first_index].loc[second_index].values
+    def get_distances(self, crater_id: int) -> np.array:
+        """
+        Returns all distances for the specified crater.
+        """
+        second_index = [x for x in self._crater_ids if x < crater_id]
+        result = self._distances.loc[crater_id].loc[second_index].values
         return result.squeeze(1)
 
-    def get_distance(self, first_crater_id: int, second_crater_id: int) -> float:
-        return self._distances.loc[first_crater_id][second_crater_id]
-
     def get_craters(self) -> pd.DataFrame:
+        """
+        Returns a dataframe containing all craters in the record.
+        """
         return self._all_craters.loc[self._crater_ids]
 
     def get_crater_ids(self) -> List[int]:
+        """
+        Returns the crater IDs currently in the record.
+        """
         return self._crater_ids
