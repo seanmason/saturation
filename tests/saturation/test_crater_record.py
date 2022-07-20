@@ -211,7 +211,8 @@ def test_get_nearest_neighbor_distances_respects_terrain_limits():
     record.update(1)
     record.update(2)
     record.update(3)
+    record.update(4)
     result = record.get_nearest_neighbor_distances()
 
     # Assert
-    assert_array_almost_equal(result, [600., 600.])
+    assert_array_almost_equal(result, [50., 400.])

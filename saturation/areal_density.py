@@ -91,7 +91,7 @@ class ArealDensityCalculator(object):
         self._terrain_size = terrain_size
         self._margin = margin
 
-        self._terrain = np.zeros((terrain_size - 2 * margin, terrain_size - 2 * margin), dtype='uint16')
+        self._terrain = np.zeros((terrain_size - 2 * margin, terrain_size - 2 * margin), dtype='uint8')
         self._limited_terrain_size = self._terrain.shape[0]
 
         self._total_area = self._limited_terrain_size * self._limited_terrain_size

@@ -38,7 +38,15 @@ def get_craters(n_craters: int,
         'y': locations[:, 1],
         'radius': radii
     }
-    data = pd.DataFrame(data_dict).set_index(['id'])
+    data = pd.DataFrame(data_dict)
+
+    # # Change datatypes to conserve memory
+    data['id'] = data.id.astype('uint32')
+    data['x'] = data.x.astype('float32')
+    data['y'] = data.y.astype('float32')
+    data['radius'] = data.radius.astype('float32')
+
+    data.set_index(['id'], inplace=True)
 
     return data
 
@@ -72,6 +80,11 @@ def run_simulation(n_craters: int,
     limited_terrain_size = terrain_size - 2 * margin
     areal_density_calculator = ArealDensityCalculator(terrain_size, margin)
 
+    min_x = margin
+    min_y = margin
+    max_x = terrain_size - 2 * margin - 1
+    max_y = terrain_size - 2 * margin - 1
+
     # Get craters according to the SFD
     craters = get_craters(n_craters, size_distribution, terrain_size)
 
@@ -92,7 +105,9 @@ def run_simulation(n_craters: int,
         removed_crater_ids = crater_record.update(crater_id)
 
         # Calculate statistics
-        if crater_row.radius >= min_crater_radius_for_stats:
+        if crater_row.radius >= min_crater_radius_for_stats \
+                and min_x <= crater_row.x <= max_x \
+                and min_y <= crater_row.y <= max_y:
             stats_calculated_crater_count += 1
             areal_density_calculator.update(craters.loc[[crater_id]], craters.loc[removed_crater_ids])
             areal_density = areal_density_calculator.get_areal_density()
@@ -108,12 +123,12 @@ def run_simulation(n_craters: int,
 
 
 if __name__ == '__main__':
-    n_craters = 30000
-    slope = -2
+    n_craters = 600000
+    slope = -3
     terrain_size = 12500
     min_crater_radius = 2.5
     min_rim_percentage = 0.4
-    effective_radius_multiplier = 1.5
+    effective_radius_multiplier = 1.1
     min_crater_radius_multiplier_for_stats = 9
     max_crater_radius = (terrain_size * 0.8) // 4
 
@@ -122,7 +137,8 @@ if __name__ == '__main__':
                                                         max_value=max_crater_radius)
 
     for simulation_number in range(100):
-        with open(f'/home/mason/output/simulation_run_{simulation_number}.txt', 'w') as output_file:
+        print(f'Simulation number: {simulation_number}')
+        with open(f'/home/mason/output/simulation_run_large_n_craters_{simulation_number}.txt', 'w') as output_file:
             run_simulation(n_craters,
                            size_distribution,
                            min_crater_radius,
