@@ -10,7 +10,7 @@ class DummyProbabilityDistribution(ProbabilityDistribution):
         self.pdf_result = 0
         self.cdf_result = 0
 
-    def uniform_to_density(self, uniform: float) -> float:
+    def pullback(self, uniform: float) -> float:
         return self.inverse_cdf_result
 
     def pdf(self, x: float) -> float:

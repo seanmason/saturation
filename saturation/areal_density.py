@@ -15,10 +15,10 @@ def _get_mins_and_maxes(x: float,
     Calculates min and max x and y square bounding a circle within a terrain bounded by
     [0, limited_terrain_size] with a specified margin.
     """
-    x_min = int(max(x - radius, margin))
-    x_max = int(min(x + radius, limited_terrain_size - 1))
-    y_min = int(max(y - radius, margin))
-    y_max = int(min(y + radius, limited_terrain_size - 1))
+    x_min = int(max(x - radius - 1, margin))
+    x_max = int(min(x + radius + 1, limited_terrain_size + margin - 1))
+    y_min = int(max(y - radius - 1, margin))
+    y_max = int(min(y + radius + 1, limited_terrain_size + margin - 1))
 
     return x_min, x_max, y_min, y_max
 
@@ -35,7 +35,7 @@ def _increment_terrain(x: float,
     Increments points in the terrain for the placement of a specified circle.
     """
     x_min, x_max, y_min, y_max = _get_mins_and_maxes(x, y, radius, margin, limited_terrain_size)
-    limit = int(radius ** 2)
+    limit = radius ** 2
 
     for test_x in range(x_min, x_max + 1):
         for test_y in range(y_min, y_max + 1):
@@ -98,8 +98,13 @@ class ArealDensityCalculator(object):
         self._cratered_area = 0
 
     def update(self, new_craters: pd.DataFrame, new_erased_craters: pd.DataFrame):
-        difference = _update(new_craters[['x', 'y', 'radius']].values.astype('float64'),
-                             new_erased_craters[['x', 'y', 'radius']].values.astype('float64'),
+        if new_erased_craters.shape[0] > 0:
+            erased = new_erased_craters[['x', 'y', 'radius']].values.astype('float')
+        else:
+            erased = np.empty((0, 3), dtype='float')
+
+        difference = _update(new_craters[['x', 'y', 'radius']].values.astype('float'),
+                             erased,
                              self._terrain,
                              self._margin,
                              self._limited_terrain_size)

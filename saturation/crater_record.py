@@ -25,8 +25,8 @@ class CraterRecord(object):
 
         self._min_x = margin
         self._min_y = margin
-        self._max_x = terrain_size - 2 * margin - 1
-        self._max_y = terrain_size - 2 * margin - 1
+        self._max_x = terrain_size - margin - 1
+        self._max_y = terrain_size - margin - 1
 
         # Find all crater ids that are both in bounds for stats and
         # greater than the minimum radius

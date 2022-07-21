@@ -5,7 +5,7 @@ import numpy as np
 
 from saturation.areal_density import ArealDensityCalculator
 from saturation.crater_record import CraterRecord
-from saturation.distributions import ProbabilityDistribution, PowerLawProbabilityDistribution
+from saturation.distributions import ProbabilityDistribution, ParetoProbabilityDistribution
 
 # Type definitions
 from saturation.geometry import calculate_rim_percentage_remaining, get_erased_rim_arcs
@@ -31,7 +31,7 @@ def get_craters(n_craters: int,
     """
     ids = np.arange(1, n_craters + 1, dtype=int)
     locations = location_func(n_craters) * scale
-    radii = [size_distribution.uniform_to_density(x) for x in np.random.rand(n_craters)]
+    radii = [size_distribution.pullback(x) for x in np.random.rand(n_craters)]
     data_dict = {
         'id': ids,
         'x': locations[:, 0],
@@ -82,8 +82,8 @@ def run_simulation(n_craters: int,
 
     min_x = margin
     min_y = margin
-    max_x = terrain_size - 2 * margin - 1
-    max_y = terrain_size - 2 * margin - 1
+    max_x = terrain_size - margin - 1
+    max_y = terrain_size - margin - 1
 
     # Get craters according to the SFD
     craters = get_craters(n_craters, size_distribution, terrain_size)
@@ -98,33 +98,40 @@ def run_simulation(n_craters: int,
                                  margin)
 
     # Simulation loop, one new crater at a time.
+    empty_craters = pd.DataFrame().reindex_like(craters)
     stats_calculated_crater_count = 0
+    areal_density = 0
+    z = 0
+    za = 0
     for crater_row in craters.itertuples():
         crater_id = crater_row.Index
 
         removed_crater_ids = crater_record.update(crater_id)
 
         # Calculate statistics
-        if crater_row.radius >= min_crater_radius_for_stats \
-                and min_x <= crater_row.x <= max_x \
-                and min_y <= crater_row.y <= max_y:
-            stats_calculated_crater_count += 1
+        if crater_row.radius >= min_crater_radius_for_stats:
             areal_density_calculator.update(craters.loc[[crater_id]], craters.loc[removed_crater_ids])
-            areal_density = areal_density_calculator.get_areal_density()
-            z = calculate_z_statistic(crater_record.get_nearest_neighbor_distances(), limited_terrain_size)
-            za = calculate_za_statistic(crater_record.get_nearest_neighbor_distances(),
-                                        areal_density * limited_terrain_size**2,
-                                        limited_terrain_size)
 
-            output_file.write(f'{crater_id},{stats_calculated_crater_count},{len(crater_record.get_crater_ids())},{areal_density},{z},{za}\n')
+            if min_x <= crater_row.x <= max_x and min_y <= crater_row.y <= max_y:
+                stats_calculated_crater_count += 1
+                areal_density = areal_density_calculator.get_areal_density()
+                z = calculate_z_statistic(crater_record.get_nearest_neighbor_distances(), limited_terrain_size)
+                za = calculate_za_statistic(crater_record.get_nearest_neighbor_distances(),
+                                            areal_density * limited_terrain_size ** 2,
+                                            limited_terrain_size)
+
+                output_file.write(f'{crater_id},{stats_calculated_crater_count},{len(crater_record.get_crater_ids())},{areal_density},{z},{za}\n')
+        else:
+            areal_density_calculator.update(empty_craters, craters.loc[removed_crater_ids])
 
         if crater_id % 500 == 0:
-            print(f'{crater_id},{stats_calculated_crater_count},{len(crater_record.get_crater_ids())},{areal_density},{z},{za}')
+            print(
+                f'{crater_id},{stats_calculated_crater_count},{len(crater_record.get_crater_ids())},{areal_density},{z},{za}')
 
 
 if __name__ == '__main__':
     n_craters = 600000
-    slope = -3
+    slope = 2
     terrain_size = 12500
     min_crater_radius = 2.5
     min_rim_percentage = 0.4
@@ -132,9 +139,9 @@ if __name__ == '__main__':
     min_crater_radius_multiplier_for_stats = 9
     max_crater_radius = (terrain_size * 0.8) // 4
 
-    size_distribution = PowerLawProbabilityDistribution(slope=slope,
-                                                        min_value=min_crater_radius,
-                                                        max_value=max_crater_radius)
+    size_distribution = ParetoProbabilityDistribution(cdf_slope=slope,
+                                                      x_min=min_crater_radius,
+                                                      x_max=max_crater_radius)
 
     for simulation_number in range(100):
         print(f'Simulation number: {simulation_number}')

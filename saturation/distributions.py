@@ -1,7 +1,5 @@
 from abc import ABC, abstractmethod
 
-import numpy as np
-
 
 class ProbabilityDistribution(ABC):
     """
@@ -9,9 +7,9 @@ class ProbabilityDistribution(ABC):
     """
 
     @abstractmethod
-    def uniform_to_density(self, u: float) -> float:
+    def pullback(self, u: float) -> float:
         """
-        Converts a random uniform value on [0, 1] to a density in the distribution
+        Converts a random uniform value on [0, 1] to a value from the distribution
         """
         pass
 
@@ -30,32 +28,30 @@ class ProbabilityDistribution(ABC):
         pass
 
 
-class PowerLawProbabilityDistribution(ProbabilityDistribution):
+class ParetoProbabilityDistribution(ProbabilityDistribution):
     """
-    Represents a power law distribution given the slope of the PDF and the min value.
+    Represents a Pareto distribution given the slope of the CDF and the min/max values.
     PDF has the form of p(x) = constant * x^slope
     """
+    def __init__(self, *, cdf_slope: float, x_min: float, x_max: float):
+        self._cdf_slope = cdf_slope
+        self._x_min = x_min
+        self._x_max = x_max
+        self._u_max = 1 - (x_min / x_max) ** cdf_slope
 
-    def __init__(self, *, slope: float, min_value: float, max_value: float = None):
-        assert slope < -1, "PDF slope must be < -1"
-
-        self._slope = slope
-        self._min_value = min_value
-
-        # Calculate the constant
-        self._constant = (-self._slope - 1) / min_value ** (self._slope + 1)
-
-        # Calculate the max allowed value of a uniform random input
-        if max_value:
-            self._max_uniform = self.cdf(max_value)
-        else:
-            self._max_uniform = 1
-
-    def uniform_to_density(self, u: float) -> float:
-        return self._min_value * (1 - u * self._max_uniform) ** (1 / (1 + self._slope))
+    def pullback(self, u: float) -> float:
+        return (1 - (u * self._u_max)) ** (-1. / self._cdf_slope) * self._x_min
 
     def cdf(self, x: float) -> float:
-        return 1 - self._constant / (-self._slope - 1) * x ** (self._slope + 1)
+        if x < self._x_min:
+            return 0.0
+        elif x > self._x_max:
+            return 1.0
+
+        return 1 - (self._x_min / x) ** self._cdf_slope
 
     def pdf(self, x: float) -> float:
-        return self._constant * x ** self._slope / self._max_uniform
+        if x < self._x_min:
+            return 0.0
+
+        return self._cdf_slope * self._x_min**self._cdf_slope / x ** (self._cdf_slope + 1)
