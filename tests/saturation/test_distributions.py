@@ -2,44 +2,32 @@ import numpy as np
 from numpy.testing import assert_almost_equal
 from sklearn.linear_model import LinearRegression
 
-from saturation.distributions import PowerLawProbabilityDistribution
+from saturation.distributions import ParetoProbabilityDistribution
 
 
-def test_power_law_distribution_round_trip():
+def test_pareto_distribution_uniform_to_density_max_value_respected():
     # Arrange
-    distribution = PowerLawProbabilityDistribution(slope=-3, min_value=1)
+    distribution = ParetoProbabilityDistribution(cdf_slope=2.8, x_min=1, x_max=25)
 
     # Act
-    cumulative = distribution.cdf(1.5)
-    result = distribution.uniform_to_density(cumulative)
+    result = distribution.pullback(1)
 
     # Assert
-    assert result == 1.5
+    assert_almost_equal(result, 25)
 
 
-def test_power_law_distribution_inverse_cdf_max_value_respected():
-    # Arrange
-    distribution = PowerLawProbabilityDistribution(slope=-2.8, min_value=1, max_value=10)
-
-    # Act
-    result = distribution.uniform_to_density(1)
-
-    # Assert
-    assert_almost_equal(result, 10)
-
-
-def test_power_law_distribution_slope():
+def test_pareto_distribution_slope():
     """
     The slope in log-log space should equal the CDF's slope.
     """
     # Arrange
-    distribution = PowerLawProbabilityDistribution(slope=-2.8, min_value=1)
+    distribution = ParetoProbabilityDistribution(cdf_slope=2.8, x_min=1, x_max=25)
 
     # Act
     n_samples = 500000
     y = np.arange(n_samples, 0, -1)
 
-    x = [distribution.uniform_to_density(x) for x in np.random.rand(n_samples)]
+    x = [distribution.pullback(x) for x in np.random.rand(n_samples)]
     x = sorted(x)
 
     ln_x = np.reshape(np.log(x), newshape=(len(x), 1))
@@ -48,16 +36,16 @@ def test_power_law_distribution_slope():
     reg = LinearRegression().fit(ln_x, ln_y)
 
     # Assert
-    # Within a tolerance of 0.5%
-    assert abs(1 - reg.coef_[0] / -1.8) < 0.01
+    # Within a tolerance of .5%
+    assert_almost_equal(reg.coef_[0], -2.8, 1)
 
 
-def test_power_law_distribution_pdf_sums_to_1():
+def test_pareto_distribution_pdf_sums_to_1():
     # Arrange
     min_value = 5
     max_value = 100
     steps = 100000
-    distribution = PowerLawProbabilityDistribution(slope=-2.8, min_value=min_value, max_value=max_value)
+    distribution = ParetoProbabilityDistribution(cdf_slope=2.8, x_min=min_value, x_max=max_value)
 
     # Act
     # Analytical integral via right-handed Riemann sum
@@ -66,5 +54,5 @@ def test_power_law_distribution_pdf_sums_to_1():
     result = sum([distribution.pdf(x) * step_size for x in test_values])
 
     # Assert
-    # Should be within 0.1%
-    assert abs(result - 1) < 1e-3
+    # Should be within .1%
+    assert_almost_equal(result, 1, 3)

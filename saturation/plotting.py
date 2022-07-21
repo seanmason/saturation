@@ -11,7 +11,8 @@ def plot_circle(center: Location,
                 axes_subplot,
                 fill: bool = False,
                 color: str = 'black',
-                lw: float = 1):
+                lw: float = 1,
+                antialiased: bool = True):
     """
     Plots the specified circle on the supplied subplot.
     """
@@ -19,7 +20,8 @@ def plot_circle(center: Location,
                                                      radius=radius,
                                                      color=color,
                                                      fill=fill,
-                                                     lw=lw))
+                                                     lw=lw,
+                                                     antialiased=antialiased))
 
 
 def plot_arc(center: Location,

@@ -53,7 +53,7 @@ def test_calculate_areal_density_uses_both_margins():
     margin = 100
     data = [
         {'id': 1, 'x': margin, 'y': margin, 'radius': 200},
-        {'id': 2, 'x': terrain_size - 2 * margin - 1, 'y': terrain_size - 2 * margin - 1, 'radius': 500},
+        {'id': 2, 'x': terrain_size - margin - 1, 'y': terrain_size - margin - 1, 'radius': 500},
     ]
     craters = pd.DataFrame(data).set_index(['id'])
     calculator = ArealDensityCalculator(terrain_size, margin)
@@ -135,3 +135,4 @@ def test_calculate_areal_density_overlapping_add_and_remove():
     crater2_area = craters.iloc[1].radius ** 2 * np.pi
     expected = crater2_area / (terrain_size - 2 * margin) ** 2
     assert_almost_equal(result, expected, decimal=4)
+
