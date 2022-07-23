@@ -1,143 +1,126 @@
-from typing import Callable, TextIO, List
+from typing import Callable, TextIO, Generator
 
-import pandas as pd
 import numpy as np
 
 from saturation.areal_density import ArealDensityCalculator
 from saturation.crater_record import CraterRecord
 from saturation.distributions import ProbabilityDistribution, ParetoProbabilityDistribution
+from saturation.statistics import calculate_z_statistic, calculate_za_statistic
+from saturation.datatypes import Crater
+
 
 # Type definitions
-from saturation.geometry import calculate_rim_percentage_remaining, get_erased_rim_arcs
-from saturation.statistics import calculate_z_statistic, calculate_za_statistic
-
-LocationFunc = Callable[[int], np.array]
+LocationFunc = Callable[[], np.array]
 
 
-def get_crater_locations(n_craters: int) -> np.array:
+def get_crater_location() -> np.array:
     """
-    Returns n_craters crater locations, uniformly distributed on [0, 1]
+    Returns an (x, y) crater location, uniformly distributed on [0, 1]
     """
-    return np.random.rand(n_craters, 2)
+    return np.random.rand(2)
 
 
-def get_craters(n_craters: int,
-                size_distribution: ProbabilityDistribution,
-                scale: float,
-                location_func: LocationFunc = get_crater_locations) -> pd.DataFrame:
+def get_craters(size_distribution: ProbabilityDistribution,
+                full_terrain_size: float,
+                location_func: LocationFunc = get_crater_location) -> Generator[Crater, None, None]:
     """
-    Returns a dataframe of n_craters, including (x, y) center locations and radii.
-    Scale defines the maximum size of the terrain.
+    Infinite generator for craters. Scale defines the maximum size of the terrain.
     """
-    ids = np.arange(1, n_craters + 1, dtype=int)
-    locations = location_func(n_craters) * scale
-    radii = [size_distribution.pullback(x) for x in np.random.rand(n_craters)]
-    data_dict = {
-        'id': ids,
-        'x': locations[:, 0],
-        'y': locations[:, 1],
-        'radius': radii
-    }
-    data = pd.DataFrame(data_dict)
-
-    # # Change datatypes to conserve memory
-    data['id'] = data.id.astype('uint32')
-    data['x'] = data.x.astype('float32')
-    data['y'] = data.y.astype('float32')
-    data['radius'] = data.radius.astype('float32')
-
-    data.set_index(['id'], inplace=True)
-
-    return data
+    crater_id = 1
+    while True:
+        locations = location_func()
+        # radius = size_distribution.pullback(np.random.rand(1)[0])
+        yield Crater(
+            id=crater_id,
+            x=locations[0] * full_terrain_size,
+            y=locations[1] * full_terrain_size,
+            radius=size_distribution.pullback(np.random.rand(1)[0])
+        )
+        crater_id += 1
 
 
 def run_simulation(n_craters: int,
-                   size_distribution: ProbabilityDistribution,
-                   min_crater_radius: float,
+                   r_stat: float,
                    min_rim_percentage: float,
                    effective_radius_multiplier: float,
-                   min_crater_radius_multiplier_for_stats: float,
-                   terrain_size: int,
+                   observed_terrain_size: int,
+                   terrain_padding: int,
+                   size_distribution: ProbabilityDistribution,
                    output_file: TextIO):
     """
     Runs a simulation.
 
-    :param n_craters: Number of craters to generate.
-    :param size_distribution: Probability distribution for crater sizes.
-    :param min_crater_radius: Minimum crater radius.
+    :param n_craters: Number of craters above r_stat to generate.
+    :param r_stat: Minimum crater radius for statistics
     :param min_rim_percentage: Minimum rim percentage for a crater to remain in the record.
     :param effective_radius_multiplier: Multiplier on a crater's radius when destroying other rims.
-    :param min_crater_radius_multiplier_for_stats: Multiple of the minimum crater radius for consideration in stats calculation (r_stat).
-    :param terrain_size: Size of the terrain.
-    :param output_filename: Output filename.
+    :param observed_terrain_size: Size of the observed terrain.
+    :param terrain_padding: Padding around the edges of the terrain.
+    :param size_distribution: Probability distribution for crater sizes.
+    :param output_file: Output file.
     """
     # Write the header
-    output_file.write('crater_id,n_stats_craters,crater_count,areal_density,z,za\n')
+    output_file.write('crater_id,n_craters_generated,n_craters_in_observation_area,areal_density,z,za\n')
 
-    min_crater_radius_for_stats = min_crater_radius * min_crater_radius_multiplier_for_stats
-
-    margin = terrain_size // 10
-    limited_terrain_size = terrain_size - 2 * margin
-    areal_density_calculator = ArealDensityCalculator(terrain_size, margin)
-
-    min_x = margin
-    min_y = margin
-    max_x = terrain_size - margin - 1
-    max_y = terrain_size - margin - 1
-
-    # Get craters according to the SFD
-    craters = get_craters(n_craters, size_distribution, terrain_size)
+    full_terrain_size = observed_terrain_size + 2 * terrain_padding
+    observed_terrain_area = observed_terrain_size**2
 
     # The crater record handles removal of craters rims and the record
     # of what craters remain at a given point in time.
-    crater_record = CraterRecord(craters,
-                                 min_crater_radius_for_stats,
+    crater_record = CraterRecord(r_stat,
                                  min_rim_percentage,
                                  effective_radius_multiplier,
-                                 terrain_size,
-                                 margin)
+                                 observed_terrain_size,
+                                 terrain_padding)
 
-    # Simulation loop, one new crater at a time.
-    empty_craters = pd.DataFrame().reindex_like(craters)
-    stats_calculated_crater_count = 0
-    areal_density = 0
-    z = 0
-    za = 0
-    for crater_row in craters.itertuples():
-        crater_id = crater_row.Index
+    areal_density_calculator = ArealDensityCalculator(observed_terrain_size, terrain_padding)
 
-        removed_crater_ids = crater_record.update(crater_id)
+    last_n_craters = 0
+    for crater in get_craters(size_distribution, full_terrain_size):
+        # Exit if we have generated our target number of craters.
+        if crater_record.n_craters_added_in_observation_area == n_craters:
+            break
 
-        # Calculate statistics
-        if crater_row.radius >= min_crater_radius_for_stats:
-            areal_density_calculator.update(craters.loc[[crater_id]], craters.loc[removed_crater_ids])
+        removed_craters = crater_record.add(crater)
 
-            if min_x <= crater_row.x <= max_x and min_y <= crater_row.y <= max_y:
-                stats_calculated_crater_count += 1
-                areal_density = areal_density_calculator.get_areal_density()
-                z = calculate_z_statistic(crater_record.get_nearest_neighbor_distances(), limited_terrain_size)
-                za = calculate_za_statistic(crater_record.get_nearest_neighbor_distances(),
-                                            areal_density * limited_terrain_size ** 2,
-                                            limited_terrain_size)
+        if removed_craters:
+            areal_density_calculator.remove_craters(removed_craters)
 
-                output_file.write(f'{crater_id},{stats_calculated_crater_count},{len(crater_record.get_crater_ids())},{areal_density},{z},{za}\n')
-        else:
-            areal_density_calculator.update(empty_craters, craters.loc[removed_crater_ids])
+        # Only perform updates if the observable crater count ticked up
+        if last_n_craters != crater_record.n_craters_added_in_observation_area:
+            last_n_craters = crater_record.n_craters_added_in_observation_area
 
-        if crater_id % 500 == 0:
-            print(
-                f'{crater_id},{stats_calculated_crater_count},{len(crater_record.get_crater_ids())},{areal_density},{z},{za}')
+            areal_density_calculator.add_crater(crater)
+            areal_density = areal_density_calculator.areal_density
+
+            if crater_record.n_craters_in_observation_area > 1:
+                nn_distances = crater_record.get_nearest_neighbor_distances()
+                z = calculate_z_statistic(nn_distances, observed_terrain_area)
+                za = calculate_za_statistic(nn_distances,
+                                            areal_density_calculator.area_covered,
+                                            observed_terrain_area)
+            else:
+                z = np.nan
+                za = np.nan
+
+            # Write out stats
+            n_craters_generated = crater_record.n_craters_added_in_observation_area
+            n_craters_in_observation_area = crater_record.n_craters_in_observation_area
+            output_file.write(
+                f'{crater.id},{n_craters_generated},{n_craters_in_observation_area},{areal_density},{z},{za}\n')
 
 
 if __name__ == '__main__':
-    n_craters = 600000
+    n_craters = 5000
     slope = 2
-    terrain_size = 12500
+    observed_terrain_size = 10000
+    terrain_padding = int(observed_terrain_size * 0.125)
     min_crater_radius = 2.5
+    r_stat_multiplier = 9
     min_rim_percentage = 0.4
-    effective_radius_multiplier = 1.1
-    min_crater_radius_multiplier_for_stats = 9
-    max_crater_radius = (terrain_size * 0.8) // 4
+    effective_radius_multiplier = 1.5
+    max_crater_radius = observed_terrain_size // 4
+    r_stat = r_stat_multiplier * min_crater_radius
 
     size_distribution = ParetoProbabilityDistribution(cdf_slope=slope,
                                                       x_min=min_crater_radius,
@@ -145,12 +128,12 @@ if __name__ == '__main__':
 
     for simulation_number in range(100):
         print(f'Simulation number: {simulation_number}')
-        with open(f'/home/mason/output/simulation_run_large_n_craters_{simulation_number}.txt', 'w') as output_file:
+        with open(f'/home/mason/output/sim_run3_2_9_0.4_1.5_{simulation_number}.txt', 'w') as output_file:
             run_simulation(n_craters,
-                           size_distribution,
-                           min_crater_radius,
+                           r_stat,
                            min_rim_percentage,
                            effective_radius_multiplier,
-                           min_crater_radius_multiplier_for_stats,
-                           terrain_size,
+                           observed_terrain_size,
+                           terrain_padding,
+                           size_distribution,
                            output_file)

@@ -2,31 +2,8 @@ from typing import Tuple, List
 
 import pandas as pd
 import numpy as np
-from sortedcontainers import SortedKeyList
 
-# Type definitions
-# Arc in radians
-Arc = Tuple[float, float]
-
-# (x, y) location
-Location = Tuple[float, float]
-
-
-class SortedArcList(SortedKeyList[Arc]):
-    def __init__(self, iterable=None):
-        super(SortedArcList, self).__init__(iterable=iterable, key=lambda x: x[0])
-
-    def reverse(self):
-        super().reverse()
-
-    def append(self, value):
-        super().append(value)
-
-    def extend(self, values):
-        super().extend(values)
-
-    def insert(self, index, value):
-        super().insert(index, value)
+from saturation.datatypes import Location, Arc, SortedArcList
 
 
 def get_xy_intersection(center1: Location,
@@ -145,7 +122,7 @@ def get_erased_rim_arcs(craters: pd.DataFrame,
     return pd.DataFrame(erased_arcs)
 
 
-def normalize_arcs(arcs: List[Arc]) -> SortedArcList[Arc]:
+def normalize_arcs(arcs: List[Arc]) -> SortedArcList:
     """
     Splits arcs that cross zero into two arcs.
     Assumes all arcs are in range [0, 2*pi]
