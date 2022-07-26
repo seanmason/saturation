@@ -112,12 +112,12 @@ def run_simulation(n_craters: int,
 
 if __name__ == '__main__':
     n_craters = 5000
-    slope = 2
+    slope = 1
     observed_terrain_size = 10000
     terrain_padding = int(observed_terrain_size * 0.125)
     min_crater_radius = 2.5
     r_stat_multiplier = 9
-    min_rim_percentage = 0.4
+    min_rim_percentage = 0.6
     effective_radius_multiplier = 1.5
     max_crater_radius = observed_terrain_size // 4
     r_stat = r_stat_multiplier * min_crater_radius
@@ -128,7 +128,34 @@ if __name__ == '__main__':
 
     for simulation_number in range(100):
         print(f'Simulation number: {simulation_number}')
-        with open(f'/home/mason/output/sim_run3_2_9_0.4_1.5_{simulation_number}.txt', 'w') as output_file:
+        with open(f'/home/mason/output/sim_run_1_9_0.6_1.5_{simulation_number}.txt', 'w') as output_file:
+            run_simulation(n_craters,
+                           r_stat,
+                           min_rim_percentage,
+                           effective_radius_multiplier,
+                           observed_terrain_size,
+                           terrain_padding,
+                           size_distribution,
+                           output_file)
+
+    n_craters = 5000
+    slope = 1
+    observed_terrain_size = 10000
+    terrain_padding = int(observed_terrain_size * 0.125)
+    min_crater_radius = 2.5
+    r_stat_multiplier = 9
+    min_rim_percentage = 0.4
+    effective_radius_multiplier = 1.1
+    max_crater_radius = observed_terrain_size // 4
+    r_stat = r_stat_multiplier * min_crater_radius
+
+    size_distribution = ParetoProbabilityDistribution(cdf_slope=slope,
+                                                      x_min=min_crater_radius,
+                                                      x_max=max_crater_radius)
+
+    for simulation_number in range(100):
+        print(f'Simulation number: {simulation_number}')
+        with open(f'/home/mason/output/sim_run_1_9_0.4_1.1_{simulation_number}.txt', 'w') as output_file:
             run_simulation(n_craters,
                            r_stat,
                            min_rim_percentage,

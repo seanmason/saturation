@@ -1,8 +1,9 @@
 from collections import defaultdict
 from dataclasses import dataclass
-from typing import List
+from typing import List, Iterable
 
 import numpy as np
+import pandas as pd
 from sortedcontainers import SortedList
 
 from saturation.geometry import get_intersection_arc, normalize_arcs, SortedArcList, merge_arcs
@@ -64,6 +65,11 @@ class CraterRecord(object):
 
         self._craters_in_observation_area = CraterDictionary()
         self._all_craters_in_record = CraterDictionary()
+
+        self._all_craters_in_record_dataframe = pd.DataFrame(columns=['id', 'x', 'y', 'radius'], dtype='float')
+        self._all_craters_in_record_dataframe['id'] = self._all_craters_in_record_dataframe.id.astype('int')
+        self._all_craters_in_record_dataframe = self._all_craters_in_record_dataframe.set_index(['id'])
+
         self._all_craters = CraterDictionary()
         self._n_craters_added_in_observation_area = 0
 
@@ -100,19 +106,14 @@ class CraterRecord(object):
             if crater.id in self._distances:
                 del self._distances[crater.id]
 
-            for distance_crater_id, distances in self._distances.items():
-                index = -1
-                for idx, distance in enumerate(distances):
-                    if distance.crater_id == crater.id:
-                        index = idx
-                        break
-                if index != -1:
-                    del distances[index]
-
     def get_nearest_neighbor_distances(self) -> List[float]:
         result = []
 
+        ids_in_record = set(self._all_craters_in_record_dataframe.index)
         for distances in self._distances.values():
+            while distances and distances[0].crater_id not in ids_in_record:
+                distances.pop(0)
+
             if distances:
                 result.append(distances[0].distance)
 
@@ -129,6 +130,20 @@ class CraterRecord(object):
 
         return total / counter
 
+    def _get_crater_ids_in_range(self, new_crater: Crater) -> Iterable[int]:
+        """"
+        Returns a list of crater IDs that may be affected by the addition of new_crater
+        """
+        new_x = new_crater.x
+        new_y = new_crater.y
+        effective_radius = new_crater.radius * self._effective_radius_multiplier
+
+        distances = np.sqrt((self._all_craters_in_record_dataframe.x - new_crater.x) ** 2 + (self._all_craters_in_record_dataframe.y - new_crater.y) ** 2)
+        return self._all_craters_in_record_dataframe.index[
+            (distances < self._all_craters_in_record_dataframe.radius + effective_radius)
+            & (distances > self._all_craters_in_record_dataframe.radius - effective_radius)
+        ]
+
     def _update_rim_arcs_and_erased_craters(self, new_crater: Crater) -> List[Crater]:
         """
         Returns removed craters.
@@ -139,13 +154,11 @@ class CraterRecord(object):
         new_y = new_crater.y
         effective_radius = new_crater.radius * self._effective_radius_multiplier
 
-        # Find craters that may be affected by the new crater.
-        craters_in_range = [
-            old_crater
-            for old_crater in self._all_craters_in_record
-            if old_crater.radius - effective_radius < np.sqrt((old_crater.x - new_x) ** 2 + (old_crater.y - new_y) ** 2) < old_crater.radius + effective_radius
-        ]
-        for old_crater in craters_in_range:
+        crater_ids_in_range = self._get_crater_ids_in_range(new_crater)
+
+        # for old_crater in craters_in_range:
+        for old_crater_id in crater_ids_in_range:
+            old_crater = self._all_craters_in_record[old_crater_id]
             arc = get_intersection_arc((old_crater.x, old_crater.y),
                                        old_crater.radius,
                                        (new_x, new_y),
@@ -161,6 +174,7 @@ class CraterRecord(object):
             if remaining_rim_percentage < self._min_rim_percentage:
                 removed_craters.append(old_crater)
                 self._all_craters_in_record.remove(old_crater)
+                self._all_craters_in_record_dataframe.drop([old_crater.id], axis=0, inplace=True)
                 if old_crater.id in self._craters_in_observation_area:
                     self._craters_in_observation_area.remove(old_crater)
 
@@ -178,13 +192,18 @@ class CraterRecord(object):
 
         if crater.radius >= self._r_stat:
             self._all_craters_in_record.add(crater)
+            self._all_craters_in_record_dataframe = pd.concat(
+                [self._all_craters_in_record_dataframe, pd.DataFrame([crater]).set_index(['id'])],
+                axis=0
+            )
 
             if self._min_x <= crater.x <= self._max_x and self._min_y <= crater.y <= self._max_y:
                 self._craters_in_observation_area.add(crater)
                 self._n_craters_added_in_observation_area += 1
 
         self._add_crater_to_distances(crater)
-        self._remove_craters_from_distances(erased)
+        if erased:
+            self._remove_craters_from_distances(erased)
 
         return erased
 
