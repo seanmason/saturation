@@ -134,8 +134,6 @@ class CraterRecord(object):
         """"
         Returns a list of crater IDs that may be affected by the addition of new_crater
         """
-        new_x = new_crater.x
-        new_y = new_crater.y
         effective_radius = new_crater.radius * self._effective_radius_multiplier
 
         distances = np.sqrt((self._all_craters_in_record_dataframe.x - new_crater.x) ** 2 + (self._all_craters_in_record_dataframe.y - new_crater.y) ** 2)

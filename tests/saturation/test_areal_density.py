@@ -12,7 +12,7 @@ def test_calculate_areal_density_no_edges():
     crater = Crater(id=1, x=100, y=100, radius=100)
     observed_terrain_size = 1000
     terrain_padding = 0
-    calculator = ArealDensityCalculator(observed_terrain_size, terrain_padding)
+    calculator = ArealDensityCalculator(observed_terrain_size, terrain_padding, 3)
 
     # Act
     calculator.add_crater(crater)
@@ -29,7 +29,7 @@ def test_calculate_areal_density_uses_margin():
     # A single crater that has a quarter of its area within the observable area
     observed_terrain_size = 5000
     terrain_padding = 100
-    calculator = ArealDensityCalculator(observed_terrain_size, terrain_padding)
+    calculator = ArealDensityCalculator(observed_terrain_size, terrain_padding, 3)
     crater = Crater(id=1, x=terrain_padding, y=terrain_padding, radius=200)
 
     # Act
@@ -46,7 +46,7 @@ def test_calculate_areal_density_uses_both_margins():
     # Two craters that have a quarter of each's area within the observable area
     observed_terrain_size = 5000
     terrain_padding = 100
-    calculator = ArealDensityCalculator(observed_terrain_size, terrain_padding)
+    calculator = ArealDensityCalculator(observed_terrain_size, terrain_padding, 3)
     crater1 = Crater(id=1, x=terrain_padding, y=terrain_padding, radius=200)
     crater2 = Crater(id=2, x=observed_terrain_size + terrain_padding - 1, y=observed_terrain_size + terrain_padding - 1, radius=500)
 
@@ -67,7 +67,7 @@ def test_calculate_areal_density_overlapping_craters():
     # Completely overlapping craters
     observed_terrain_size = 5000
     terrain_padding = 100
-    calculator = ArealDensityCalculator(observed_terrain_size, terrain_padding)
+    calculator = ArealDensityCalculator(observed_terrain_size, terrain_padding, 3)
     crater1 = Crater(id=1, x=terrain_padding, y=terrain_padding, radius=200)
     crater2 = Crater(id=2, x=terrain_padding, y=terrain_padding, radius=500)
 
@@ -87,9 +87,9 @@ def test_calculate_areal_density_disjoint_add_and_remove():
     # Two craters that have a quarter of each's area within the margin
     observed_terrain_size = 5000
     terrain_padding = 100
-    calculator = ArealDensityCalculator(observed_terrain_size, terrain_padding)
+    calculator = ArealDensityCalculator(observed_terrain_size, terrain_padding, 3)
     crater1 = Crater(id=1, x=terrain_padding, y=terrain_padding, radius=200)
-    crater2 = Crater(id=2, x=observed_terrain_size + terrain_padding, y=observed_terrain_size + terrain_padding, radius=500)
+    crater2 = Crater(id=2, x=observed_terrain_size + terrain_padding - 1, y=observed_terrain_size + terrain_padding - 1, radius=500)
 
     # Act
     calculator.add_crater(crater1)
@@ -108,7 +108,7 @@ def test_calculate_areal_density_overlapping_add_and_remove():
     # Two overlapping craters
     observed_terrain_size = 5000
     terrain_padding = 100
-    calculator = ArealDensityCalculator(observed_terrain_size, terrain_padding)
+    calculator = ArealDensityCalculator(observed_terrain_size, terrain_padding, 3)
     crater1 = Crater(id=1, x=terrain_padding + 100, y=terrain_padding + 100, radius=500)
     crater2 = Crater(id=2, x=terrain_padding, y=terrain_padding, radius=200)
 
@@ -122,3 +122,36 @@ def test_calculate_areal_density_overlapping_add_and_remove():
     crater2_area = crater2.radius ** 2 * np.pi / 4
     expected = crater2_area / observed_terrain_size ** 2
     assert_almost_equal(result, expected, decimal=4)
+
+
+def test_craters_outside_observed_area_do_not_affect_areal_density():
+    # Arrange
+    # Single crater outside the observed terrain, but with a radius that is inside the terrain.
+    observed_terrain_size = 5000
+    terrain_padding = 100
+    calculator = ArealDensityCalculator(observed_terrain_size, terrain_padding, 3)
+    crater1 = Crater(id=1, x=0, y=0, radius=500)
+
+    # Act
+    calculator.add_crater(crater1)
+    result = calculator.areal_density
+
+    # Assert
+    assert_almost_equal(result, 0, decimal=4)
+
+
+def test_craters_smaller_than_r_stat_do_not_affect_areal_density():
+    # Arrange
+    # Single crater that is too small
+    observed_terrain_size = 5000
+    terrain_padding = 100
+    calculator = ArealDensityCalculator(observed_terrain_size, terrain_padding, 10)
+    crater1 = Crater(id=1, x=terrain_padding, y=terrain_padding, radius=9)
+
+    # Act
+    calculator.add_crater(crater1)
+    result = calculator.areal_density
+
+    # Assert
+    assert_almost_equal(result, 0, decimal=4)
+
