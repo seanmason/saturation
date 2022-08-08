@@ -7,6 +7,7 @@ def test_add_in_observation_area():
     crater = Crater(id=1, x=100, y=100, radius=100)
     record = CraterRecord(
         r_stat=10,
+        r_stat_multiplier=3,
         min_rim_percentage=0.5,
         effective_radius_multiplier=1.0,
         observed_terrain_size=1000,
@@ -31,6 +32,7 @@ def test_add_outside_observation_area():
     crater = Crater(id=1, x=100, y=100, radius=100)
     record = CraterRecord(
         r_stat=10,
+        r_stat_multiplier=3,
         min_rim_percentage=0.5,
         effective_radius_multiplier=1.0,
         observed_terrain_size=1000,
@@ -54,6 +56,7 @@ def test_add_does_not_add_small_craters():
     crater = Crater(id=1, x=100, y=100, radius=9)
     record = CraterRecord(
         r_stat=10,
+        r_stat_multiplier=3,
         min_rim_percentage=0.5,
         effective_radius_multiplier=1.0,
         observed_terrain_size=1000,
@@ -77,6 +80,7 @@ def test_add_removes_obliterated_craters():
     crater2 = Crater(id=2, x=110, y=110, radius=50)
     record = CraterRecord(
         r_stat=10,
+        r_stat_multiplier=3,
         min_rim_percentage=0.5,
         effective_radius_multiplier=1.0,
         observed_terrain_size=1000,
@@ -102,6 +106,7 @@ def test_add_leaves_partially_removed_craters():
     crater2 = Crater(id=2, x=110, y=110, radius=10)
     record = CraterRecord(
         r_stat=10,
+        r_stat_multiplier=3,
         min_rim_percentage=0.5,
         effective_radius_multiplier=1.0,
         observed_terrain_size=1000,
@@ -120,11 +125,61 @@ def test_add_leaves_partially_removed_craters():
     assert n_craters_added == 2
 
 
+def test_crater_rims_truncated_by_observed_terrain_edges():
+    # Arrange
+    crater = Crater(id=1, x=0, y=0, radius=10)
+    record = CraterRecord(
+        r_stat=10,
+        r_stat_multiplier=3,
+        min_rim_percentage=0.5,
+        effective_radius_multiplier=1.0,
+        observed_terrain_size=1000,
+        terrain_padding=0
+    )
+
+    # Act
+    record.add(crater)
+
+    # Assert
+    assert record._erased_arcs[crater.id]
+
+
+def test_crater_radius_ratio_respected():
+    # Arrange
+    # For a new crater to affect an old crater, (new crater radius) > (old crater radius) / r_stat_multiplier
+    # Here we pepper crater1 with a bunch of craters below this ratio. crater1 should not be removed.
+    crater1 = Crater(id=1, x=100, y=100, radius=10)
+    crater2 = Crater(id=2, x=100, y=110, radius=4)
+    crater3 = Crater(id=3, x=90, y=100, radius=4)
+    crater4 = Crater(id=4, x=100, y=110, radius=4)
+    crater5 = Crater(id=5, x=100, y=90, radius=4)
+    record = CraterRecord(
+        r_stat=10,
+        r_stat_multiplier=2,
+        min_rim_percentage=0.9,
+        effective_radius_multiplier=1.0,
+        observed_terrain_size=1000,
+        terrain_padding=0,
+    )
+
+    # Act
+    record.add(crater1)
+    record.add(crater2)
+    record.add(crater3)
+    record.add(crater4)
+    record.add(crater5)
+    all_craters = record.all_craters_in_record
+
+    # Assert
+    assert all_craters == [crater1]
+
+
 def test_nearest_neighbor_empty_from():
     # Arrange
     crater1 = Crater(id=1, x=200, y=200, radius=10)
     record = CraterRecord(
         r_stat=10,
+        r_stat_multiplier=3,
         min_rim_percentage=0.5,
         effective_radius_multiplier=1.0,
         observed_terrain_size=100,
@@ -145,6 +200,7 @@ def test_nearest_neighbor_single_from_and_to():
     crater2 = Crater(id=2, x=150, y=150, radius=10)
     record = CraterRecord(
         r_stat=10,
+        r_stat_multiplier=3,
         min_rim_percentage=0.5,
         effective_radius_multiplier=1.0,
         observed_terrain_size=100,
@@ -168,7 +224,8 @@ def test_nearest_neighbor_gets_shortest_distance_from_to_craters():
     crater4 = Crater(id=4, x=99, y=100, radius=10)
     record = CraterRecord(
         r_stat=10,
-        min_rim_percentage=0.5,
+        r_stat_multiplier=3,
+        min_rim_percentage=0.0,
         effective_radius_multiplier=1.0,
         observed_terrain_size=100,
         terrain_padding=100
@@ -192,7 +249,8 @@ def test_nearest_neighbor_gets_shortest_distance_for_all_from_craters():
     crater3 = Crater(id=3, x=110, y=100, radius=10)
     record = CraterRecord(
         r_stat=10,
-        min_rim_percentage=0.5,
+        r_stat_multiplier=3,
+        min_rim_percentage=0.0,
         effective_radius_multiplier=1.0,
         observed_terrain_size=100,
         terrain_padding=100
@@ -215,6 +273,7 @@ def test_nearest_neighbor_ignores_smaller_than_r_stat():
     crater3 = Crater(id=3, x=110, y=100, radius=5)
     record = CraterRecord(
         r_stat=10,
+        r_stat_multiplier=3,
         min_rim_percentage=0.5,
         effective_radius_multiplier=1.0,
         observed_terrain_size=100,
@@ -238,6 +297,7 @@ def test_nearest_neighbor_ignores_removed_craters():
     crater3 = Crater(id=3, x=100, y=160, radius=50)
     record = CraterRecord(
         r_stat=10,
+        r_stat_multiplier=3,
         min_rim_percentage=0.5,
         effective_radius_multiplier=1.0,
         observed_terrain_size=100,
@@ -261,6 +321,7 @@ def test_get_mean_nearest_neighbor_distance():
     crater3 = Crater(id=3, x=110, y=100, radius=10)
     record = CraterRecord(
         r_stat=10,
+        r_stat_multiplier=3,
         min_rim_percentage=0.5,
         effective_radius_multiplier=1.0,
         observed_terrain_size=100,

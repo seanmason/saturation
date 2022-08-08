@@ -29,7 +29,6 @@ def get_craters(size_distribution: ProbabilityDistribution,
     crater_id = 1
     while True:
         locations = location_func()
-        # radius = size_distribution.pullback(np.random.rand(1)[0])
         yield Crater(
             id=crater_id,
             x=locations[0] * full_terrain_size,
@@ -68,6 +67,7 @@ def run_simulation(n_craters: int,
     # The crater record handles removal of craters rims and the record
     # of what craters remain at a given point in time.
     crater_record = CraterRecord(r_stat,
+                                 r_stat_multiplier,
                                  min_rim_percentage,
                                  effective_radius_multiplier,
                                  observed_terrain_size,
@@ -83,14 +83,14 @@ def run_simulation(n_craters: int,
 
         removed_craters = crater_record.add(crater)
 
-        if removed_craters:
-            areal_density_calculator.remove_craters(removed_craters)
-
         # Only perform updates if the observable crater count ticked up
         if last_n_craters != crater_record.n_craters_added_in_observation_area:
             last_n_craters = crater_record.n_craters_added_in_observation_area
 
             areal_density_calculator.add_crater(crater)
+            if removed_craters:
+                areal_density_calculator.remove_craters(removed_craters)
+
             areal_density = areal_density_calculator.areal_density
 
             if crater_record.n_craters_in_observation_area > 1:
@@ -138,56 +138,3 @@ if __name__ == '__main__':
                            size_distribution,
                            output_file)
 
-    n_craters = 5000
-    slope = 1
-    observed_terrain_size = 10000
-    terrain_padding = int(observed_terrain_size * 0.125)
-    min_crater_radius = 2.5
-    r_stat_multiplier = 9
-    min_rim_percentage = 0.6
-    effective_radius_multiplier = 1.5
-    max_crater_radius = observed_terrain_size // 4
-    r_stat = r_stat_multiplier * min_crater_radius
-
-    size_distribution = ParetoProbabilityDistribution(cdf_slope=slope,
-                                                      x_min=min_crater_radius,
-                                                      x_max=max_crater_radius)
-
-    for simulation_number in range(35):
-        print(f'Simulation number: {simulation_number}')
-        with open(f'/home/mason/output/sim_run_1_9_0.6_1.5_{simulation_number}.txt', 'w') as output_file:
-            run_simulation(n_craters,
-                           r_stat,
-                           min_rim_percentage,
-                           effective_radius_multiplier,
-                           observed_terrain_size,
-                           terrain_padding,
-                           size_distribution,
-                           output_file)
-
-    n_craters = 5000
-    slope = 1
-    observed_terrain_size = 10000
-    terrain_padding = int(observed_terrain_size * 0.125)
-    min_crater_radius = 2.5
-    r_stat_multiplier = 9
-    min_rim_percentage = 0.4
-    effective_radius_multiplier = 1.1
-    max_crater_radius = observed_terrain_size // 4
-    r_stat = r_stat_multiplier * min_crater_radius
-
-    size_distribution = ParetoProbabilityDistribution(cdf_slope=slope,
-                                                      x_min=min_crater_radius,
-                                                      x_max=max_crater_radius)
-
-    for simulation_number in range(35):
-        print(f'Simulation number: {simulation_number}')
-        with open(f'/home/mason/output/sim_run_1_9_0.4_1.1_{simulation_number}.txt', 'w') as output_file:
-            run_simulation(n_craters,
-                           r_stat,
-                           min_rim_percentage,
-                           effective_radius_multiplier,
-                           observed_terrain_size,
-                           terrain_padding,
-                           size_distribution,
-                           output_file)

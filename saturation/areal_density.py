@@ -36,16 +36,15 @@ def _increment_terrain(x: float,
     """
     x_min, x_max, y_min, y_max = _get_mins_and_maxes(x, y, radius, terrain.shape[0], terrain_padding)
 
-    # If the crater is not in the observation region, it should not factor into areal density.
-    if x < x_min or x > x_max or y < y_min or y > y_max:
-        return
-
     limit = radius ** 2
 
     for test_x in range(x_min, x_max + 1):
         for test_y in range(y_min, y_max + 1):
             if (test_x - x) ** 2 + (test_y - y) ** 2 <= limit:
-                terrain[test_x - terrain_padding, test_y - terrain_padding] += increment
+                if increment == -1:
+                    terrain[test_x - terrain_padding, test_y - terrain_padding] = 0
+                else:
+                    terrain[test_x - terrain_padding, test_y - terrain_padding] += increment
 
 
 @njit()
@@ -74,11 +73,15 @@ class ArealDensityCalculator(object):
         self._cratered_area = 0
 
     def add_crater(self, new_crater: Crater):
-        if new_crater.radius >= self._r_stat:
+        if new_crater.radius >= self._r_stat \
+                and self._terrain_padding <= new_crater.x <= self._observed_terrain_size + self._terrain_padding \
+                and self._terrain_padding <= new_crater.y <= self._observed_terrain_size + self._terrain_padding:
             # Calculate the difference in the cratered area before and after crater addition.
-            before = _get_cratered_area(new_crater.x, new_crater.y, new_crater.radius, self._terrain, self._terrain_padding)
+            before = _get_cratered_area(new_crater.x, new_crater.y, new_crater.radius, self._terrain,
+                                        self._terrain_padding)
             _increment_terrain(new_crater.x, new_crater.y, new_crater.radius, 1, self._terrain, self._terrain_padding)
-            after = _get_cratered_area(new_crater.x, new_crater.y, new_crater.radius, self._terrain, self._terrain_padding)
+            after = _get_cratered_area(new_crater.x, new_crater.y, new_crater.radius, self._terrain,
+                                       self._terrain_padding)
 
             self._cratered_area += after - before
 
@@ -86,7 +89,9 @@ class ArealDensityCalculator(object):
         difference = 0
 
         for erased in new_erased_craters:
-            if erased.radius >= self._r_stat:
+            if erased.radius >= self._r_stat \
+                    and self._terrain_padding <= erased.x <= self._observed_terrain_size + self._terrain_padding \
+                    and self._terrain_padding <= erased.y <= self._observed_terrain_size + self._terrain_padding:
                 # Calculate the difference in the cratered area before and after crater removal.
                 before = _get_cratered_area(erased.x, erased.y, erased.radius, self._terrain, self._terrain_padding)
                 _increment_terrain(erased.x, erased.y, erased.radius, -1, self._terrain, self._terrain_padding)
