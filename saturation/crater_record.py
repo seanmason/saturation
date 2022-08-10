@@ -91,6 +91,7 @@ class CraterRecord(object):
         self._n_craters_added_in_observation_area = 0
 
         self._erased_arcs = defaultdict(lambda: SortedArcList())
+        self._initial_rim_radians = dict()
 
     @property
     def n_craters_added_in_observation_area(self) -> int:
@@ -178,6 +179,7 @@ class CraterRecord(object):
             self._erased_arcs[new_crater.id].update(normalized_arcs)
             merged_arcs = merge_arcs(self._erased_arcs[new_crater.id])
             self._erased_arcs[new_crater.id] = merged_arcs
+            self._initial_rim_radians[new_crater.id] = 2 * np.pi - sum([x[1] - x[0] for x in merged_arcs])
 
         crater_ids_in_range = self._get_crater_ids_in_range(new_crater)
 
@@ -201,7 +203,7 @@ class CraterRecord(object):
 
         for crater in list(self._craters_in_observation_area):
             removed_arcs = self._erased_arcs[crater.id]
-            remaining_rim_percentage = 1 - sum([x[1] - x[0] for x in removed_arcs]) / (2 * np.pi)
+            remaining_rim_percentage = 1 - (sum([x[1] - x[0] for x in removed_arcs]) / self._initial_rim_radians[crater.id])
             if remaining_rim_percentage < self._min_rim_percentage:
                 removed_craters.append(crater)
                 self._all_craters_in_record.remove(crater)
