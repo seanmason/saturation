@@ -203,7 +203,7 @@ class CraterRecord(object):
 
         for crater in list(self._craters_in_observation_area):
             removed_arcs = self._erased_arcs[crater.id]
-            remaining_rim_percentage = 1 - (sum([x[1] - x[0] for x in removed_arcs]) / self._initial_rim_radians[crater.id])
+            remaining_rim_percentage = 1 - ((sum([x[1] - x[0] for x in removed_arcs]) - 2 * np.pi + self._initial_rim_radians[crater.id]) / self._initial_rim_radians[crater.id])
             if remaining_rim_percentage < self._min_rim_percentage:
                 removed_craters.append(crater)
                 self._all_craters_in_record.remove(crater)

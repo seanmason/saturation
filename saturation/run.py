@@ -1,67 +1,122 @@
+import multiprocessing
+import numpy as np
+from functools import partial
+
 from saturation.distributions import ParetoProbabilityDistribution
 from saturation.simulation import run_simulation, get_craters
 
+
+def run_single_simulation(n_craters: int,
+                          slope: float,
+                          observed_terrain_size: int,
+                          min_crater_radius: float,
+                          r_stat_multiplier: float,
+                          min_rim_percentage: float,
+                          effective_radius_multiplier: float,
+                          output_path: str,
+                          simulation_id: int) -> int:
+    np.random.seed(simulation_id)
+
+    terrain_padding = int(observed_terrain_size * 0.125)
+    max_crater_radius = observed_terrain_size // 4
+    r_stat = r_stat_multiplier * min_crater_radius
+
+    full_terrain_size = observed_terrain_size + 2 * terrain_padding
+    size_distribution = ParetoProbabilityDistribution(cdf_slope=slope,
+                                                      x_min=min_crater_radius,
+                                                      x_max=max_crater_radius)
+    crater_generator = get_craters(size_distribution, full_terrain_size)
+
+    print(f'Start simulation {simulation_id}')
+
+    output_filename = f'{output_path}/sim_run_{slope}_{r_stat_multiplier}_{min_rim_percentage}_{effective_radius_multiplier}_{simulation_id}.csv'
+    with open(output_filename, 'w') as output_file:
+        run_simulation(crater_generator,
+                       n_craters,
+                       r_stat,
+                       r_stat_multiplier,
+                       min_rim_percentage,
+                       effective_radius_multiplier,
+                       observed_terrain_size,
+                       terrain_padding,
+                       output_file)
+
+    return simulation_id
+
+
 if __name__ == '__main__':
-    n_craters = 5000
-    slope = 2
-    observed_terrain_size = 10000
-    terrain_padding = int(observed_terrain_size * 0.125)
-    min_crater_radius = 2.5
-    r_stat_multiplier = 9
-    min_rim_percentage = 0.4
-    effective_radius_multiplier = 1.5
-    max_crater_radius = observed_terrain_size // 4
-    r_stat = r_stat_multiplier * min_crater_radius
+    N_WORKERS = 22
+    N_SIMULATIONS = 55
 
-    full_terrain_size = observed_terrain_size + 2 * terrain_padding
+    N_CRATERS = 5000
+    SLOPE = 1
+    OBSERVED_TERRAIN_SIZE = 10000
+    MIN_CRATER_RADIUS = 2.5
+    R_STAT_MULTIPLIER = 3
+    MIN_RIM_PERCENTAGE = 0.4
+    EFFECTIVE_RADIUS_MULTIPLIER = 1.5
 
-    size_distribution = ParetoProbabilityDistribution(cdf_slope=slope,
-                                                      x_min=min_crater_radius,
-                                                      x_max=max_crater_radius)
-    crater_generator = get_craters(size_distribution, full_terrain_size)
+    with multiprocessing.Pool(processes=N_WORKERS) as pool:
+        it = pool.imap_unordered(
+            partial(run_single_simulation,
+                    N_CRATERS,
+                    SLOPE,
+                    OBSERVED_TERRAIN_SIZE,
+                    MIN_CRATER_RADIUS,
+                    R_STAT_MULTIPLIER,
+                    MIN_RIM_PERCENTAGE,
+                    EFFECTIVE_RADIUS_MULTIPLIER,
+                    '/home/mason/output/'),
+            list(range(1, N_SIMULATIONS + 1))
+        )
+        for x in it:
+            print(f'Completed simulation {x}')
 
-    for simulation_number in range(30):
-        print(f'Simulation number: {simulation_number}')
-        with open(f'/home/mason/output/sim_run_2_9_0.4_1.5_{simulation_number}.txt', 'w') as output_file:
-            run_simulation(crater_generator,
-                           n_craters,
-                           r_stat,
-                           r_stat_multiplier,
-                           min_rim_percentage,
-                           effective_radius_multiplier,
-                           observed_terrain_size,
-                           terrain_padding,
-                           output_file)
+    N_CRATERS = 5000
+    SLOPE = 1
+    OBSERVED_TERRAIN_SIZE = 10000
+    MIN_CRATER_RADIUS = 2.5
+    R_STAT_MULTIPLIER = 3
+    MIN_RIM_PERCENTAGE = 0.38
+    EFFECTIVE_RADIUS_MULTIPLIER = 1.5
+
+    with multiprocessing.Pool(processes=N_WORKERS) as pool:
+        it = pool.imap_unordered(
+            partial(run_single_simulation,
+                    N_CRATERS,
+                    SLOPE,
+                    OBSERVED_TERRAIN_SIZE,
+                    MIN_CRATER_RADIUS,
+                    R_STAT_MULTIPLIER,
+                    MIN_RIM_PERCENTAGE,
+                    EFFECTIVE_RADIUS_MULTIPLIER,
+                    '/home/mason/output/'),
+            list(range(1, N_SIMULATIONS + 1))
+        )
+        for x in it:
+            print(f'Completed simulation {x}')
 
 
-    n_craters = 5000
-    slope = 1
-    observed_terrain_size = 10000
-    terrain_padding = int(observed_terrain_size * 0.125)
-    min_crater_radius = 2.5
-    r_stat_multiplier = 3
-    min_rim_percentage = 0.4
-    effective_radius_multiplier = 1.5
-    max_crater_radius = observed_terrain_size // 4
-    r_stat = r_stat_multiplier * min_crater_radius
+    N_CRATERS = 5000
+    SLOPE = 1
+    OBSERVED_TERRAIN_SIZE = 10000
+    MIN_CRATER_RADIUS = 2.5
+    R_STAT_MULTIPLIER = 3
+    MIN_RIM_PERCENTAGE = 0.39
+    EFFECTIVE_RADIUS_MULTIPLIER = 1.5
 
-    full_terrain_size = observed_terrain_size + 2 * terrain_padding
-
-    size_distribution = ParetoProbabilityDistribution(cdf_slope=slope,
-                                                      x_min=min_crater_radius,
-                                                      x_max=max_crater_radius)
-    crater_generator = get_craters(size_distribution, full_terrain_size)
-
-    for simulation_number in range(55):
-        print(f'Simulation number: {simulation_number}')
-        with open(f'/home/mason/output/sim_run_1_3_0.4_1.5_{simulation_number}.txt', 'w') as output_file:
-            run_simulation(crater_generator,
-                           n_craters,
-                           r_stat,
-                           r_stat_multiplier,
-                           min_rim_percentage,
-                           effective_radius_multiplier,
-                           observed_terrain_size,
-                           terrain_padding,
-                           output_file)
-
+    with multiprocessing.Pool(processes=N_WORKERS) as pool:
+        it = pool.imap_unordered(
+            partial(run_single_simulation,
+                    N_CRATERS,
+                    SLOPE,
+                    OBSERVED_TERRAIN_SIZE,
+                    MIN_CRATER_RADIUS,
+                    R_STAT_MULTIPLIER,
+                    MIN_RIM_PERCENTAGE,
+                    EFFECTIVE_RADIUS_MULTIPLIER,
+                    '/home/mason/output/'),
+            list(range(1, N_SIMULATIONS + 1))
+        )
+        for x in it:
+            print(f'Completed simulation {x}')

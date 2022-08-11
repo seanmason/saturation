@@ -26,7 +26,7 @@ if __name__ == '__main__':
     terrain_padding = int(observed_terrain_size * 0.125)
     min_crater_radius = 2.5
     r_stat_multiplier = 3
-    min_rim_percentage = 0.4
+    min_rim_percentage = 0.40
     effective_radius_multiplier = 1.5
     max_crater_radius = observed_terrain_size // 4
     r_stat = r_stat_multiplier * min_crater_radius
