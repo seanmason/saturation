@@ -19,6 +19,7 @@ setup(name='saturation',
             'matplotlib==3.5.2',
             'scikit-learn==1.1.1',
             'numba==0.55.2',
-            'sortedcontainers==2.4.0'
+            'sortedcontainers==2.4.0',
+            'pillow'
       ]
       )

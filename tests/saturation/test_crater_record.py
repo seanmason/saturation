@@ -2,7 +2,7 @@ from saturation.crater_record import CraterRecord
 from saturation.datatypes import Crater
 
 
-def test_add_in_observation_area():
+def test_add_in_observed_area():
     # Arrange
     crater = Crater(id=1, x=100, y=100, radius=100)
     record = CraterRecord(
@@ -17,17 +17,17 @@ def test_add_in_observation_area():
     # Act
     removed = record.add(crater)
     all_craters = record.all_craters_in_record
-    craters_in_observation_area = record.craters_in_observation_area
-    n_craters_added = record.n_craters_added_in_observation_area
+    craters_in_observed_area = record.craters_in_observed_area
+    n_craters_added = record.n_craters_added_in_observed_area
 
     # Assert
     assert not removed
     assert [crater] == all_craters
-    assert [crater] == craters_in_observation_area
+    assert [crater] == craters_in_observed_area
     assert n_craters_added == 1
 
 
-def test_add_outside_observation_area():
+def test_add_outside_observed_area():
     # Arrange
     crater = Crater(id=1, x=100, y=100, radius=100)
     record = CraterRecord(
@@ -42,12 +42,12 @@ def test_add_outside_observation_area():
     # Act
     record.add(crater)
     all_craters = record.all_craters_in_record
-    craters_in_observation_area = record.craters_in_observation_area
-    n_craters_added = record.n_craters_added_in_observation_area
+    craters_in_observed_area = record.craters_in_observed_area
+    n_craters_added = record.n_craters_added_in_observed_area
 
     # Assert
     assert [crater] == all_craters
-    assert not craters_in_observation_area
+    assert not craters_in_observed_area
     assert n_craters_added == 0
 
 
@@ -66,7 +66,7 @@ def test_add_does_not_add_small_craters():
     # Act
     record.add(crater)
     all_craters = record.all_craters_in_record
-    n_craters_added = record.n_craters_added_in_observation_area
+    n_craters_added = record.n_craters_added_in_observed_area
 
     # Assert
     assert not all_craters
@@ -91,7 +91,7 @@ def test_add_removes_obliterated_craters():
     record.add(crater1)
     removed = record.add(crater2)
     all_craters = record.all_craters_in_record
-    n_craters_added = record.n_craters_added_in_observation_area
+    n_craters_added = record.n_craters_added_in_observed_area
 
     # Assert
     assert [crater2] == all_craters
@@ -117,7 +117,7 @@ def test_add_leaves_partially_removed_craters():
     record.add(crater1)
     removed = record.add(crater2)
     all_craters = record.all_craters_in_record
-    n_craters_added = record.n_craters_added_in_observation_area
+    n_craters_added = record.n_craters_added_in_observed_area
 
     # Assert
     assert {crater1, crater2} == set(all_craters)

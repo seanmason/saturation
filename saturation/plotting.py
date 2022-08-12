@@ -4,7 +4,9 @@ import pandas as pd
 import numpy as np
 import matplotlib
 import matplotlib.pyplot as plt
+from PIL import Image
 
+from saturation.areal_density import ArealDensityCalculator
 from saturation.crater_record import CraterRecord
 from saturation.geometry import Location, Arc
 
@@ -93,3 +95,11 @@ def convert_plot_to_array(fig, show_plot: bool = False) -> np.array:
     squashed = img.sum(axis=2)
 
     return np.where(squashed > 764, 0, 1)
+
+
+def save_terrain(calculator: ArealDensityCalculator, filename: str):
+    """
+    Saves a grayscale image of the terrain to disk.
+    """
+    data = np.where(calculator._terrain != 0, np.uint8(0), np.uint8(255))
+    Image.fromarray(data).save(filename)

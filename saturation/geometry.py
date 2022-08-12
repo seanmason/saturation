@@ -1,4 +1,4 @@
-from typing import Tuple, List
+from typing import Tuple, List, Optional
 
 import pandas as pd
 import numpy as np
@@ -159,14 +159,14 @@ def find_intersections_with_terrain_bounds(center: Location,
 def get_terrain_boundary_intersection_arc(center: Location,
                                           radius: float,
                                           observed_terrain_size: int,
-                                          terrain_padding: int) -> Arc:
+                                          terrain_padding: int) -> Optional[Arc]:
     """
     Returns the intersection arc (in radians) of the specified circle with the terrain bounds.
     """
     intersections = find_intersections_with_terrain_bounds(center, radius, observed_terrain_size, terrain_padding)
 
     if len(intersections) != 2:
-        return 0.0, 0.0
+        return None
 
     # np.arctan2 gets us the result in the correct quadrant
     # Note that arctan2 takes arguments (y, x)
