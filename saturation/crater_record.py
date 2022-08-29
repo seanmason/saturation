@@ -1,147 +1,304 @@
 from collections import defaultdict
-from typing import List, Set
+from dataclasses import dataclass
+from typing import List, Iterable
 
 import numpy as np
 import pandas as pd
+from sortedcontainers import SortedList
 
-from saturation.geometry import get_intersection_arc, normalize_arcs, SortedArcList, merge_arcs
+from saturation.geometry import get_intersection_arc, normalize_arcs, SortedArcList, merge_arcs, \
+    get_terrain_boundary_intersection_arc
+from saturation.datatypes import Crater, Arc
+
+
+@dataclass(frozen=True, kw_only=True)
+class CraterDistance:
+    crater_id: int
+    distance: float
+
+
+class CraterDictionary(object):
+    """
+    Convenience wrapper around a dictionary for Craters.
+    """
+
+    def __init__(self):
+        self._craters = dict()
+
+    def add(self, crater: Crater):
+        self._craters[crater.id] = crater
+
+    def remove(self, crater: Crater):
+        del self._craters[crater.id]
+
+    def __getitem__(self, crater_id: int) -> Crater:
+        return self._craters[crater_id]
+
+    def __contains__(self, crater_id: int) -> bool:
+        return crater_id in self._craters
+
+    def __iter__(self):
+        return (x for x in self._craters.values())
+
+    def __len__(self):
+        return len(self._craters)
 
 
 class CraterRecord(object):
     """
     Maintains the record of craters.
     """
+    MAX_N_DISTANCES = 500
+
     def __init__(self,
-                 all_craters: pd.DataFrame,
-                 min_crater_radius_for_stats: float,
+                 r_stat: float,
+                 r_stat_multiplier: float,
                  min_rim_percentage: float,
                  effective_radius_multiplier: float,
-                 terrain_size: int,
-                 margin: int):
-        self._all_craters = all_craters
-        self._min_crater_radius_for_stats = min_crater_radius_for_stats
+                 observed_terrain_size: int,
+                 terrain_padding: int):
+        self._r_stat = r_stat
+        self._r_stat_multiplier = r_stat_multiplier
         self._min_rim_percentage = min_rim_percentage
         self._effective_radius_multiplier = effective_radius_multiplier
+        self._observed_terrain_size = observed_terrain_size
+        self._terrain_padding = terrain_padding
 
-        self._min_x = margin
-        self._min_y = margin
-        self._max_x = terrain_size - margin - 1
-        self._max_y = terrain_size - margin - 1
+        self._min_x = terrain_padding
+        self._min_y = terrain_padding
+        self._max_x = observed_terrain_size + terrain_padding - 1
+        self._max_y = observed_terrain_size + terrain_padding - 1
 
-        # Find all crater ids that are both in bounds for stats and
-        # greater than the minimum radius
-        all_craters_for_stats = self._all_craters[
-            (self._all_craters.radius >= self._min_crater_radius_for_stats)
-            & (self._all_craters.x >= self._min_x) & (self._all_craters.x <= self._max_x)
-            & (self._all_craters.y >= self._min_y) & (self._all_craters.y <= self._max_y)
-        ]
-        self._all_crater_ids_for_stats = set(all_craters_for_stats.reset_index().id)
+        # Contains all craters with r > r_stat, may be outside the observed terrain
+        self._all_craters_in_record = CraterDictionary()
 
-        # All craters in the record
-        self._crater_ids = set()
+        # Contains all craters with r > r_stat within the observed terrain
+        self._craters_in_observed_area = CraterDictionary()
 
-        # Craters in the record that are in bounds for stats
-        self._crater_ids_for_stats = set()
+        # Duplicate of _craters_in_observed_area as a DataFrame
+        # This is maintained as a performance optimization for calculating distances.
+        self._craters_in_observed_area_dataframe = pd.DataFrame(columns=['id', 'x', 'y', 'radius'], dtype='float')
+        self._craters_in_observed_area_dataframe['id'] = self._craters_in_observed_area_dataframe.id.astype('int')
+        self._craters_in_observed_area_dataframe = self._craters_in_observed_area_dataframe.set_index(['id'])
 
-        self._erased_crater_ids = []
+        # Maintains distances for nearest neighbor calculations.
+        # Contains pairwise distances from all craters in the observed area with r > r_stat
+        # and all other craters with r > r_stat
+        self._distances = defaultdict(lambda: SortedList(key=lambda x: x.distance))
+
+        # Contains all craters, even those below r_stat and those outside the terrain
+        self._all_craters = CraterDictionary()
+        self._n_craters_added_in_observed_area = 0
+
         self._erased_arcs = defaultdict(lambda: SortedArcList())
+        self._initial_rim_radians = dict()
 
-        self._calculate_distances()
+    @property
+    def n_craters_added_in_observed_area(self) -> int:
+        return self._n_craters_added_in_observed_area
 
-    def _calculate_distances(self):
-        """
-        Calculates the distances between all craters above the minimum radius.
-        """
-        filtered = self._all_craters[
-            (self._all_craters.radius >= self._min_crater_radius_for_stats)
-        ].reset_index()
-        filtered_in_bounds = filtered[
-            (filtered.x >= self._min_x) & (filtered.x <= self._max_x)
-            & (filtered.y >= self._min_y) & (filtered.y <= self._max_y)
-        ].reset_index()
-        merged = pd.merge(filtered_in_bounds, filtered, how='cross', suffixes=('_old', '_new'))
-        merged = merged[merged.id_new != merged.id_old]
-        merged['distance'] = np.sqrt((merged.x_old - merged.x_new)**2 + (merged.y_old - merged.y_new)**2).astype('float16')
-        self._distances = merged[['id_old', 'id_new', 'distance']].rename(columns={
-            'id_old': 'first_id',
-            'id_new': 'second_id'
-        })
+    @property
+    def n_craters_in_observed_area(self) -> int:
+        return len(self._craters_in_observed_area)
 
-    def _update_rim_arcs_and_erased_craters(self, new_crater_id: int) -> List[int]:
-        """
-        Returns removed crater ids.
-        """
-        removed_crater_ids = []
+    def _add_crater_to_distances(self, crater: Crater):
+        if crater.radius >= self._r_stat:
+            for from_crater_id, distances in self._distances.items():
+                if crater.id != from_crater_id:
+                    from_crater = self._all_craters[from_crater_id]
+                    distances = self._distances[from_crater.id]
+                    distance = np.sqrt((from_crater.x - crater.x) ** 2 + (from_crater.y - crater.y) ** 2)
+                    distances.add(CraterDistance(crater_id=crater.id, distance=distance))
 
-        new_crater = self._all_craters.loc[new_crater_id]
+            if self._min_x <= crater.x <= self._max_x and self._min_y <= crater.y <= self._max_y:
+                distances = self._distances[crater.id]
+                for to_crater in self._all_craters_in_record:
+                    if crater != to_crater:
+                        distance = np.sqrt((to_crater.x - crater.x) ** 2 + (to_crater.y - crater.y) ** 2)
+                        distances.add(CraterDistance(crater_id=to_crater.id, distance=distance))
+
+    def _remove_craters_from_distances(self, craters: List[Crater]):
+        for crater in craters:
+            if crater.id in self._distances:
+                del self._distances[crater.id]
+
+        crater_ids = {x.id for x in craters}
+        for distance_list in self._distances.values():
+            for distance in [x for x in distance_list if x.crater_id in crater_ids]:
+                distance_list.remove(distance)
+
+    def _cleanup_distances(self):
+        """
+        Removes from distances lists if:
+        - the distances list is long
+        - distance values are very far
+        """
+        max_distance = self._observed_terrain_size // 2
+
+        for distance_list in self._distances.values():
+            if not distance_list:
+                continue
+
+            while len(distance_list) > self.MAX_N_DISTANCES and distance_list[-1].distance > max_distance:
+                distance_list.pop(-1)
+
+    def get_nearest_neighbor_distances(self) -> List[float]:
+        result = []
+
+        ids_in_record = set([x.id for x in self._all_craters_in_record])
+        for distances in self._distances.values():
+            while distances and distances[0].crater_id not in ids_in_record:
+                distances.pop(0)
+
+            if distances:
+                result.append(distances[0].distance)
+
+        return result
+
+    def get_mean_neighbor_distance(self) -> float:
+        total = 0.0
+        counter = 0
+
+        for distances in self._distances.values():
+            if distances:
+                total += distances[0].distance
+                counter += 1
+
+        return total / counter
+
+    def _get_crater_ids_in_range(self, new_crater: Crater) -> Iterable[int]:
+        """"
+        Returns a list of crater IDs that may be affected by the addition of new_crater
+        """
+        effective_radius = new_crater.radius * self._effective_radius_multiplier
+
+        distances = np.sqrt((self._craters_in_observed_area_dataframe.x - new_crater.x) ** 2
+                            + (self._craters_in_observed_area_dataframe.y - new_crater.y) ** 2)
+        return self._craters_in_observed_area_dataframe.index[
+            (distances < self._craters_in_observed_area_dataframe.radius + effective_radius)
+            & (distances > self._craters_in_observed_area_dataframe.radius - effective_radius)
+            ]
+
+    def _update_rim_arcs(self, new_crater: Crater):
         new_x = new_crater.x
         new_y = new_crater.y
         effective_radius = new_crater.radius * self._effective_radius_multiplier
 
-        # Filter to only those craters that may be effected by the new crater.
-        filtered = self._all_craters.loc[list(self._crater_ids)]
-        distance = np.sqrt((filtered.x - new_x) ** 2 + (filtered.y - new_y) ** 2)
-        filtered = filtered[(distance < filtered.radius + effective_radius)
-                            & (distance + effective_radius > filtered.radius)].reset_index()
+        # If the new crater runs outside the observed terrain, remove those portions of its rim.
+        lower_limit = self._terrain_padding
+        upper_limit = self._terrain_padding + self._observed_terrain_size
+        if new_crater.radius >= self._r_stat \
+                and lower_limit <= new_x <= upper_limit \
+                and lower_limit <= new_y <= upper_limit:
+            arc = get_terrain_boundary_intersection_arc((new_x, new_y),
+                                                        new_crater.radius,
+                                                        self._observed_terrain_size,
+                                                        self._terrain_padding)
+            if arc:
+                normalized_arcs = normalize_arcs([(arc[0], arc[1])])
+                self._erased_arcs[new_crater.id].update(normalized_arcs)
+                merged_arcs = merge_arcs(self._erased_arcs[new_crater.id])
+                self._erased_arcs[new_crater.id] = merged_arcs
+                self._initial_rim_radians[new_crater.id] = 2 * np.pi - sum([x[1] - x[0] for x in merged_arcs])
+            else:
+                self._initial_rim_radians[new_crater.id] = 2 * np.pi
 
-        for x, y, radius, old_id in filtered[['x', 'y', 'radius', 'id']].values:
-            arc = get_intersection_arc((x, y),
-                                       radius,
-                                       (new_x, new_y),
-                                       effective_radius)
+        crater_ids_in_range = self._get_crater_ids_in_range(new_crater)
 
-            normalized_arcs = normalize_arcs([(arc[0], arc[1])])
-            self._erased_arcs[old_id].update(normalized_arcs)
-            merged_arcs = merge_arcs(self._erased_arcs[old_id])
-            self._erased_arcs[old_id] = merged_arcs
+        for old_crater_id in crater_ids_in_range:
+            old_crater = self._all_craters_in_record[old_crater_id]
 
-            # Remove old crater if necessary
-            remaining_rim_percentage = 1 - sum([x[1] - x[0] for x in merged_arcs]) / (2 * np.pi)
+            # For a new crater to affect an old crater, (new crater radius) > (old crater radius) / r_stat_multiplier
+            if new_crater.radius > old_crater.radius / self._r_stat_multiplier:
+                arc = get_intersection_arc((old_crater.x, old_crater.y),
+                                           old_crater.radius,
+                                           (new_x, new_y),
+                                           effective_radius)
+
+                normalized_arcs = normalize_arcs([(arc[0], arc[1])])
+                self._erased_arcs[old_crater.id].update(normalized_arcs)
+                merged_arcs = merge_arcs(self._erased_arcs[old_crater.id])
+                self._erased_arcs[old_crater.id] = merged_arcs
+
+    def _remove_craters_with_destroyed_rims(self) -> List[Crater]:
+        removed_craters = []
+
+        for crater in list(self._craters_in_observed_area):
+            removed_arcs = self._erased_arcs[crater.id]
+            remaining_rim_percentage = self.get_remaining_rim_percent(crater.id)
             if remaining_rim_percentage < self._min_rim_percentage:
-                removed_crater_ids.append(old_id)
-                self._crater_ids.remove(old_id)
-                if old_id in self._crater_ids_for_stats:
-                    self._crater_ids_for_stats.remove(old_id)
-                self._erased_crater_ids.append(old_id)
+                removed_craters.append(crater)
+                self._all_craters_in_record.remove(crater)
+                self._craters_in_observed_area_dataframe.drop([crater.id], axis=0, inplace=True)
+                if crater.id in self._craters_in_observed_area:
+                    self._craters_in_observed_area.remove(crater)
 
-        return removed_crater_ids
+        return removed_craters
 
-    def update(self, new_crater_id: int) -> List[int]:
+    def add(self, crater: Crater) -> List[Crater]:
         """
-        Updates the crater record for the addition of the supplied crater id.
-        :param new_crater_id: New crater to be added.
-        :return: A list of crater ids that were removed.
+        Adds the supplied crater to the record, possibly destroying other craters.
+        :param crater: New crater to be added.
+        :return: A list of craters that were erased as a result of the addition.
         """
-        crater = self._all_craters.loc[new_crater_id]
-        removed_crater_ids = self._update_rim_arcs_and_erased_craters(new_crater_id)
+        self._all_craters.add(crater)
 
-        # Add the new crater if it is large enough.
-        if crater.radius >= self._min_crater_radius_for_stats:
-            self._crater_ids.add(new_crater_id)
+        self._update_rim_arcs(crater)
 
-            if new_crater_id in self._all_crater_ids_for_stats:
-                self._crater_ids_for_stats.add(new_crater_id)
+        if crater.radius >= self._r_stat:
+            self._all_craters_in_record.add(crater)
 
-        return removed_crater_ids
+            if self._min_x <= crater.x <= self._max_x and self._min_y <= crater.y <= self._max_y:
+                self._craters_in_observed_area.add(crater)
+                self._craters_in_observed_area_dataframe = pd.concat(
+                    [self._craters_in_observed_area_dataframe, pd.DataFrame([crater]).set_index(['id'])],
+                    axis=0
+                )
+                self._n_craters_added_in_observed_area += 1
 
-    def get_nearest_neighbor_distances(self) -> np.array:
-        """
-        Returns nearest neighbor distances for craters in the record that fall within
-        a central bounding box.
-        """
-        result = self._distances[self._distances.first_id.isin(self._crater_ids_for_stats)]
-        result = result[result.second_id.isin(self._crater_ids)][['first_id', 'distance']]\
-            .groupby(['first_id']).distance.min().values
-        return result
+            self._add_crater_to_distances(crater)
 
-    def get_craters(self) -> pd.DataFrame:
-        """
-        Returns a dataframe containing all craters in the record.
-        """
-        return self._all_craters.loc[self._crater_ids_for_stats]
+        removed = self._remove_craters_with_destroyed_rims()
+        if removed:
+            self._remove_craters_from_distances(removed)
+            self._cleanup_distances()
 
-    def get_crater_ids(self) -> Set[int]:
+        return removed
+
+    def get_crater(self, crater_id: int) -> Crater:
         """
-        Returns the crater IDs currently in the record.
+        Returns the crater with the specified id.
         """
-        return self._crater_ids_for_stats
+        return self._all_craters[crater_id]
+
+    @property
+    def all_craters(self) -> List[Crater]:
+        """
+        Returns a list of all craters ever seen.
+        """
+        return list(self._all_craters)
+
+    @property
+    def all_craters_in_record(self) -> List[Crater]:
+        """
+        Returns a list of all craters in the record.
+        """
+        return list(self._all_craters_in_record)
+
+    @property
+    def craters_in_observed_area(self) -> List[Crater]:
+        """
+        Returns a list of all craters in the record that are in the observed area.
+        """
+        return list(self._craters_in_observed_area)
+
+    def get_erased_rim_segments(self, crater_id: int) -> List[Arc]:
+        """
+        Returns the erased rim segments for the specified crater.
+        """
+        return list(self._erased_arcs[crater_id])
+
+    def get_remaining_rim_percent(self, crater_id: int) -> float:
+        erased = self.get_erased_rim_segments(crater_id)
+        initial_rim_radians = self._initial_rim_radians[crater_id]
+        return 1 - ((sum([x[1] - x[0] for x in erased]) - 2 * np.pi + initial_rim_radians) / initial_rim_radians)

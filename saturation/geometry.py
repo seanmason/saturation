@@ -1,32 +1,9 @@
-from typing import Tuple, List
+from typing import Tuple, List, Optional
 
 import pandas as pd
 import numpy as np
-from sortedcontainers import SortedKeyList
 
-# Type definitions
-# Arc in radians
-Arc = Tuple[float, float]
-
-# (x, y) location
-Location = Tuple[float, float]
-
-
-class SortedArcList(SortedKeyList[Arc]):
-    def __init__(self, iterable=None):
-        super(SortedArcList, self).__init__(iterable=iterable, key=lambda x: x[0])
-
-    def reverse(self):
-        super().reverse()
-
-    def append(self, value):
-        super().append(value)
-
-    def extend(self, values):
-        super().extend(values)
-
-    def insert(self, index, value):
-        super().insert(index, value)
+from saturation.datatypes import Location, Arc, SortedArcList
 
 
 def get_xy_intersection(center1: Location,
@@ -100,6 +77,125 @@ def get_intersection_arc(center1: Location,
     return theta1, theta2
 
 
+def solve_quadratic(a: float, b: float, c: float) -> Tuple[float, float]:
+    first = (-b + np.sqrt(b ** 2 - 4 * a * c)) / (2 * a)
+    second = (-b - np.sqrt(b ** 2 - 4 * a * c)) / (2 * a)
+
+    return first, second
+
+
+def find_intersections_with_terrain_bounds(center: Location,
+                                           radius: float,
+                                           observed_terrain_size: int,
+                                           terrain_padding: int) -> List[Location]:
+    result = []
+
+    low_boundary = terrain_padding
+    high_boundary = observed_terrain_size + terrain_padding
+
+    # The circle goes off the left side of the terrain
+    if center[0] - radius < low_boundary:
+        offset = low_boundary
+        test_x = center[0] - offset
+        test_y = center[1] - offset
+
+        a = 1
+        b = -2 * test_y
+        c = test_y ** 2 - radius ** 2 - test_x ** 2
+        solutions = solve_quadratic(a, b, c)
+        if solutions[0] > 0:
+            result.append((offset, solutions[0] + offset))
+        if solutions[1] > 0:
+            result.append((offset, solutions[1] + offset))
+
+    # The circle goes off the right side of the terrain
+    if center[0] + radius > high_boundary:
+        offset = high_boundary
+        test_x = center[0] - offset
+        test_y = center[1] - offset
+
+        a = 1
+        b = -2 * test_y
+        c = test_y ** 2 - radius ** 2 - test_x ** 2
+        solutions = solve_quadratic(a, b, c)
+        if solutions[0] > 0:
+            result.append((offset, solutions[0] + offset))
+        if solutions[1] > 0:
+            result.append((offset, solutions[1] + offset))
+
+    # The circle goes off the bottom side of the terrain
+    if  center[1] - radius < low_boundary:
+        offset = low_boundary
+        test_x = center[0] - offset
+        test_y = center[1] - offset
+
+        a = 1
+        b = -2 * test_x
+        c = test_x ** 2 - radius ** 2 - test_y ** 2
+        solutions = solve_quadratic(a, b, c)
+        if solutions[0] > 0:
+            result.append((solutions[0] + offset, offset))
+        if solutions[1] > 0:
+            result.append((solutions[1] + offset, offset))
+
+    # The circle goes off the top side of the terrain
+    if center[1] + radius > high_boundary:
+        offset = high_boundary
+        test_x = center[0] - offset
+        test_y = center[1] - offset
+
+        a = 1
+        b = -2 * test_x
+        c = test_x ** 2 - radius ** 2 - test_y ** 2
+        solutions = solve_quadratic(a, b, c)
+        if solutions[0] > 0:
+            result.append((solutions[0] + offset, offset))
+        if solutions[1] > 0:
+            result.append((solutions[1] + offset, offset))
+
+    return result
+
+
+def get_terrain_boundary_intersection_arc(center: Location,
+                                          radius: float,
+                                          observed_terrain_size: int,
+                                          terrain_padding: int) -> Optional[Arc]:
+    """
+    Returns the intersection arc (in radians) of the specified circle with the terrain bounds.
+    """
+    intersections = find_intersections_with_terrain_bounds(center, radius, observed_terrain_size, terrain_padding)
+
+    if len(intersections) != 2:
+        return None
+
+    # np.arctan2 gets us the result in the correct quadrant
+    # Note that arctan2 takes arguments (y, x)
+    theta1 = np.arctan2(intersections[0][1] - center[1], intersections[0][0] - center[0])
+    theta2 = np.arctan2(intersections[1][1] - center[1], intersections[1][0] - center[0])
+
+    # Adjust both thetas to be in (0, 2*pi)
+    theta1 = theta1 if theta1 > 0 else theta1 + 2 * np.pi
+    theta2 = theta2 if theta2 > 0 else theta2 + 2 * np.pi
+    if theta1 > theta2:
+        tmp = theta1
+        theta1 = theta2
+        theta2 = tmp
+
+    # Test if the midpoint of (theta1, theta2) on the circle is in bounds
+    midpoint = (theta1 + theta2) / 2
+    midpoint_x = center[0] + radius * np.cos(midpoint)
+    midpoint_y = center[1] + radius * np.sin(midpoint)
+
+    # If our test point is not within circle2, reverse our thetas
+    if not (
+            terrain_padding <= midpoint_x <= observed_terrain_size + terrain_padding and terrain_padding <= midpoint_y <= observed_terrain_size + terrain_padding):
+        tmp = theta1
+        theta1 = theta2
+        theta2 = tmp
+
+    return theta1, theta2
+
+
 def get_erased_rim_arcs(craters: pd.DataFrame,
                         min_crater_radius: float,
                         effective_radius_multiplier: float) -> pd.DataFrame:
@@ -145,7 +241,7 @@ def get_erased_rim_arcs(craters: pd.DataFrame,
     return pd.DataFrame(erased_arcs)
 
 
-def normalize_arcs(arcs: List[Arc]) -> SortedArcList[Arc]:
+def normalize_arcs(arcs: List[Arc]) -> SortedArcList:
     """
     Splits arcs that cross zero into two arcs.
     Assumes all arcs are in range [0, 2*pi]

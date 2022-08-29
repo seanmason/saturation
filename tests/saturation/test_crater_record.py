@@ -1,218 +1,338 @@
-import numpy
-import numpy as np
-import pandas as pd
-from numpy.testing import assert_array_almost_equal
-
 from saturation.crater_record import CraterRecord
+from saturation.datatypes import Crater
 
 
-def test_update_adds_to_craters():
+def test_add_in_observed_area():
     # Arrange
-    data = [
-        {'id': 1, 'x': 100, 'y': 100, 'radius': 100},
-    ]
-    craters = pd.DataFrame(data).set_index(['id'])
+    crater = Crater(id=1, x=100, y=100, radius=100)
     record = CraterRecord(
-        craters,
-        min_crater_radius_for_stats=10,
+        r_stat=10,
+        r_stat_multiplier=3,
         min_rim_percentage=0.5,
         effective_radius_multiplier=1.0,
-        terrain_size=1000,
-        margin=100
+        observed_terrain_size=1000,
+        terrain_padding=100
     )
 
     # Act
-    record.update(1)
-    result = record.get_craters()
+    removed = record.add(crater)
+    all_craters = record.all_craters_in_record
+    craters_in_observed_area = record.craters_in_observed_area
+    n_craters_added = record.n_craters_added_in_observed_area
 
     # Assert
-    pd.testing.assert_frame_equal(result, craters)
+    assert not removed
+    assert [crater] == all_craters
+    assert [crater] == craters_in_observed_area
+    assert n_craters_added == 1
 
 
-def test_update_does_not_add_small_craters():
+def test_add_outside_observed_area():
     # Arrange
-    data = [
-        {'id': 1, 'x': 100, 'y': 100, 'radius': 100},
-    ]
-    craters = pd.DataFrame(data).set_index(['id'])
+    crater = Crater(id=1, x=100, y=100, radius=100)
     record = CraterRecord(
-        craters,
-        min_crater_radius_for_stats=1000,
+        r_stat=10,
+        r_stat_multiplier=3,
         min_rim_percentage=0.5,
         effective_radius_multiplier=1.0,
-        terrain_size=1000,
-        margin=100
+        observed_terrain_size=1000,
+        terrain_padding=200
     )
 
     # Act
-    record.update(1)
-    result = record.get_craters()
+    record.add(crater)
+    all_craters = record.all_craters_in_record
+    craters_in_observed_area = record.craters_in_observed_area
+    n_craters_added = record.n_craters_added_in_observed_area
 
     # Assert
-    assert result.shape[0] == 0
+    assert [crater] == all_craters
+    assert not craters_in_observed_area
+    assert n_craters_added == 0
 
 
-def test_update_removes_obliterated_craters():
+def test_add_does_not_add_small_craters():
+    # Arrange
+    crater = Crater(id=1, x=100, y=100, radius=9)
+    record = CraterRecord(
+        r_stat=10,
+        r_stat_multiplier=3,
+        min_rim_percentage=0.5,
+        effective_radius_multiplier=1.0,
+        observed_terrain_size=1000,
+        terrain_padding=100
+    )
+
+    # Act
+    record.add(crater)
+    all_craters = record.all_craters_in_record
+    n_craters_added = record.n_craters_added_in_observed_area
+
+    # Assert
+    assert not all_craters
+    assert n_craters_added == 0
+
+
+def test_add_removes_obliterated_craters():
     # Arrange
     # Second crater completely obliterates the first.
-    data = [
-        {'id': 1, 'x': 100, 'y': 100, 'radius': 10},
-        {'id': 2, 'x': 100, 'y': 100, 'radius': 100},
-    ]
-    craters = pd.DataFrame(data).set_index(['id'])
+    crater1 = Crater(id=1, x=100, y=100, radius=10)
+    crater2 = Crater(id=2, x=110, y=110, radius=50)
     record = CraterRecord(
-        craters,
-        min_crater_radius_for_stats=10,
+        r_stat=10,
+        r_stat_multiplier=3,
         min_rim_percentage=0.5,
         effective_radius_multiplier=1.0,
-        terrain_size=1000,
-        margin=100
+        observed_terrain_size=1000,
+        terrain_padding=100
     )
 
     # Act
-    record.update(1)
-    record.update(2)
-    result = record.get_craters()
+    record.add(crater1)
+    removed = record.add(crater2)
+    all_craters = record.all_craters_in_record
+    n_craters_added = record.n_craters_added_in_observed_area
 
     # Assert
-    expected = craters.loc[[2]]
-    pd.testing.assert_frame_equal(expected, result)
+    assert [crater2] == all_craters
+    assert [crater1] == removed
+    assert n_craters_added == 2
 
 
-def test_update_leaves_partially_removed_craters():
+def test_add_leaves_partially_removed_craters():
     # Arrange
     # Second crater partially destroys the first's rim.
-    data = [
-        {'id': 1, 'x': 100, 'y': 100, 'radius': 10},
-        {'id': 2, 'x': 100, 'y': 110, 'radius': 10},
-    ]
-    craters = pd.DataFrame(data).set_index(['id'])
+    crater1 = Crater(id=1, x=100, y=100, radius=10)
+    crater2 = Crater(id=2, x=110, y=110, radius=10)
     record = CraterRecord(
-        craters,
-        min_crater_radius_for_stats=10,
+        r_stat=10,
+        r_stat_multiplier=3,
         min_rim_percentage=0.5,
         effective_radius_multiplier=1.0,
-        terrain_size=1000,
-        margin=100
+        observed_terrain_size=1000,
+        terrain_padding=100
     )
 
     # Act
-    record.update(1)
-    record.update(2)
-    result = record.get_craters()
+    record.add(crater1)
+    removed = record.add(crater2)
+    all_craters = record.all_craters_in_record
+    n_craters_added = record.n_craters_added_in_observed_area
 
     # Assert
-    pd.testing.assert_frame_equal(craters, result)
+    assert {crater1, crater2} == set(all_craters)
+    assert not removed
+    assert n_craters_added == 2
 
 
-def test_get_nearest_neighbor_distances_two_craters():
+def test_crater_rims_truncated_by_observed_terrain_edges():
     # Arrange
-    # Two non-overlapping craters
-    data = [
-        {'id': 1, 'x': 100, 'y': 100, 'radius': 10},
-        {'id': 2, 'x': 100, 'y': 200, 'radius': 10},
-    ]
-    craters = pd.DataFrame(data).set_index(['id'])
+    crater = Crater(id=1, x=0, y=0, radius=10)
     record = CraterRecord(
-        craters,
-        min_crater_radius_for_stats=10,
+        r_stat=10,
+        r_stat_multiplier=3,
         min_rim_percentage=0.5,
         effective_radius_multiplier=1.0,
-        terrain_size=1000,
-        margin=100
+        observed_terrain_size=1000,
+        terrain_padding=0
     )
 
     # Act
-    record.update(1)
-    record.update(2)
+    record.add(crater)
+
+    # Assert
+    assert record._erased_arcs[crater.id]
+
+
+def test_crater_radius_ratio_respected():
+    # Arrange
+    # For a new crater to affect an old crater, (new crater radius) > (old crater radius) / r_stat_multiplier
+    # Here we pepper crater1 with a bunch of craters below this ratio. crater1 should not be removed.
+    crater1 = Crater(id=1, x=100, y=100, radius=10)
+    crater2 = Crater(id=2, x=100, y=110, radius=4)
+    crater3 = Crater(id=3, x=90, y=100, radius=4)
+    crater4 = Crater(id=4, x=100, y=110, radius=4)
+    crater5 = Crater(id=5, x=100, y=90, radius=4)
+    record = CraterRecord(
+        r_stat=10,
+        r_stat_multiplier=2,
+        min_rim_percentage=0.9,
+        effective_radius_multiplier=1.0,
+        observed_terrain_size=1000,
+        terrain_padding=0,
+    )
+
+    # Act
+    record.add(crater1)
+    record.add(crater2)
+    record.add(crater3)
+    record.add(crater4)
+    record.add(crater5)
+    all_craters = record.all_craters_in_record
+
+    # Assert
+    assert all_craters == [crater1]
+
+
+def test_nearest_neighbor_empty_from():
+    # Arrange
+    crater1 = Crater(id=1, x=200, y=200, radius=10)
+    record = CraterRecord(
+        r_stat=10,
+        r_stat_multiplier=3,
+        min_rim_percentage=0.5,
+        effective_radius_multiplier=1.0,
+        observed_terrain_size=100,
+        terrain_padding=100
+    )
+
+    # Act
+    record.add(crater1)
     result = record.get_nearest_neighbor_distances()
 
     # Assert
-    assert_array_almost_equal(result, [100., 100.])
+    assert not result
 
 
-def test_get_nearest_neighbor_distances_three_craters_one_destroyed():
+def test_nearest_neighbor_single_from_and_to():
     # Arrange
-    # Three craters
-    # Third crater destroys the first.
-    data = [
-        {'id': 1, 'x': 100, 'y': 100, 'radius': 10},
-        {'id': 2, 'x': 100, 'y': 200, 'radius': 10},
-        {'id': 3, 'x': 100, 'y': 110, 'radius': 50},
-    ]
-    craters = pd.DataFrame(data).set_index(['id'])
+    crater1 = Crater(id=1, x=50, y=150, radius=10)
+    crater2 = Crater(id=2, x=150, y=150, radius=10)
     record = CraterRecord(
-        craters,
-        min_crater_radius_for_stats=10,
+        r_stat=10,
+        r_stat_multiplier=3,
         min_rim_percentage=0.5,
         effective_radius_multiplier=1.0,
-        terrain_size=1000,
-        margin=100
+        observed_terrain_size=100,
+        terrain_padding=100
     )
 
     # Act
-    record.update(1)
-    record.update(2)
-    record.update(3)
+    record.add(crater1)
+    record.add(crater2)
     result = record.get_nearest_neighbor_distances()
 
     # Assert
-    assert_array_almost_equal(result, [90., 90.])
+    assert result == [100]
 
 
-def test_get_nearest_neighbor_distances_three_non_overlapping_craters():
+def test_nearest_neighbor_gets_shortest_distance_from_to_craters():
     # Arrange
-    # Three non-overlapping craters all along x=100
-    data = [
-        {'id': 1, 'x': 100, 'y': 100, 'radius': 10},
-        {'id': 2, 'x': 100, 'y': 150, 'radius': 10},
-        {'id': 3, 'x': 100, 'y': 180, 'radius': 20},
-    ]
-    craters = pd.DataFrame(data).set_index(['id'])
+    crater1 = Crater(id=1, x=100, y=100, radius=10)
+    crater2 = Crater(id=2, x=100, y=210, radius=10)
+    crater3 = Crater(id=3, x=100, y=230, radius=10)
+    crater4 = Crater(id=4, x=99, y=100, radius=10)
     record = CraterRecord(
-        craters,
-        min_crater_radius_for_stats=10,
-        min_rim_percentage=0.5,
+        r_stat=10,
+        r_stat_multiplier=3,
+        min_rim_percentage=0.0,
         effective_radius_multiplier=1.0,
-        terrain_size=1000,
-        margin=100
+        observed_terrain_size=100,
+        terrain_padding=100
     )
 
     # Act
-    record.update(1)
-    record.update(2)
-    record.update(3)
-    result = np.sort(record.get_nearest_neighbor_distances())
-
-    # Assert
-    assert_array_almost_equal(result, [30., 30., 50.])
-
-
-def test_get_nearest_neighbor_distances_respects_terrain_limits():
-    # Arrange
-    # First and fourth craters are outside the terrain limits.
-    data = [
-        {'id': 1, 'x': 100, 'y': 50, 'radius': 10},
-        {'id': 2, 'x': 100, 'y': 100, 'radius': 10},
-        {'id': 3, 'x': 100, 'y': 700, 'radius': 10},
-        {'id': 4, 'x': 100, 'y': 1100, 'radius': 10},
-    ]
-    craters = pd.DataFrame(data).set_index(['id'])
-    record = CraterRecord(
-        craters,
-        min_crater_radius_for_stats=10,
-        min_rim_percentage=0.5,
-        effective_radius_multiplier=1.0,
-        terrain_size=1000,
-        margin=100
-    )
-
-    # Act
-    record.update(1)
-    record.update(2)
-    record.update(3)
-    record.update(4)
+    record.add(crater1)
+    record.add(crater2)
+    record.add(crater3)
+    record.add(crater4)
     result = record.get_nearest_neighbor_distances()
 
     # Assert
-    assert_array_almost_equal(result, [50., 400.])
+    assert result == [1]
+
+
+def test_nearest_neighbor_gets_shortest_distance_for_all_from_craters():
+    # Arrange
+    crater1 = Crater(id=1, x=100, y=100, radius=10)
+    crater2 = Crater(id=2, x=100, y=120, radius=10)
+    crater3 = Crater(id=3, x=110, y=100, radius=10)
+    record = CraterRecord(
+        r_stat=10,
+        r_stat_multiplier=3,
+        min_rim_percentage=0.0,
+        effective_radius_multiplier=1.0,
+        observed_terrain_size=100,
+        terrain_padding=100
+    )
+
+    # Act
+    record.add(crater1)
+    record.add(crater2)
+    record.add(crater3)
+    result = record.get_nearest_neighbor_distances()
+
+    # Assert
+    assert result == [10, 20, 10]
+
+
+def test_nearest_neighbor_ignores_smaller_than_r_stat():
+    # Arrange
+    crater1 = Crater(id=1, x=100, y=100, radius=10)
+    crater2 = Crater(id=2, x=100, y=120, radius=10)
+    crater3 = Crater(id=3, x=110, y=100, radius=5)
+    record = CraterRecord(
+        r_stat=10,
+        r_stat_multiplier=3,
+        min_rim_percentage=0.5,
+        effective_radius_multiplier=1.0,
+        observed_terrain_size=100,
+        terrain_padding=100
+    )
+
+    # Act
+    record.add(crater1)
+    record.add(crater2)
+    record.add(crater3)
+    result = record.get_nearest_neighbor_distances()
+
+    # Assert
+    assert result == [20, 20]
+
+
+def test_nearest_neighbor_ignores_removed_craters():
+    # Arrange
+    crater1 = Crater(id=1, x=100, y=100, radius=10)
+    crater2 = Crater(id=2, x=100, y=150, radius=10)
+    crater3 = Crater(id=3, x=100, y=160, radius=50)
+    record = CraterRecord(
+        r_stat=10,
+        r_stat_multiplier=3,
+        min_rim_percentage=0.5,
+        effective_radius_multiplier=1.0,
+        observed_terrain_size=100,
+        terrain_padding=100
+    )
+
+    # Act
+    record.add(crater1)
+    record.add(crater2)
+    record.add(crater3)
+    result = record.get_nearest_neighbor_distances()
+
+    # Assert
+    assert result == [60, 60]
+
+
+def test_get_mean_nearest_neighbor_distance():
+    # Arrange
+    crater1 = Crater(id=1, x=100, y=100, radius=10)
+    crater2 = Crater(id=2, x=100, y=120, radius=10)
+    crater3 = Crater(id=3, x=110, y=100, radius=10)
+    record = CraterRecord(
+        r_stat=10,
+        r_stat_multiplier=3,
+        min_rim_percentage=0.5,
+        effective_radius_multiplier=1.0,
+        observed_terrain_size=100,
+        terrain_padding=100
+    )
+
+    # Act
+    record.add(crater1)
+    record.add(crater2)
+    record.add(crater3)
+    result = record.get_mean_neighbor_distance()
+
+    # Assert
+    assert result == 40/3

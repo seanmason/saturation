@@ -1,24 +1,25 @@
-from typing import Tuple
+from typing import Tuple, List
 
-import pandas as pd
 import numpy as np
 from numba import njit
+
+from saturation.datatypes import Crater
 
 
 @njit()
 def _get_mins_and_maxes(x: float,
                         y: float,
                         radius: float,
-                        margin: int,
-                        limited_terrain_size: int) -> Tuple[int, int, int, int]:
+                        observed_terrain_size: int,
+                        terrain_padding: int) -> Tuple[int, int, int, int]:
     """
     Calculates min and max x and y square bounding a circle within a terrain bounded by
-    [0, limited_terrain_size] with a specified margin.
+    [0, observed_terrain_size] with a specified margin.
     """
-    x_min = int(max(x - radius - 1, margin))
-    x_max = int(min(x + radius + 1, limited_terrain_size + margin - 1))
-    y_min = int(max(y - radius - 1, margin))
-    y_max = int(min(y + radius + 1, limited_terrain_size + margin - 1))
+    x_min = int(max(x - radius - 1, terrain_padding))
+    x_max = int(min(x + radius + 1, observed_terrain_size + terrain_padding - 1))
+    y_min = int(max(y - radius - 1, terrain_padding))
+    y_max = int(min(y + radius + 1, observed_terrain_size + terrain_padding - 1))
 
     return x_min, x_max, y_min, y_max
 
@@ -29,18 +30,21 @@ def _increment_terrain(x: float,
                        radius: float,
                        increment: int,
                        terrain: np.array,
-                       margin: int,
-                       limited_terrain_size: int):
+                       terrain_padding: int):
     """
     Increments points in the terrain for the placement of a specified circle.
     """
-    x_min, x_max, y_min, y_max = _get_mins_and_maxes(x, y, radius, margin, limited_terrain_size)
+    x_min, x_max, y_min, y_max = _get_mins_and_maxes(x, y, radius, terrain.shape[0], terrain_padding)
+
     limit = radius ** 2
 
     for test_x in range(x_min, x_max + 1):
         for test_y in range(y_min, y_max + 1):
             if (test_x - x) ** 2 + (test_y - y) ** 2 <= limit:
-                terrain[test_x - margin, test_y - margin] += increment
+                if increment == -1:
+                    terrain[test_x - terrain_padding, test_y - terrain_padding] = 0
+                else:
+                    terrain[test_x - terrain_padding, test_y - terrain_padding] += increment
 
 
 @njit()
@@ -48,67 +52,58 @@ def _get_cratered_area(x: float,
                        y: float,
                        radius: float,
                        terrain: np.array,
-                       margin: int,
-                       limited_terrain_size: int) -> int:
+                       terrain_padding: int) -> int:
     """
     Gets the total cratered area of the bounding rectangle for a specified circle.
     """
-    x_min, x_max, y_min, y_max = _get_mins_and_maxes(x, y, radius, margin, limited_terrain_size)
-    return np.count_nonzero(terrain[x_min - margin:x_max - margin + 1,
-                            y_min - margin:y_max - margin + 1])
-
-
-@njit()
-def _update(new_craters: np.array,
-            new_erased_craters: np.array,
-            terrain: np.array,
-            margin: int,
-            limited_terrain_size: int) -> int:
-    """
-    Updates the terrain, adding and removing specified craters.
-    """
-    difference = 0
-
-    for x, y, radius in new_craters:
-        # Calculate the difference in the cratered area before and after crater addition.
-        before = _get_cratered_area(x, y, radius, terrain, margin, limited_terrain_size)
-        _increment_terrain(x, y, radius, 1, terrain, margin, limited_terrain_size)
-        after = _get_cratered_area(x, y, radius, terrain, margin, limited_terrain_size)
-        difference += after - before
-
-    for x, y, radius in new_erased_craters:
-        # Calculate the difference in the cratered area before and after crater removal.
-        before = _get_cratered_area(x, y, radius, terrain, margin, limited_terrain_size)
-        _increment_terrain(x, y, radius, -1, terrain, margin, limited_terrain_size)
-        after = _get_cratered_area(x, y, radius, terrain, margin, limited_terrain_size)
-        difference += after - before
-
-    return difference
+    x_min, x_max, y_min, y_max = _get_mins_and_maxes(x, y, radius, terrain.shape[0], terrain_padding)
+    return np.count_nonzero(terrain[x_min - terrain_padding:x_max - terrain_padding + 1,
+                            y_min - terrain_padding:y_max - terrain_padding + 1])
 
 
 class ArealDensityCalculator(object):
-    def __init__(self, terrain_size: int, margin: int):
-        self._terrain_size = terrain_size
-        self._margin = margin
+    def __init__(self, observed_terrain_size: int, terrain_padding: int, r_stat: float):
+        self._observed_terrain_size = observed_terrain_size
+        self._terrain_padding = terrain_padding
+        self._r_stat = r_stat
 
-        self._terrain = np.zeros((terrain_size - 2 * margin, terrain_size - 2 * margin), dtype='uint8')
-        self._limited_terrain_size = self._terrain.shape[0]
+        self._terrain = np.zeros((observed_terrain_size, observed_terrain_size), dtype='uint8')
 
-        self._total_area = self._limited_terrain_size * self._limited_terrain_size
+        self._total_area = self._observed_terrain_size * self._observed_terrain_size
         self._cratered_area = 0
 
-    def update(self, new_craters: pd.DataFrame, new_erased_craters: pd.DataFrame):
-        if new_erased_craters.shape[0] > 0:
-            erased = new_erased_craters[['x', 'y', 'radius']].values.astype('float')
-        else:
-            erased = np.empty((0, 3), dtype='float')
+    def add_crater(self, new_crater: Crater):
+        if new_crater.radius >= self._r_stat \
+                and self._terrain_padding <= new_crater.x <= self._observed_terrain_size + self._terrain_padding \
+                and self._terrain_padding <= new_crater.y <= self._observed_terrain_size + self._terrain_padding:
+            # Calculate the difference in the cratered area before and after crater addition.
+            before = _get_cratered_area(new_crater.x, new_crater.y, new_crater.radius, self._terrain,
+                                        self._terrain_padding)
+            _increment_terrain(new_crater.x, new_crater.y, new_crater.radius, 1, self._terrain, self._terrain_padding)
+            after = _get_cratered_area(new_crater.x, new_crater.y, new_crater.radius, self._terrain,
+                                       self._terrain_padding)
 
-        difference = _update(new_craters[['x', 'y', 'radius']].values.astype('float'),
-                             erased,
-                             self._terrain,
-                             self._margin,
-                             self._limited_terrain_size)
+            self._cratered_area += after - before
+
+    def remove_craters(self, new_erased_craters: List[Crater]):
+        difference = 0
+
+        for erased in new_erased_craters:
+            if erased.radius >= self._r_stat \
+                    and self._terrain_padding <= erased.x <= self._observed_terrain_size + self._terrain_padding \
+                    and self._terrain_padding <= erased.y <= self._observed_terrain_size + self._terrain_padding:
+                # Calculate the difference in the cratered area before and after crater removal.
+                before = _get_cratered_area(erased.x, erased.y, erased.radius, self._terrain, self._terrain_padding)
+                _increment_terrain(erased.x, erased.y, erased.radius, -1, self._terrain, self._terrain_padding)
+                after = _get_cratered_area(erased.x, erased.y, erased.radius, self._terrain, self._terrain_padding)
+                difference += after - before
+
         self._cratered_area += difference
 
-    def get_areal_density(self):
+    @property
+    def areal_density(self) -> float:
         return self._cratered_area / self._total_area
+
+    @property
+    def area_covered(self) -> float:
+        return self._cratered_area

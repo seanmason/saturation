@@ -1,8 +1,13 @@
+import io
+
 import pandas as pd
 import numpy as np
 import matplotlib
 import matplotlib.pyplot as plt
+from PIL import Image
 
+from saturation.areal_density import ArealDensityCalculator
+from saturation.crater_record import CraterRecord
 from saturation.geometry import Location, Arc
 
 
@@ -42,34 +47,59 @@ def plot_arc(center: Location,
                                                   lw=lw))
 
 
-def plot_up_to_crater(crater_id: int,
-                      craters: pd.DataFrame,
-                      erased_rim_arcs: pd.DataFrame,
-                      scale: float,
-                      figsize: float = 4):
+def plot_crater_record(crater_record: CraterRecord,
+                       observed_terrain_size: float,
+                       terrain_padding: float,
+                       figsize: float = 4):
     """
-    Plots all craters up to the specified crater id.
+    Plots all craters in the crater record.
     Erased rim arcs are shown in blue.
     """
     fig, ax = plt.subplots(figsize=(figsize, figsize))
 
-    ax.set_xlim([0, scale])
-    ax.set_ylim([0, scale])
+    ax.set_xlim([terrain_padding, observed_terrain_size + 1])
+    ax.set_ylim([terrain_padding, observed_terrain_size + 1])
 
     # Plot craters
-    for row in craters.loc[range(1, crater_id + 1)].itertuples():
-        plot_circle((row.x, row.y), row.radius, ax)
+    for crater in crater_record.all_craters:
+        plot_circle((crater.x, crater.y), crater.radius, ax)
 
     # Plot erased rim arcs
-    filtered_erased_rim_arcs = erased_rim_arcs[erased_rim_arcs.new_id <= crater_id]
-    for row in filtered_erased_rim_arcs.itertuples():
-        old_crater = craters.loc[row.old_id]
+    for crater_id, arcs in crater_record._erased_arcs.items():
+        crater = crater_record.get_crater(crater_id)
 
-        plot_arc((old_crater.x, old_crater.y),
-                 old_crater.radius,
-                 (row.theta1, row.theta2),
-                 ax,
-                 color='blue',
-                 lw=2)
+        for arc in arcs:
+            plot_arc((crater.x, crater.y),
+                     crater.radius,
+                     (arc[0], arc[1]),
+                     ax,
+                     color='blue',
+                     lw=2)
 
     plt.show()
+
+
+def convert_plot_to_array(fig, show_plot: bool = False) -> np.array:
+    """
+    Converts a plot to a 2D binary numpy array.
+    """
+    buffer = io.BytesIO()
+    fig.savefig(buffer, format='raw')
+
+    if not show_plot:
+        plt.close()
+
+    buffer.seek(0)
+    img = np.reshape(np.frombuffer(buffer.getvalue(), dtype=np.uint8),
+                     newshape=(int(fig.bbox.bounds[3]), int(fig.bbox.bounds[2]), -1))
+    squashed = img.sum(axis=2)
+
+    return np.where(squashed > 764, 0, 1)
+
+
+def save_terrain(calculator: ArealDensityCalculator, filename: str):
+    """
+    Saves a grayscale image of the terrain to disk.
+    """
+    data = np.where(calculator._terrain != 0, np.uint8(0), np.uint8(255))
+    Image.fromarray(data).save(filename)
