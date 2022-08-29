@@ -1,4 +1,5 @@
-from typing import Callable, TextIO, Generator, Iterable
+from dataclasses import dataclass
+from typing import Callable, TextIO, Generator, Iterable, List
 
 import numpy as np
 import pandas as pd
@@ -8,11 +9,46 @@ from saturation.crater_record import CraterRecord
 from saturation.distributions import ProbabilityDistribution
 from saturation.plotting import save_terrain
 from saturation.statistics import calculate_z_statistic, calculate_za_statistic
-from saturation.datatypes import Crater
-
+from saturation.datatypes import Crater, Arc
 
 # Type definitions
 LocationFunc = Callable[[], np.array]
+
+
+@dataclass(frozen=True, kw_only=True)
+class CraterRow:
+    crater_id: int
+    x: float
+    y: float
+    radius: float
+
+
+@dataclass(frozen=True, kw_only=True)
+class RemovalRow:
+    crater_id: int
+    removed_by_id: int
+
+
+@dataclass(frozen=True, kw_only=True)
+class StateRow:
+    last_crater_id: int
+    n_craters_added_in_observed_area: int
+    crater_id: int
+    x: float
+    y: float
+    radius: float
+    erased_rim_segments: List[Arc]
+    rim_percent_remaining: float
+
+
+@dataclass(frozen=True, kw_only=True)
+class StatisticsRow:
+    crater_id: int
+    n_craters_added_in_observed_area: int
+    n_craters_in_observed_area: int
+    areal_density: float
+    z: float
+    za: float
 
 
 def get_crater_location() -> np.array:
@@ -55,6 +91,7 @@ def run_simulation(crater_generator: Iterable[Crater],
     - A CSV of statistics after every crater added to the observed terrain.
     - A CSV of the state after every crater is added to the observed terrain.
     - A CSV recording when each crater is removed.
+    - A CSV recording all craters generated.
     - Sample output images of the observed terrain, as PNGs.
 
     :param crater_generator: Crater generator.
@@ -67,9 +104,11 @@ def run_simulation(crater_generator: Iterable[Crater],
     :param terrain_padding: Padding around the edges of the terrain.
     :param output_path: Path to the output directory.
     """
+    output_image_cadence = 50
+
     statistics_rows = []
-    state_rows = []
     removals_rows = []
+    all_craters_rows = []
 
     observed_terrain_area = observed_terrain_size**2
 
@@ -86,9 +125,18 @@ def run_simulation(crater_generator: Iterable[Crater],
 
     last_n_craters = 0
     for crater in crater_generator:
+        n_craters_current = crater_record.n_craters_added_in_observed_area
+
         # Exit if we have generated our target number of craters.
-        if crater_record.n_craters_added_in_observed_area == n_craters:
+        if n_craters_current == n_craters:
             break
+
+        all_craters_rows.append(CraterRow(
+            crater_id=crater.id,
+            x=crater.x,
+            y=crater.y,
+            radius=crater.radius
+        ))
 
         removed_craters = crater_record.add(crater)
 
@@ -98,14 +146,14 @@ def run_simulation(crater_generator: Iterable[Crater],
 
             # Save removals
             for removed in removed_craters:
-                removals_rows.append({
-                    'crater_id': removed.id,
-                    'removed_by_id': crater.id
-                })
+                removals_rows.append(RemovalRow(
+                    crater_id=removed.id,
+                    removed_by_id=crater.id
+                ))
 
         # Only perform updates if the observable crater count ticked up
-        if last_n_craters != crater_record.n_craters_added_in_observed_area:
-            last_n_craters = crater_record.n_craters_added_in_observed_area
+        if last_n_craters != n_craters_current:
+            last_n_craters = n_craters_current
 
             areal_density = areal_density_calculator.areal_density
 
@@ -120,33 +168,36 @@ def run_simulation(crater_generator: Iterable[Crater],
                 za = np.nan
 
             # Save stats
-            statistics_rows.append({
-                'crater_id': crater.id,
-                'n_craters_added_in_observed_area': crater_record.n_craters_added_in_observed_area,
-                'n_craters_in_observed_area': crater_record.n_craters_in_observed_area,
-                'areal_density': areal_density,
-                'z': z,
-                'za': za
-            })
+            statistics_rows.append(StatisticsRow(
+                crater_id=crater.id,
+                n_craters_added_in_observed_area=n_craters_current,
+                n_craters_in_observed_area=crater_record.n_craters_in_observed_area,
+                areal_density=areal_density,
+                z=z,
+                za=za
+            ))
 
             # Save state snapshot
+            state_rows = []
             for report_crater in crater_record.craters_in_observed_area:
-                state_rows.append({
-                    'last_crater_id': crater.id,
-                    'n_craters_added_in_observed_area': crater_record.n_craters_added_in_observed_area,
-                    'crater_id': report_crater.id,
-                    'x': report_crater.x,
-                    'y': report_crater.y,
-                    'radius': report_crater.radius,
-                    'erased_rim_segments': crater_record.get_erased_rim_segments(report_crater.id),
-                    'rim_percent_remaining': crater_record.get_remaining_rim_percent(report_crater.id)
-                })
+                state_rows.append(StateRow(
+                    last_crater_id=crater.id,
+                    n_craters_added_in_observed_area=n_craters_current,
+                    crater_id=report_crater.id,
+                    x=report_crater.x,
+                    y=report_crater.y,
+                    radius=report_crater.radius,
+                    erased_rim_segments=crater_record.get_erased_rim_segments(report_crater.id),
+                    rim_percent_remaining=crater_record.get_remaining_rim_percent(report_crater.id)
+                ))
 
-            if crater_record.n_craters_added_in_observed_area % 100 == 0:
-                png_name = f'{output_path}/terrain_{crater_record.n_craters_added_in_observed_area}.png'
+            state_filename = f'{output_path}/state_{n_craters_current}.csv'
+            pd.DataFrame(state_rows).to_csv(state_filename, index=False)
+
+            if n_craters_current % output_image_cadence == 0:
+                png_name = f'{output_path}/terrain_{n_craters_current}.png'
                 save_terrain(areal_density_calculator, png_name)
 
-    # Write outputs
     pd.DataFrame(statistics_rows).to_csv(f'{output_path}/statistics.csv', index=False)
-    pd.DataFrame(state_rows).to_csv(f'{output_path}/state.csv', index=False)
     pd.DataFrame(removals_rows).to_csv(f'{output_path}/removals.csv', index=False)
+    pd.DataFrame(all_craters_rows).to_csv(f'{output_path}/all_craters.csv', index=False)

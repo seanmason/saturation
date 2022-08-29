@@ -1,7 +1,6 @@
 from collections import defaultdict
 from dataclasses import dataclass
 from typing import List, Iterable
-from scipy.optimize import fsolve
 
 import numpy as np
 import pandas as pd
@@ -49,6 +48,7 @@ class CraterRecord(object):
     """
     Maintains the record of craters.
     """
+    MAX_N_DISTANCES = 500
 
     def __init__(self,
                  r_stat: float,
@@ -121,6 +121,26 @@ class CraterRecord(object):
         for crater in craters:
             if crater.id in self._distances:
                 del self._distances[crater.id]
+
+        crater_ids = {x.id for x in craters}
+        for distance_list in self._distances.values():
+            for distance in [x for x in distance_list if x.crater_id in crater_ids]:
+                distance_list.remove(distance)
+
+    def _cleanup_distances(self):
+        """
+        Removes from distances lists if:
+        - the distances list is long
+        - distance values are very far
+        """
+        max_distance = self._observed_terrain_size // 2
+
+        for distance_list in self._distances.values():
+            if not distance_list:
+                continue
+
+            while len(distance_list) > self.MAX_N_DISTANCES and distance_list[-1].distance > max_distance:
+                distance_list.pop(-1)
 
     def get_nearest_neighbor_distances(self) -> List[float]:
         result = []
@@ -241,6 +261,7 @@ class CraterRecord(object):
         removed = self._remove_craters_with_destroyed_rims()
         if removed:
             self._remove_craters_from_distances(removed)
+            self._cleanup_distances()
 
         return removed
 

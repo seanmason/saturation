@@ -20,6 +20,7 @@ setup(name='saturation',
             'scikit-learn==1.1.1',
             'numba==0.55.2',
             'sortedcontainers==2.4.0',
-            'pillow'
+            'pillow',
+            'pyarrow'
       ]
       )
