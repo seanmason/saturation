@@ -1,0 +1,27 @@
+n_workers: 10
+output_path: /home/mason/output/
+
+run_configurations:
+  - shallow_slope:
+      slope: 1.00
+      r_stat_multiplier: 3.00
+      min_rim_percentage: 0.60
+      effective_radius_multiplier: 1.90
+      study_region_size: 10000
+      study_region_padding: 1250
+      min_crater_radius: 2.5
+      max_crater_radius: 2500
+      n_craters: 1000
+      n_simulations: 2
+
+  - medium_slope:
+      slope: 2.00
+      r_stat_multiplier: 3.00
+      min_rim_percentage: 0.60
+      effective_radius_multiplier: 1.90
+      study_region_size: 10000
+      study_region_padding: 1250
+      min_crater_radius: 2.5
+      max_crater_radius: 2500
+      n_craters: 1000
+      n_simulations: 2
