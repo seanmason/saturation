@@ -21,6 +21,8 @@ setup(name='saturation',
             'numba==0.55.2',
             'sortedcontainers==2.4.0',
             'pillow',
-            'pyarrow'
+            'pyarrow',
+            'pyyaml',
+            'statsmodels'
       ]
       )
