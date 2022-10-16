@@ -11,7 +11,8 @@ def test_add_in_observed_area():
         min_rim_percentage=0.5,
         effective_radius_multiplier=1.0,
         observed_terrain_size=1000,
-        terrain_padding=100
+        terrain_padding=100,
+        max_r=250
     )
 
     # Act
@@ -36,7 +37,8 @@ def test_add_outside_observed_area():
         min_rim_percentage=0.5,
         effective_radius_multiplier=1.0,
         observed_terrain_size=1000,
-        terrain_padding=200
+        terrain_padding=200,
+        max_r=250
     )
 
     # Act
@@ -60,7 +62,8 @@ def test_add_does_not_add_small_craters():
         min_rim_percentage=0.5,
         effective_radius_multiplier=1.0,
         observed_terrain_size=1000,
-        terrain_padding=100
+        terrain_padding=100,
+        max_r=250
     )
 
     # Act
@@ -84,7 +87,8 @@ def test_add_removes_obliterated_craters():
         min_rim_percentage=0.5,
         effective_radius_multiplier=1.0,
         observed_terrain_size=1000,
-        terrain_padding=100
+        terrain_padding=100,
+        max_r=250
     )
 
     # Act
@@ -110,7 +114,8 @@ def test_add_leaves_partially_removed_craters():
         min_rim_percentage=0.5,
         effective_radius_multiplier=1.0,
         observed_terrain_size=1000,
-        terrain_padding=100
+        terrain_padding=100,
+        max_r=250
     )
 
     # Act
@@ -134,7 +139,8 @@ def test_crater_rims_truncated_by_observed_terrain_edges():
         min_rim_percentage=0.5,
         effective_radius_multiplier=1.0,
         observed_terrain_size=1000,
-        terrain_padding=0
+        terrain_padding=0,
+        max_r=250
     )
 
     # Act
@@ -160,6 +166,7 @@ def test_crater_radius_ratio_respected():
         effective_radius_multiplier=1.0,
         observed_terrain_size=1000,
         terrain_padding=0,
+        max_r=250
     )
 
     # Act
@@ -183,7 +190,8 @@ def test_nearest_neighbor_empty_from():
         min_rim_percentage=0.5,
         effective_radius_multiplier=1.0,
         observed_terrain_size=100,
-        terrain_padding=100
+        terrain_padding=100,
+        max_r=25
     )
 
     # Act
@@ -204,7 +212,8 @@ def test_nearest_neighbor_single_from_and_to():
         min_rim_percentage=0.5,
         effective_radius_multiplier=1.0,
         observed_terrain_size=100,
-        terrain_padding=100
+        terrain_padding=100,
+        max_r=100
     )
 
     # Act
@@ -228,7 +237,8 @@ def test_nearest_neighbor_gets_shortest_distance_from_to_craters():
         min_rim_percentage=0.0,
         effective_radius_multiplier=1.0,
         observed_terrain_size=100,
-        terrain_padding=100
+        terrain_padding=100,
+        max_r=25
     )
 
     # Act
@@ -253,7 +263,8 @@ def test_nearest_neighbor_gets_shortest_distance_for_all_from_craters():
         min_rim_percentage=0.0,
         effective_radius_multiplier=1.0,
         observed_terrain_size=100,
-        terrain_padding=100
+        terrain_padding=100,
+        max_r=25
     )
 
     # Act
@@ -277,7 +288,8 @@ def test_nearest_neighbor_ignores_smaller_than_r_stat():
         min_rim_percentage=0.5,
         effective_radius_multiplier=1.0,
         observed_terrain_size=100,
-        terrain_padding=100
+        terrain_padding=100,
+        max_r=250
     )
 
     # Act
@@ -301,7 +313,8 @@ def test_nearest_neighbor_ignores_removed_craters():
         min_rim_percentage=0.5,
         effective_radius_multiplier=1.0,
         observed_terrain_size=100,
-        terrain_padding=100
+        terrain_padding=100,
+        max_r=250
     )
 
     # Act
@@ -313,26 +326,3 @@ def test_nearest_neighbor_ignores_removed_craters():
     # Assert
     assert result == [60, 60]
 
-
-def test_get_mean_nearest_neighbor_distance():
-    # Arrange
-    crater1 = Crater(id=1, x=100, y=100, radius=10)
-    crater2 = Crater(id=2, x=100, y=120, radius=10)
-    crater3 = Crater(id=3, x=110, y=100, radius=10)
-    record = CraterRecord(
-        r_stat=10,
-        r_stat_multiplier=3,
-        min_rim_percentage=0.5,
-        effective_radius_multiplier=1.0,
-        observed_terrain_size=100,
-        terrain_padding=100
-    )
-
-    # Act
-    record.add(crater1)
-    record.add(crater2)
-    record.add(crater3)
-    result = record.get_mean_neighbor_distance()
-
-    # Assert
-    assert result == 40/3
