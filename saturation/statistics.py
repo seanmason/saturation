@@ -8,8 +8,8 @@ def calculate_z_statistic(nearest_neighbor_distances: List[float],
     """
     Calculates the Z statistic defined by Clark and Evans (1954).
     :param nearest_neighbor_distances: The nearest neighbor distances for all craters in the record
-                                       that fall in the terrain limits.
-    :param area: The area of the terrain.
+                                       that fall in the study region.
+    :param area: The area of the study region.
     """
     n_craters = len(nearest_neighbor_distances)
     if n_craters == 0:
@@ -28,9 +28,9 @@ def calculate_za_statistic(nearest_neighbor_distances: List[float],
     """
     Calculates the Za statistic defined by Squyres et al. (1998)
     :param nearest_neighbor_distances: The nearest neighbor distances for all craters in the record
-                                       that fall in the terrain limits.
-    :param area_covered: The area of the terrain covered.
-    :param area: The size of the terrain.
+                                       that fall in the study region.
+    :param area_covered: The area of the study region covered.
+    :param area: The size of the study region.
     """
     n_craters = len(nearest_neighbor_distances)
     if n_craters == 0:

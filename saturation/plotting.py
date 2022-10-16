@@ -48,8 +48,8 @@ def plot_arc(center: Location,
 
 
 def plot_crater_record(crater_record: CraterRecord,
-                       observed_terrain_size: float,
-                       terrain_padding: float,
+                       study_region_size: float,
+                       study_region_padding: float,
                        figsize: float = 4):
     """
     Plots all craters in the crater record.
@@ -57,8 +57,8 @@ def plot_crater_record(crater_record: CraterRecord,
     """
     fig, ax = plt.subplots(figsize=(figsize, figsize))
 
-    ax.set_xlim([terrain_padding, observed_terrain_size + 1])
-    ax.set_ylim([terrain_padding, observed_terrain_size + 1])
+    ax.set_xlim([study_region_padding, study_region_size + 1])
+    ax.set_ylim([study_region_padding, study_region_size + 1])
 
     # Plot craters
     for crater in crater_record.all_craters:
@@ -97,9 +97,9 @@ def convert_plot_to_array(fig, show_plot: bool = False) -> np.array:
     return np.where(squashed > 764, 0, 1)
 
 
-def save_terrain(calculator: ArealDensityCalculator, filename: str):
+def save_study_region(calculator: ArealDensityCalculator, filename: str):
     """
-    Saves a grayscale image of the terrain to disk.
+    Saves a grayscale image of the study region to disk.
     """
-    data = np.where(calculator._terrain != 0, np.uint8(0), np.uint8(255))
+    data = np.where(calculator._study_region != 0, np.uint8(0), np.uint8(255))
     Image.fromarray(data).save(filename)

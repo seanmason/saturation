@@ -1,19 +1,19 @@
 n_workers: 10
-output_path: /home/mason/full_runs/python/
+output_path: /home/mason/full_runs/python/testing/
 
 run_configurations:
-#  - 1.00_3.00_0.40_1.50:
-#      slope: 1.00
-#      r_stat_multiplier: 3.00
-#      min_rim_percentage: 0.40
-#      effective_radius_multiplier: 1.50
-#      study_region_size: 10000
-#      study_region_padding: 1250
-#      min_crater_radius: 2.5
-#      max_crater_radius: 2500
-#      n_craters: 5000
-#      n_simulations: 55
-#
+  - 1.00_3.00_0.40_1.50:
+      slope: 1.00
+      r_stat_multiplier: 3.00
+      min_rim_percentage: 0.40
+      effective_radius_multiplier: 1.50
+      study_region_size: 10000
+      study_region_padding: 1250
+      min_crater_radius: 2.5
+      max_crater_radius: 2500
+      n_craters: 5000
+      n_simulations: 10
+
 #  - 2.00_3.00_0.40_1.70:
 #      slope: 2.00
 #      r_stat_multiplier: 3.00
@@ -26,14 +26,14 @@ run_configurations:
 #      n_craters: 5000
 #      n_simulations: 55
 
-  - 2.00_5.00_0.60_1.10:
-        slope: 2.00
-        r_stat_multiplier: 5.00
-        min_rim_percentage: 0.60
-        effective_radius_multiplier: 1.10
-        study_region_size: 10000
-        study_region_padding: 1250
-        min_crater_radius: 2.5
-        max_crater_radius: 2500
-        n_craters: 10000
-        n_simulations: 55
+#  - 2.00_5.00_0.60_1.10:
+#        slope: 2.00
+#        r_stat_multiplier: 5.00
+#        min_rim_percentage: 0.60
+#        effective_radius_multiplier: 1.10
+#        study_region_size: 10000
+#        study_region_padding: 1250
+#        min_crater_radius: 2.5
+#        max_crater_radius: 2500
+#        n_craters: 10000
+#        n_simulations: 55

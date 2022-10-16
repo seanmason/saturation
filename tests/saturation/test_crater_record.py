@@ -2,7 +2,7 @@ from saturation.crater_record import CraterRecord
 from saturation.datatypes import Crater
 
 
-def test_add_in_observed_area():
+def test_add_in_study_region():
     # Arrange
     crater = Crater(id=1, x=100, y=100, radius=100)
     record = CraterRecord(
@@ -10,25 +10,25 @@ def test_add_in_observed_area():
         r_stat_multiplier=3,
         min_rim_percentage=0.5,
         effective_radius_multiplier=1.0,
-        observed_terrain_size=1000,
-        terrain_padding=100,
+        study_region_size=1000,
+        study_region_padding=100,
         max_r=250
     )
 
     # Act
     removed = record.add(crater)
     all_craters = record.all_craters_in_record
-    craters_in_observed_area = record.craters_in_observed_area
-    n_craters_added = record.n_craters_added_in_observed_area
+    craters_in_study_region = record.craters_in_study_region
+    n_craters_added = record.n_craters_added_in_study_region
 
     # Assert
     assert not removed
     assert [crater] == all_craters
-    assert [crater] == craters_in_observed_area
+    assert [crater] == craters_in_study_region
     assert n_craters_added == 1
 
 
-def test_add_outside_observed_area():
+def test_add_outside_study_region():
     # Arrange
     crater = Crater(id=1, x=100, y=100, radius=100)
     record = CraterRecord(
@@ -36,20 +36,20 @@ def test_add_outside_observed_area():
         r_stat_multiplier=3,
         min_rim_percentage=0.5,
         effective_radius_multiplier=1.0,
-        observed_terrain_size=1000,
-        terrain_padding=200,
+        study_region_size=1000,
+        study_region_padding=200,
         max_r=250
     )
 
     # Act
     record.add(crater)
     all_craters = record.all_craters_in_record
-    craters_in_observed_area = record.craters_in_observed_area
-    n_craters_added = record.n_craters_added_in_observed_area
+    craters_in_study_region = record.craters_in_study_region
+    n_craters_added = record.n_craters_added_in_study_region
 
     # Assert
     assert [crater] == all_craters
-    assert not craters_in_observed_area
+    assert not craters_in_study_region
     assert n_craters_added == 0
 
 
@@ -61,15 +61,15 @@ def test_add_does_not_add_small_craters():
         r_stat_multiplier=3,
         min_rim_percentage=0.5,
         effective_radius_multiplier=1.0,
-        observed_terrain_size=1000,
-        terrain_padding=100,
+        study_region_size=1000,
+        study_region_padding=100,
         max_r=250
     )
 
     # Act
     record.add(crater)
     all_craters = record.all_craters_in_record
-    n_craters_added = record.n_craters_added_in_observed_area
+    n_craters_added = record.n_craters_added_in_study_region
 
     # Assert
     assert not all_craters
@@ -86,8 +86,8 @@ def test_add_removes_obliterated_craters():
         r_stat_multiplier=3,
         min_rim_percentage=0.5,
         effective_radius_multiplier=1.0,
-        observed_terrain_size=1000,
-        terrain_padding=100,
+        study_region_size=1000,
+        study_region_padding=100,
         max_r=250
     )
 
@@ -95,7 +95,7 @@ def test_add_removes_obliterated_craters():
     record.add(crater1)
     removed = record.add(crater2)
     all_craters = record.all_craters_in_record
-    n_craters_added = record.n_craters_added_in_observed_area
+    n_craters_added = record.n_craters_added_in_study_region
 
     # Assert
     assert [crater2] == all_craters
@@ -113,8 +113,8 @@ def test_add_leaves_partially_removed_craters():
         r_stat_multiplier=3,
         min_rim_percentage=0.5,
         effective_radius_multiplier=1.0,
-        observed_terrain_size=1000,
-        terrain_padding=100,
+        study_region_size=1000,
+        study_region_padding=100,
         max_r=250
     )
 
@@ -122,7 +122,7 @@ def test_add_leaves_partially_removed_craters():
     record.add(crater1)
     removed = record.add(crater2)
     all_craters = record.all_craters_in_record
-    n_craters_added = record.n_craters_added_in_observed_area
+    n_craters_added = record.n_craters_added_in_study_region
 
     # Assert
     assert {crater1, crater2} == set(all_craters)
@@ -130,7 +130,7 @@ def test_add_leaves_partially_removed_craters():
     assert n_craters_added == 2
 
 
-def test_crater_rims_truncated_by_observed_terrain_edges():
+def test_crater_rims_truncated_by_study_region_edges():
     # Arrange
     crater = Crater(id=1, x=0, y=0, radius=10)
     record = CraterRecord(
@@ -138,8 +138,8 @@ def test_crater_rims_truncated_by_observed_terrain_edges():
         r_stat_multiplier=3,
         min_rim_percentage=0.5,
         effective_radius_multiplier=1.0,
-        observed_terrain_size=1000,
-        terrain_padding=0,
+        study_region_size=1000,
+        study_region_padding=0,
         max_r=250
     )
 
@@ -164,8 +164,8 @@ def test_crater_radius_ratio_respected():
         r_stat_multiplier=2,
         min_rim_percentage=0.9,
         effective_radius_multiplier=1.0,
-        observed_terrain_size=1000,
-        terrain_padding=0,
+        study_region_size=1000,
+        study_region_padding=0,
         max_r=250
     )
 
@@ -189,8 +189,8 @@ def test_nearest_neighbor_empty_from():
         r_stat_multiplier=3,
         min_rim_percentage=0.5,
         effective_radius_multiplier=1.0,
-        observed_terrain_size=100,
-        terrain_padding=100,
+        study_region_size=100,
+        study_region_padding=100,
         max_r=25
     )
 
@@ -211,8 +211,8 @@ def test_nearest_neighbor_single_from_and_to():
         r_stat_multiplier=3,
         min_rim_percentage=0.5,
         effective_radius_multiplier=1.0,
-        observed_terrain_size=100,
-        terrain_padding=100,
+        study_region_size=100,
+        study_region_padding=100,
         max_r=100
     )
 
@@ -236,8 +236,8 @@ def test_nearest_neighbor_gets_shortest_distance_from_to_craters():
         r_stat_multiplier=3,
         min_rim_percentage=0.0,
         effective_radius_multiplier=1.0,
-        observed_terrain_size=100,
-        terrain_padding=100,
+        study_region_size=100,
+        study_region_padding=100,
         max_r=25
     )
 
@@ -262,8 +262,8 @@ def test_nearest_neighbor_gets_shortest_distance_for_all_from_craters():
         r_stat_multiplier=3,
         min_rim_percentage=0.0,
         effective_radius_multiplier=1.0,
-        observed_terrain_size=100,
-        terrain_padding=100,
+        study_region_size=100,
+        study_region_padding=100,
         max_r=25
     )
 
@@ -287,8 +287,8 @@ def test_nearest_neighbor_ignores_smaller_than_r_stat():
         r_stat_multiplier=3,
         min_rim_percentage=0.5,
         effective_radius_multiplier=1.0,
-        observed_terrain_size=100,
-        terrain_padding=100,
+        study_region_size=100,
+        study_region_padding=100,
         max_r=250
     )
 
@@ -312,8 +312,8 @@ def test_nearest_neighbor_ignores_removed_craters():
         r_stat_multiplier=3,
         min_rim_percentage=0.5,
         effective_radius_multiplier=1.0,
-        observed_terrain_size=100,
-        terrain_padding=100,
+        study_region_size=100,
+        study_region_padding=100,
         max_r=250
     )
 
