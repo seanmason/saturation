@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Callable, TextIO, Generator, Iterable, List
+from typing import Callable, Generator, Iterable, List
 
 import numpy as np
 import pandas as pd
@@ -84,6 +84,7 @@ def run_simulation(crater_generator: Iterable[Crater],
                    effective_radius_multiplier: float,
                    observed_terrain_size: int,
                    terrain_padding: int,
+                   max_crater_radius: int,
                    output_path: str):
     """
     Runs a simulation.
@@ -119,7 +120,8 @@ def run_simulation(crater_generator: Iterable[Crater],
                                  min_rim_percentage,
                                  effective_radius_multiplier,
                                  observed_terrain_size,
-                                 terrain_padding)
+                                 terrain_padding,
+                                 max_crater_radius)
 
     areal_density_calculator = ArealDensityCalculator(observed_terrain_size, terrain_padding, r_stat)
 

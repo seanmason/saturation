@@ -51,6 +51,7 @@ def run_single_simulation(config: SimulationConfig):
                    config.effective_radius_multiplier,
                    config.study_region_size,
                    config.study_region_padding,
+                   config.max_crater_radius,
                    config.output_path)
 
     duration = datetime.datetime.now() - start_time
