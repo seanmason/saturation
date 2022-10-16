@@ -7,7 +7,7 @@ import numpy as np
 from sortedcontainers import SortedList
 
 from saturation.geometry import get_intersection_arc, normalize_arcs, SortedArcList, merge_arcs, \
-    get_terrain_boundary_intersection_arc
+    get_study_region_boundary_intersection_arc
 from saturation.datatypes import Crater, Arc
 
 
@@ -54,48 +54,48 @@ class CraterRecord(object):
                  r_stat_multiplier: float,
                  min_rim_percentage: float,
                  effective_radius_multiplier: float,
-                 observed_terrain_size: int,
-                 terrain_padding: int,
+                 study_region_size: int,
+                 study_region_padding: int,
                  max_r: float):
         self._r_stat = r_stat
         self._r_stat_multiplier = r_stat_multiplier
         self._min_rim_percentage = min_rim_percentage
         self._effective_radius_multiplier = effective_radius_multiplier
-        self._observed_terrain_size = observed_terrain_size
-        self._terrain_padding = terrain_padding
+        self._study_region_size = study_region_size
+        self._study_region_padding = study_region_padding
         self._max_distance = max_r + max_r * effective_radius_multiplier
 
-        self._min_x = terrain_padding
-        self._min_y = terrain_padding
-        self._max_x = observed_terrain_size + terrain_padding - 1
-        self._max_y = observed_terrain_size + terrain_padding - 1
+        self._min_x = study_region_padding
+        self._min_y = study_region_padding
+        self._max_x = study_region_size + study_region_padding - 1
+        self._max_y = study_region_size + study_region_padding - 1
 
-        # Contains all craters with r > r_stat, may be outside the observed terrain
+        # Contains all craters with r > r_stat, may be outside the study region
         self._all_craters_in_record = CraterDictionary()
 
-        # Contains all craters with r > r_stat within the observed terrain
-        self._craters_in_observed_area = CraterDictionary()
+        # Contains all craters with r > r_stat within the study region
+        self._craters_in_study_region = CraterDictionary()
 
         # Maintains distances for nearest neighbor calculations.
-        # Contains pairwise distances from all craters in the observed area with r > r_stat
+        # Contains pairwise distances from all craters in the study region with r > r_stat
         # and all other craters with r > r_stat
         self._distances: Dict[int, SortedList[CraterDistance]] = defaultdict(
             lambda: SortedList(key=lambda x: x.distance))
 
-        # Contains all craters, even those below r_stat and those outside the terrain
+        # Contains all craters, even those below r_stat and those outside the study region
         self._all_craters = CraterDictionary()
-        self._n_craters_added_in_observed_area = 0
+        self._n_craters_added_in_study_region = 0
 
         self._erased_arcs = defaultdict(lambda: SortedArcList())
         self._initial_rim_radians = defaultdict(lambda: math.pi * 2)
 
     @property
-    def n_craters_added_in_observed_area(self) -> int:
-        return self._n_craters_added_in_observed_area
+    def n_craters_added_in_study_region(self) -> int:
+        return self._n_craters_added_in_study_region
 
     @property
-    def n_craters_in_observed_area(self) -> int:
-        return len(self._craters_in_observed_area)
+    def n_craters_in_study_region(self) -> int:
+        return len(self._craters_in_study_region)
 
     @staticmethod
     def _get_distance(crater1: Crater, crater2: Crater) -> float:
@@ -145,9 +145,9 @@ class CraterRecord(object):
     def get_nearest_neighbor_distances(self) -> List[float]:
         result = []
 
-        ids_in_observed_area = set([x.id for x in self._craters_in_observed_area])
+        ids_in_study_region = set([x.id for x in self._craters_in_study_region])
         for crater_id, distances in self._distances.items():
-            if crater_id in ids_in_observed_area:
+            if crater_id in ids_in_study_region:
                 if distances:
                     result.append(distances[0].distance)
 
@@ -172,16 +172,16 @@ class CraterRecord(object):
         new_y = new_crater.y
         effective_radius = new_crater.radius * self._effective_radius_multiplier
 
-        # If the new crater runs outside the observed terrain, remove those portions of its rim.
-        lower_limit = self._terrain_padding
-        upper_limit = self._terrain_padding + self._observed_terrain_size
+        # If the new crater runs outside the study region, remove those portions of its rim.
+        lower_limit = self._study_region_padding
+        upper_limit = self._study_region_padding + self._study_region_size
         if new_crater.radius >= self._r_stat \
                 and lower_limit <= new_x <= upper_limit \
                 and lower_limit <= new_y <= upper_limit:
-            arc = get_terrain_boundary_intersection_arc((new_x, new_y),
-                                                        new_crater.radius,
-                                                        self._observed_terrain_size,
-                                                        self._terrain_padding)
+            arc = get_study_region_boundary_intersection_arc((new_x, new_y),
+                                                             new_crater.radius,
+                                                             self._study_region_size,
+                                                             self._study_region_padding)
             if arc:
                 normalized_arcs = normalize_arcs([(arc[0], arc[1])])
                 self._erased_arcs[new_crater.id].update(normalized_arcs)
@@ -214,8 +214,8 @@ class CraterRecord(object):
             if remaining_rim_percentage < self._min_rim_percentage:
                 removed_craters.append(crater)
                 self._all_craters_in_record.remove(crater)
-                if crater.id in self._craters_in_observed_area:
-                    self._craters_in_observed_area.remove(crater)
+                if crater.id in self._craters_in_study_region:
+                    self._craters_in_study_region.remove(crater)
 
         return removed_craters
 
@@ -236,8 +236,8 @@ class CraterRecord(object):
             self._all_craters_in_record.add(crater)
 
             if self._min_x <= crater.x <= self._max_x and self._min_y <= crater.y <= self._max_y:
-                self._craters_in_observed_area.add(crater)
-                self._n_craters_added_in_observed_area += 1
+                self._craters_in_study_region.add(crater)
+                self._n_craters_added_in_study_region += 1
 
         removed = self._remove_craters_with_destroyed_rims()
         if removed:
@@ -267,11 +267,11 @@ class CraterRecord(object):
         return list(self._all_craters_in_record)
 
     @property
-    def craters_in_observed_area(self) -> List[Crater]:
+    def craters_in_study_region(self) -> List[Crater]:
         """
-        Returns a list of all craters in the record that are in the observed area.
+        Returns a list of all craters in the record that are in the study region.
         """
-        return list(self._craters_in_observed_area)
+        return list(self._craters_in_study_region)
 
     def get_erased_rim_segments(self, crater_id: int) -> List[Arc]:
         """

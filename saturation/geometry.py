@@ -84,16 +84,16 @@ def solve_quadratic(a: float, b: float, c: float) -> Tuple[float, float]:
     return first, second
 
 
-def find_intersections_with_terrain_bounds(center: Location,
-                                           radius: float,
-                                           observed_terrain_size: int,
-                                           terrain_padding: int) -> List[Location]:
+def find_intersections_with_study_region_bounds(center: Location,
+                                                radius: float,
+                                                study_region_size: int,
+                                                study_region_padding: int) -> List[Location]:
     result = []
 
-    low_boundary = terrain_padding
-    high_boundary = observed_terrain_size + terrain_padding
+    low_boundary = study_region_padding
+    high_boundary = study_region_size + study_region_padding
 
-    # The circle goes off the left side of the terrain
+    # The circle goes off the left side of the study region
     if center[0] - radius < low_boundary:
         offset = low_boundary
         test_x = center[0] - offset
@@ -108,7 +108,7 @@ def find_intersections_with_terrain_bounds(center: Location,
         if solutions[1] > 0:
             result.append((offset, solutions[1] + offset))
 
-    # The circle goes off the right side of the terrain
+    # The circle goes off the right side of the study region
     if center[0] + radius > high_boundary:
         offset = high_boundary
         test_x = center[0] - offset
@@ -123,7 +123,7 @@ def find_intersections_with_terrain_bounds(center: Location,
         if solutions[1] > 0:
             result.append((offset, solutions[1] + offset))
 
-    # The circle goes off the bottom side of the terrain
+    # The circle goes off the bottom side of the study region
     if  center[1] - radius < low_boundary:
         offset = low_boundary
         test_x = center[0] - offset
@@ -138,7 +138,7 @@ def find_intersections_with_terrain_bounds(center: Location,
         if solutions[1] > 0:
             result.append((solutions[1] + offset, offset))
 
-    # The circle goes off the top side of the terrain
+    # The circle goes off the top side of the study region
     if center[1] + radius > high_boundary:
         offset = high_boundary
         test_x = center[0] - offset
@@ -156,14 +156,14 @@ def find_intersections_with_terrain_bounds(center: Location,
     return result
 
 
-def get_terrain_boundary_intersection_arc(center: Location,
-                                          radius: float,
-                                          observed_terrain_size: int,
-                                          terrain_padding: int) -> Optional[Arc]:
+def get_study_region_boundary_intersection_arc(center: Location,
+                                               radius: float,
+                                               study_region_size: int,
+                                               study_region_padding: int) -> Optional[Arc]:
     """
-    Returns the intersection arc (in radians) of the specified circle with the terrain bounds.
+    Returns the intersection arc (in radians) of the specified circle with the study region's bounds.
     """
-    intersections = find_intersections_with_terrain_bounds(center, radius, observed_terrain_size, terrain_padding)
+    intersections = find_intersections_with_study_region_bounds(center, radius, study_region_size, study_region_padding)
 
     if len(intersections) != 2:
         return None
@@ -188,7 +188,7 @@ def get_terrain_boundary_intersection_arc(center: Location,
 
     # If our test point is not within circle2, reverse our thetas
     if not (
-            terrain_padding <= midpoint_x <= observed_terrain_size + terrain_padding and terrain_padding <= midpoint_y <= observed_terrain_size + terrain_padding):
+            study_region_padding <= midpoint_x <= study_region_size + study_region_padding and study_region_padding <= midpoint_y <= study_region_size + study_region_padding):
         tmp = theta1
         theta1 = theta2
         theta2 = tmp
