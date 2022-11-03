@@ -6,6 +6,7 @@ from pathlib import Path
 from typing import Dict, List
 import numpy as np
 import yaml
+
 from saturation.distributions import ParetoProbabilityDistribution
 from saturation.simulation import run_simulation, get_craters
 
@@ -99,12 +100,14 @@ def main(config_filename: str):
     n_workers = config['n_workers']
     simulation_configs = get_simulation_configs(config)
 
-    with multiprocessing.Pool(processes=n_workers) as pool:
-        for simulation_config in simulation_configs:
-            pool.apply_async(run_single_simulation, (simulation_config, ))
-
-        pool.close()
-        pool.join()
+    # with multiprocessing.Pool(processes=n_workers) as pool:
+    #     for simulation_config in simulation_configs:
+    #         pool.apply_async(run_single_simulation, (simulation_config, ))
+    #
+    #     pool.close()
+    #     pool.join()
+    for simulation_config in simulation_configs:
+        run_single_simulation(simulation_config)
 
 
 if __name__ == '__main__':

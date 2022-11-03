@@ -1,7 +1,6 @@
 import math
 from collections import defaultdict
-from dataclasses import dataclass
-from typing import List, Iterable, Dict
+from typing import List, Iterable, Dict, NamedTuple
 
 import numpy as np
 from sortedcontainers import SortedList
@@ -11,8 +10,7 @@ from saturation.geometry import get_intersection_arc, normalize_arcs, SortedArcL
 from saturation.datatypes import Crater, Arc
 
 
-@dataclass(frozen=True, kw_only=True)
-class CraterDistance:
+class CraterDistance(NamedTuple):
     crater_id: int
     distance: float
 
@@ -47,8 +45,6 @@ class CraterRecord(object):
     """
     Maintains the record of craters.
     """
-    MAX_N_DISTANCES = 500
-
     def __init__(self,
                  r_stat: float,
                  r_stat_multiplier: float,
@@ -63,7 +59,7 @@ class CraterRecord(object):
         self._effective_radius_multiplier = effective_radius_multiplier
         self._study_region_size = study_region_size
         self._study_region_padding = study_region_padding
-        self._max_distance = max_r + max_r * effective_radius_multiplier
+        self._max_distance = 1.5 * max_r
 
         self._min_x = study_region_padding
         self._min_y = study_region_padding
@@ -87,6 +83,7 @@ class CraterRecord(object):
         self._n_craters_added_in_study_region = 0
 
         self._erased_arcs = defaultdict(lambda: SortedArcList())
+        self._remaining_rim_percentages: Dict[int, float] = dict()
         self._initial_rim_radians = defaultdict(lambda: math.pi * 2)
 
     @property
@@ -131,17 +128,6 @@ class CraterRecord(object):
             for distance in [x for x in distance_list if x.crater_id in crater_ids]:
                 distance_list.remove(distance)
 
-    def _cleanup_distances(self):
-        """
-        Removes from distances lists if the distances list is very long
-        """
-        for distance_list in self._distances.values():
-            if not distance_list:
-                continue
-
-            while len(distance_list) > self.MAX_N_DISTANCES:
-                distance_list.pop(-1)
-
     def get_nearest_neighbor_distances(self) -> List[float]:
         result = []
 
@@ -158,14 +144,15 @@ class CraterRecord(object):
         Returns a list of crater IDs that may be affected by the addition of new_crater
         """
         effective_radius = new_crater.radius * self._effective_radius_multiplier
-        distances = self._distances[new_crater.id]
-        for distance in distances:
-            existing_crater = self._all_craters[distance.crater_id]
-            if distance.distance < existing_crater.radius + effective_radius:
-                # Craters that may overlap
-                if distance.distance > existing_crater.radius - effective_radius:
-                    # The new crater's rim is not entirely within the existing crater's bowl
-                    yield distance.crater_id
+        if new_crater.id in self._distances:
+            distances = self._distances[new_crater.id]
+            for distance in distances:
+                existing_crater = self._all_craters[distance.crater_id]
+                if distance.distance < existing_crater.radius + effective_radius:
+                    # Craters that may overlap
+                    if distance.distance > existing_crater.radius - effective_radius:
+                        # The new crater's rim is not entirely within the existing crater's bowl
+                        yield distance.crater_id
 
     def _update_rim_arcs(self, new_crater: Crater):
         new_x = new_crater.x
@@ -187,7 +174,13 @@ class CraterRecord(object):
                 self._erased_arcs[new_crater.id].update(normalized_arcs)
                 merged_arcs = merge_arcs(self._erased_arcs[new_crater.id])
                 self._erased_arcs[new_crater.id] = merged_arcs
-                self._initial_rim_radians[new_crater.id] = 2 * np.pi - sum([x[1] - x[0] for x in merged_arcs])
+
+                initial_rim_radians = 2 * np.pi - sum([x[1] - x[0] for x in merged_arcs])
+                self._initial_rim_radians[new_crater.id] = initial_rim_radians
+
+                self._remaining_rim_percentages[new_crater.id] = 1 - ((sum((x[1] - x[0] for x in merged_arcs))
+                                                                       - 2 * np.pi + initial_rim_radians)
+                                                                      / initial_rim_radians)
 
         crater_ids_in_range = self._get_craters_with_overlapping_rims(new_crater)
 
@@ -206,6 +199,12 @@ class CraterRecord(object):
                 merged_arcs = merge_arcs(self._erased_arcs[old_crater.id])
                 self._erased_arcs[old_crater.id] = merged_arcs
 
+                initial_rim_radians = self._initial_rim_radians[old_crater.id]
+
+                self._remaining_rim_percentages[old_crater.id] = 1 - ((sum((x[1] - x[0] for x in merged_arcs))
+                                                                       - 2 * np.pi + initial_rim_radians)
+                                                                      / initial_rim_radians)
+
     def _remove_craters_with_destroyed_rims(self) -> List[Crater]:
         removed_craters = []
 
@@ -213,6 +212,7 @@ class CraterRecord(object):
             remaining_rim_percentage = self.get_remaining_rim_percent(crater.id)
             if remaining_rim_percentage < self._min_rim_percentage:
                 removed_craters.append(crater)
+                del self._erased_arcs[crater.id]
                 self._all_craters_in_record.remove(crater)
                 if crater.id in self._craters_in_study_region:
                     self._craters_in_study_region.remove(crater)
@@ -242,7 +242,6 @@ class CraterRecord(object):
         removed = self._remove_craters_with_destroyed_rims()
         if removed:
             self._remove_craters_from_distances(removed)
-            self._cleanup_distances()
 
         return removed
 
@@ -273,13 +272,11 @@ class CraterRecord(object):
         """
         return list(self._craters_in_study_region)
 
-    def get_erased_rim_segments(self, crater_id: int) -> List[Arc]:
+    def get_erased_rim_segments(self, crater_id: int) -> Iterable[Arc]:
         """
         Returns the erased rim segments for the specified crater.
         """
-        return list(self._erased_arcs[crater_id])
+        return self._erased_arcs[crater_id]
 
     def get_remaining_rim_percent(self, crater_id: int) -> float:
-        erased = self.get_erased_rim_segments(crater_id)
-        initial_rim_radians = self._initial_rim_radians[crater_id]
-        return 1 - ((sum([x[1] - x[0] for x in erased]) - 2 * np.pi + initial_rim_radians) / initial_rim_radians)
+        return self._remaining_rim_percentages.get(crater_id, 1.0)

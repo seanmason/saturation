@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Callable, Generator, Iterable, List
+from typing import Callable, Generator, Iterable, List, NamedTuple
 
 import numpy as np
 import pandas as pd
@@ -15,8 +15,7 @@ from saturation.datatypes import Crater, Arc
 LocationFunc = Callable[[], np.array]
 
 
-@dataclass(frozen=True, kw_only=True)
-class CraterRow:
+class CraterRow(NamedTuple):
     crater_id: int
     x: float
     y: float
@@ -29,8 +28,7 @@ class RemovalRow:
     removed_by_id: int
 
 
-@dataclass(frozen=True, kw_only=True)
-class StateRow:
+class StateRow(NamedTuple):
     last_crater_id: int
     n_craters_added_in_study_region: int
     crater_id: int
@@ -85,7 +83,7 @@ def run_simulation(crater_generator: Iterable[Crater],
                    effective_radius_multiplier: float,
                    study_region_size: int,
                    study_region_padding: int,
-                   max_crater_radius: int,
+                   max_crater_radius: float,
                    output_path: str):
     """
     Runs a simulation.
@@ -130,10 +128,6 @@ def run_simulation(crater_generator: Iterable[Crater],
     last_n_craters = 0
     for crater in crater_generator:
         n_craters_current = crater_record.n_craters_added_in_study_region
-
-        # Exit if we have generated our target number of craters.
-        if n_craters_current == n_craters:
-            break
 
         all_craters_rows.append(CraterRow(
             crater_id=crater.id,
@@ -183,7 +177,7 @@ def run_simulation(crater_generator: Iterable[Crater],
 
             # Save state snapshot
             state_rows = []
-            for report_crater in crater_record.craters_in_study_region:
+            for report_crater in crater_record.all_craters_in_record:
                 state_rows.append(StateRow(
                     last_crater_id=crater.id,
                     n_craters_added_in_study_region=n_craters_current,
@@ -191,16 +185,20 @@ def run_simulation(crater_generator: Iterable[Crater],
                     x=report_crater.x,
                     y=report_crater.y,
                     radius=report_crater.radius,
-                    erased_rim_segments=crater_record.get_erased_rim_segments(report_crater.id),
+                    erased_rim_segments=list(crater_record.get_erased_rim_segments(report_crater.id)),
                     rim_percent_remaining=crater_record.get_remaining_rim_percent(report_crater.id)
                 ))
 
-            state_filename = f'{output_path}/state_{n_craters_current}.csv'
-            pd.DataFrame(state_rows).to_csv(state_filename, index=False)
+            state_filename = f'{output_path}/state_{n_craters_current}.parquet'
+            pd.DataFrame(state_rows).to_parquet(state_filename, index=False)
 
             if n_craters_current % output_image_cadence == 0:
                 png_name = f'{output_path}/study_region_{n_craters_current}.png'
                 save_study_region(areal_density_calculator, png_name)
+
+        # Exit if we have generated our target number of craters.
+        if n_craters_current == n_craters:
+            break
 
     pd.DataFrame(statistics_rows).to_csv(f'{output_path}/statistics.csv', index=False)
     pd.DataFrame(removals_rows).to_csv(f'{output_path}/removals.csv', index=False)
