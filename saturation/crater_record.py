@@ -1,18 +1,13 @@
 import math
 from collections import defaultdict
-from typing import List, Iterable, Dict, NamedTuple
+from typing import List, Iterable, Dict
 
 import numpy as np
-from sortedcontainers import SortedList
 
 from saturation.geometry import get_intersection_arc, normalize_arcs, SortedArcList, merge_arcs, \
     get_study_region_boundary_intersection_arc
 from saturation.datatypes import Crater, Arc
-
-
-class CraterDistance(NamedTuple):
-    crater_id: int
-    distance: float
+from saturation.nearest_neighbor import NearestNeighbor
 
 
 class CraterDictionary(object):
@@ -20,7 +15,7 @@ class CraterDictionary(object):
     Convenience wrapper around a dictionary for Craters.
     """
     def __init__(self):
-        self._craters = dict()
+        self._craters: Dict[int, Crater] = dict()
 
     def add(self, crater: Crater):
         self._craters[crater.id] = crater
@@ -34,7 +29,7 @@ class CraterDictionary(object):
     def __contains__(self, crater_id: int) -> bool:
         return crater_id in self._craters
 
-    def __iter__(self):
+    def __iter__(self) -> Iterable[Crater]:
         return (x for x in self._craters.values())
 
     def __len__(self):
@@ -51,32 +46,26 @@ class CraterRecord(object):
                  min_rim_percentage: float,
                  effective_radius_multiplier: float,
                  study_region_size: int,
-                 study_region_padding: int,
-                 max_r: float):
+                 study_region_padding: int):
         self._r_stat = r_stat
         self._r_stat_multiplier = r_stat_multiplier
         self._min_rim_percentage = min_rim_percentage
         self._effective_radius_multiplier = effective_radius_multiplier
         self._study_region_size = study_region_size
         self._study_region_padding = study_region_padding
-        self._max_distance = 1.5 * max_r
 
         self._min_x = study_region_padding
         self._min_y = study_region_padding
         self._max_x = study_region_size + study_region_padding - 1
         self._max_y = study_region_size + study_region_padding - 1
 
+        self._nearest_neighbors = NearestNeighbor()
+
         # Contains all craters with r > r_stat, may be outside the study region
         self._all_craters_in_record = CraterDictionary()
 
         # Contains all craters with r > r_stat within the study region
         self._craters_in_study_region = CraterDictionary()
-
-        # Maintains distances for nearest neighbor calculations.
-        # Contains pairwise distances from all craters in the study region with r > r_stat
-        # and all other craters with r > r_stat
-        self._distances: Dict[int, SortedList[CraterDistance]] = defaultdict(
-            lambda: SortedList(key=lambda x: x.distance))
 
         # Contains all craters, even those below r_stat and those outside the study region
         self._all_craters = CraterDictionary()
@@ -96,63 +85,24 @@ class CraterRecord(object):
 
     @staticmethod
     def _get_distance(crater1: Crater, crater2: Crater) -> float:
-        return math.sqrt((crater1.x - crater2.x) ** 2 + (crater1.y - crater2.y) ** 2)
+        return np.sqrt((crater1.x - crater2.x) ** 2 + (crater1.y - crater2.y) ** 2)
 
-    def _add_crater_to_distances(self, crater: Crater):
-        if crater.radius >= self._r_stat:
-            # Crater is large enough to be added to the record.
-            # Add it as a "destination" in the crater distances record.
-            for from_crater_id, distances in self._distances.items():
-                if crater.id != from_crater_id:
-                    from_crater = self._all_craters[from_crater_id]
-                    distances = self._distances[from_crater.id]
-                    distance = self._get_distance(from_crater, crater)
-                    if distance < self._max_distance:
-                        distances.add(CraterDistance(crater_id=crater.id, distance=distance))
+    def get_mean_nearest_neighbor_distance(self) -> float:
+        return self._nearest_neighbors.get_mean_nearest_neighbor_distance(self._craters_in_study_region)
 
-            # Add the new crater as a "source" in the crater distances record.
-            distances = self._distances[crater.id]
-            for to_crater in self._all_craters_in_record:
-                if crater != to_crater:
-                    distance = self._get_distance(to_crater, crater)
-                    if distance < self._max_distance:
-                        distances.add(CraterDistance(crater_id=to_crater.id, distance=distance))
-
-    def _remove_craters_from_distances(self, craters: List[Crater]):
-        for crater in craters:
-            if crater.id in self._distances:
-                del self._distances[crater.id]
-
-        crater_ids = {x.id for x in craters}
-        for distance_list in self._distances.values():
-            for distance in [x for x in distance_list if x.crater_id in crater_ids]:
-                distance_list.remove(distance)
-
-    def get_nearest_neighbor_distances(self) -> List[float]:
-        result = []
-
-        ids_in_study_region = set([x.id for x in self._craters_in_study_region])
-        for crater_id, distances in self._distances.items():
-            if crater_id in ids_in_study_region:
-                if distances:
-                    result.append(distances[0].distance)
-
-        return result
-
-    def _get_craters_with_overlapping_rims(self, new_crater: Crater) -> Iterable[int]:
+    def _get_craters_with_overlapping_rims(self, new_crater: Crater) -> Iterable[Crater]:
         """"
         Returns a list of crater IDs that may be affected by the addition of new_crater
         """
         effective_radius = new_crater.radius * self._effective_radius_multiplier
-        if new_crater.id in self._distances:
-            distances = self._distances[new_crater.id]
-            for distance in distances:
-                existing_crater = self._all_craters[distance.crater_id]
-                if distance.distance < existing_crater.radius + effective_radius:
-                    # Craters that may overlap
-                    if distance.distance > existing_crater.radius - effective_radius:
-                        # The new crater's rim is not entirely within the existing crater's bowl
-                        yield distance.crater_id
+
+        for existing_crater in self._all_craters_in_record:
+            distance = self._get_distance(new_crater, existing_crater)
+            if distance < existing_crater.radius + effective_radius:
+                # Craters that may overlap
+                if distance > existing_crater.radius - effective_radius:
+                    # The new crater's rim is not entirely within the existing crater's bowl
+                    yield existing_crater
 
     def _update_rim_arcs(self, new_crater: Crater):
         new_x = new_crater.x
@@ -182,11 +132,8 @@ class CraterRecord(object):
                                                                        - 2 * np.pi + initial_rim_radians)
                                                                       / initial_rim_radians)
 
-        crater_ids_in_range = self._get_craters_with_overlapping_rims(new_crater)
-
-        for old_crater_id in crater_ids_in_range:
-            old_crater = self._all_craters_in_record[old_crater_id]
-
+        craters_in_range = self._get_craters_with_overlapping_rims(new_crater)
+        for old_crater in craters_in_range:
             # For a new crater to affect an old crater, (new crater radius) > (old crater radius) / r_stat_multiplier
             if new_crater.radius > old_crater.radius / self._r_stat_multiplier:
                 arc = get_intersection_arc((old_crater.x, old_crater.y),
@@ -228,7 +175,7 @@ class CraterRecord(object):
         self._all_craters.add(crater)
 
         if crater.radius >= self._r_stat:
-            self._add_crater_to_distances(crater)
+            self._nearest_neighbors.add(crater)
 
         self._update_rim_arcs(crater)
 
@@ -241,7 +188,8 @@ class CraterRecord(object):
 
         removed = self._remove_craters_with_destroyed_rims()
         if removed:
-            self._remove_craters_from_distances(removed)
+            for crater in removed:
+                self._nearest_neighbors.remove(crater)
 
         return removed
 

@@ -6,6 +6,7 @@ from pathlib import Path
 from typing import Dict, List
 import numpy as np
 import yaml
+import traceback
 
 from saturation.distributions import ParetoProbabilityDistribution
 from saturation.simulation import run_simulation, get_craters
@@ -28,32 +29,35 @@ class SimulationConfig:
 
 
 def run_single_simulation(config: SimulationConfig):
-    np.random.seed(config.simulation_id)
-
-    r_stat = config.r_stat_multiplier * config.min_crater_radius
-
-    full_region_size = config.study_region_size + 2 * config.study_region_padding
-    size_distribution = ParetoProbabilityDistribution(cdf_slope=config.slope,
-                                                      x_min=config.min_crater_radius,
-                                                      x_max=config.max_crater_radius)
-    crater_generator = get_craters(size_distribution, full_region_size)
-
     print(f'Starting simulation {config.simulation_name}')
     start_time = datetime.datetime.now()
 
-    path = Path(config.output_path)
-    path.mkdir(parents=True, exist_ok=True)
+    try:
+        np.random.seed(hash(config) % 2**32)
 
-    run_simulation(crater_generator,
-                   config.n_craters,
-                   r_stat,
-                   config.r_stat_multiplier,
-                   config.min_rim_percentage,
-                   config.effective_radius_multiplier,
-                   config.study_region_size,
-                   config.study_region_padding,
-                   config.max_crater_radius,
-                   config.output_path)
+        r_stat = config.r_stat_multiplier * config.min_crater_radius
+
+        full_region_size = config.study_region_size + 2 * config.study_region_padding
+        size_distribution = ParetoProbabilityDistribution(cdf_slope=config.slope,
+                                                          x_min=config.min_crater_radius,
+                                                          x_max=config.max_crater_radius)
+        crater_generator = get_craters(size_distribution, full_region_size)
+
+        start_time = datetime.datetime.now()
+
+        path = Path(config.output_path)
+        path.mkdir(parents=True, exist_ok=True)
+        run_simulation(crater_generator,
+                       config.n_craters,
+                       r_stat,
+                       config.r_stat_multiplier,
+                       config.min_rim_percentage,
+                       config.effective_radius_multiplier,
+                       config.study_region_size,
+                       config.study_region_padding,
+                       config.output_path)
+    except:
+        traceback.print_exc()
 
     duration = datetime.datetime.now() - start_time
     print(f'Finished simulation {config.simulation_name}, duration (seconds): {duration.total_seconds():.2f}')
@@ -100,14 +104,12 @@ def main(config_filename: str):
     n_workers = config['n_workers']
     simulation_configs = get_simulation_configs(config)
 
-    # with multiprocessing.Pool(processes=n_workers) as pool:
-    #     for simulation_config in simulation_configs:
-    #         pool.apply_async(run_single_simulation, (simulation_config, ))
-    #
-    #     pool.close()
-    #     pool.join()
-    for simulation_config in simulation_configs:
-        run_single_simulation(simulation_config)
+    with multiprocessing.Pool(processes=n_workers) as pool:
+        for simulation_config in simulation_configs:
+            pool.apply_async(run_single_simulation, (simulation_config, ))
+
+        pool.close()
+        pool.join()
 
 
 if __name__ == '__main__':

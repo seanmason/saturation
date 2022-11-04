@@ -1,18 +1,18 @@
-n_workers: 4
+n_workers: 5
 output_path: /home/mason/full_runs/python/testing
 
 run_configurations:
-#  - 1.00_3.00_0.40_1.50_large:
-#      slope: 1.00
-#      r_stat_multiplier: 3.00
-#      min_rim_percentage: 0.40
-#      effective_radius_multiplier: 1.50
-#      study_region_size: 10000
-#      study_region_padding: 1250
-#      min_crater_radius: 2.5
-#      max_crater_radius: 2500
-#      n_craters: 50000
-#      n_simulations: 2
+  - 1.00_3.00_0.40_1.50_xl:
+      slope: 1.00
+      r_stat_multiplier: 3.00
+      min_rim_percentage: 0.40
+      effective_radius_multiplier: 1.50
+      study_region_size: 10000
+      study_region_padding: 1250
+      min_crater_radius: 2.5
+      max_crater_radius: 2500
+      n_craters: 100000
+      n_simulations: 1
 #
 #  - 1.25_3.00_0.60_1.10:
 #      slope: 1.25
@@ -37,7 +37,7 @@ run_configurations:
 #      max_crater_radius: 2500
 #      n_craters: 25000
 #      n_simulations: 2
-  - 2.00_3.00_0.60_1.90_large:
+  - 2.00_3.00_0.60_1.90:
       slope: 2.00
       r_stat_multiplier: 3.00
       min_rim_percentage: 0.60
@@ -46,21 +46,21 @@ run_configurations:
       study_region_padding: 1250
       min_crater_radius: 2.5
       max_crater_radius: 2500
-      n_craters: 25000
+      n_craters: 100000
       n_simulations: 1
 
-#
-#  - 2.50_5.00_0.50_1.10:
-#      slope: 2.50
-#      r_stat_multiplier: 5.00
-#      min_rim_percentage: 0.50
-#      effective_radius_multiplier: 1.10
-#      study_region_size: 10000
-#      study_region_padding: 1250
-#      min_crater_radius: 2.5
-#      max_crater_radius: 2500
-#      n_craters: 25000
-#      n_simulations: 10
+
+  - 2.50_5.00_0.50_1.10:
+      slope: 2.50
+      r_stat_multiplier: 5.00
+      min_rim_percentage: 0.50
+      effective_radius_multiplier: 1.10
+      study_region_size: 10000
+      study_region_padding: 1250
+      min_crater_radius: 2.5
+      max_crater_radius: 2500
+      n_craters: 100000
+      n_simulations: 1
 #
 #  - 2.00_5.00_0.60_1.90:
 #      slope: 2.00
@@ -74,14 +74,14 @@ run_configurations:
 #      n_craters: 25000
 #      n_simulations: 10
 
-#  - 3.00_9.00_0.60_1.90:
-#        slope: 3.00
-#        r_stat_multiplier: 5.00
-#        min_rim_percentage: 0.60
-#        effective_radius_multiplier: 1.90
-#        study_region_size: 10000
-#        study_region_padding: 1250
-#        min_crater_radius: 2.5
-#        max_crater_radius: 2500
-#        n_craters: 25000
-#        n_simulations: 10
+  - 3.00_9.00_0.60_1.90:
+        slope: 3.00
+        r_stat_multiplier: 5.00
+        min_rim_percentage: 0.60
+        effective_radius_multiplier: 1.90
+        study_region_size: 10000
+        study_region_padding: 1250
+        min_crater_radius: 2.5
+        max_crater_radius: 2500
+        n_craters: 100000
+        n_simulations: 1

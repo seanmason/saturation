@@ -8,7 +8,7 @@ from saturation.areal_density import ArealDensityCalculator
 from saturation.crater_record import CraterRecord
 from saturation.distributions import ProbabilityDistribution
 from saturation.plotting import save_study_region
-from saturation.statistics import calculate_z_statistic, calculate_za_statistic
+from saturation.z_stats import calculate_z_statistic, calculate_za_statistic
 from saturation.datatypes import Crater, Arc
 
 # Type definitions
@@ -83,7 +83,6 @@ def run_simulation(crater_generator: Iterable[Crater],
                    effective_radius_multiplier: float,
                    study_region_size: int,
                    study_region_padding: int,
-                   max_crater_radius: float,
                    output_path: str):
     """
     Runs a simulation.
@@ -102,7 +101,6 @@ def run_simulation(crater_generator: Iterable[Crater],
     :param effective_radius_multiplier: Multiplier on a crater's radius when destroying other rims.
     :param study_region_size: Size of the study region.
     :param study_region_padding: Padding around the edges of the study region.
-    :param max_crater_radius: The maximum radius of a crater.
     :param output_path: Path to the output directory.
     """
     output_image_cadence = 50
@@ -120,8 +118,7 @@ def run_simulation(crater_generator: Iterable[Crater],
                                  min_rim_percentage,
                                  effective_radius_multiplier,
                                  study_region_size,
-                                 study_region_padding,
-                                 max_crater_radius)
+                                 study_region_padding)
 
     areal_density_calculator = ArealDensityCalculator(study_region_size, study_region_padding, r_stat)
 
@@ -156,9 +153,10 @@ def run_simulation(crater_generator: Iterable[Crater],
             areal_density = areal_density_calculator.areal_density
 
             if crater_record.n_craters_in_study_region > 1:
-                nn_distances = crater_record.get_nearest_neighbor_distances()
-                z = calculate_z_statistic(nn_distances, study_region_area)
-                za = calculate_za_statistic(nn_distances,
+                mean_nn_distance = crater_record.get_mean_nearest_neighbor_distance()
+                z = calculate_z_statistic(mean_nn_distance, crater_record.n_craters_in_study_region, study_region_area)
+                za = calculate_za_statistic(mean_nn_distance,
+                                            crater_record.n_craters_in_study_region,
                                             areal_density_calculator.area_covered,
                                             study_region_area)
             else:

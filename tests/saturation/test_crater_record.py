@@ -1,3 +1,5 @@
+import numpy as np
+
 from saturation.crater_record import CraterRecord
 from saturation.datatypes import Crater
 
@@ -12,7 +14,6 @@ def test_add_in_study_region():
         effective_radius_multiplier=1.0,
         study_region_size=1000,
         study_region_padding=100,
-        max_r=250
     )
 
     # Act
@@ -38,7 +39,6 @@ def test_add_outside_study_region():
         effective_radius_multiplier=1.0,
         study_region_size=1000,
         study_region_padding=200,
-        max_r=250
     )
 
     # Act
@@ -63,7 +63,6 @@ def test_add_does_not_add_small_craters():
         effective_radius_multiplier=1.0,
         study_region_size=1000,
         study_region_padding=100,
-        max_r=250
     )
 
     # Act
@@ -88,7 +87,6 @@ def test_add_removes_obliterated_craters():
         effective_radius_multiplier=1.0,
         study_region_size=1000,
         study_region_padding=100,
-        max_r=250
     )
 
     # Act
@@ -115,7 +113,6 @@ def test_add_leaves_partially_removed_craters():
         effective_radius_multiplier=1.0,
         study_region_size=1000,
         study_region_padding=100,
-        max_r=250
     )
 
     # Act
@@ -140,7 +137,6 @@ def test_crater_rims_truncated_by_study_region_edges():
         effective_radius_multiplier=1.0,
         study_region_size=1000,
         study_region_padding=0,
-        max_r=250
     )
 
     # Act
@@ -166,7 +162,6 @@ def test_crater_radius_ratio_respected():
         effective_radius_multiplier=1.0,
         study_region_size=1000,
         study_region_padding=0,
-        max_r=250
     )
 
     # Act
@@ -181,7 +176,7 @@ def test_crater_radius_ratio_respected():
     assert all_craters == [crater1]
 
 
-def test_nearest_neighbor_empty_from():
+def test_get_mean_nearest_neighbor_distance_empty_from():
     # Arrange
     crater1 = Crater(id=1, x=200, y=200, radius=10)
     record = CraterRecord(
@@ -190,16 +185,15 @@ def test_nearest_neighbor_empty_from():
         min_rim_percentage=0.5,
         effective_radius_multiplier=1.0,
         study_region_size=100,
-        study_region_padding=100,
-        max_r=25
+        study_region_padding=100
     )
 
     # Act
     record.add(crater1)
-    result = record.get_nearest_neighbor_distances()
+    result = record.get_mean_nearest_neighbor_distance()
 
     # Assert
-    assert not result
+    assert np.isnan(result)
 
 
 def test_nearest_neighbor_single_from_and_to():
@@ -213,13 +207,12 @@ def test_nearest_neighbor_single_from_and_to():
         effective_radius_multiplier=1.0,
         study_region_size=100,
         study_region_padding=100,
-        max_r=100
     )
 
     # Act
     record.add(crater1)
     record.add(crater2)
-    result = record.get_nearest_neighbor_distances()
+    result = record.get_mean_nearest_neighbor_distance()
 
     # Assert
     assert result == [100]
@@ -238,7 +231,6 @@ def test_nearest_neighbor_gets_shortest_distance_from_to_craters():
         effective_radius_multiplier=1.0,
         study_region_size=100,
         study_region_padding=100,
-        max_r=25
     )
 
     # Act
@@ -246,13 +238,13 @@ def test_nearest_neighbor_gets_shortest_distance_from_to_craters():
     record.add(crater2)
     record.add(crater3)
     record.add(crater4)
-    result = record.get_nearest_neighbor_distances()
+    result = record.get_mean_nearest_neighbor_distance()
 
     # Assert
     assert result == [1]
 
 
-def test_nearest_neighbor_gets_shortest_distance_for_all_from_craters():
+def test_get_mean_nearest_neighbor_distance_is_shortest_distance_for_all_from_craters():
     # Arrange
     crater1 = Crater(id=1, x=100, y=100, radius=10)
     crater2 = Crater(id=2, x=100, y=120, radius=10)
@@ -264,20 +256,19 @@ def test_nearest_neighbor_gets_shortest_distance_for_all_from_craters():
         effective_radius_multiplier=1.0,
         study_region_size=100,
         study_region_padding=100,
-        max_r=25
     )
 
     # Act
     record.add(crater1)
     record.add(crater2)
     record.add(crater3)
-    result = record.get_nearest_neighbor_distances()
+    result = record.get_mean_nearest_neighbor_distance()
 
     # Assert
-    assert result == [10, 20, 10]
+    assert result == np.mean([10, 20, 10])
 
 
-def test_nearest_neighbor_ignores_smaller_than_r_stat():
+def test_get_mean_nearest_neighbor_distance_ignores_smaller_than_r_stat():
     # Arrange
     crater1 = Crater(id=1, x=100, y=100, radius=10)
     crater2 = Crater(id=2, x=100, y=120, radius=10)
@@ -289,20 +280,19 @@ def test_nearest_neighbor_ignores_smaller_than_r_stat():
         effective_radius_multiplier=1.0,
         study_region_size=100,
         study_region_padding=100,
-        max_r=250
     )
 
     # Act
     record.add(crater1)
     record.add(crater2)
     record.add(crater3)
-    result = record.get_nearest_neighbor_distances()
+    result = record.get_mean_nearest_neighbor_distance()
 
     # Assert
-    assert result == [20, 20]
+    assert result == np.mean([20, 20])
 
 
-def test_nearest_neighbor_ignores_removed_craters():
+def test_get_mean_nearest_neighbor_distance_ignores_removed_craters():
     # Arrange
     crater1 = Crater(id=1, x=100, y=100, radius=10)
     crater2 = Crater(id=2, x=100, y=150, radius=10)
@@ -314,15 +304,14 @@ def test_nearest_neighbor_ignores_removed_craters():
         effective_radius_multiplier=1.0,
         study_region_size=100,
         study_region_padding=100,
-        max_r=250
     )
 
     # Act
     record.add(crater1)
     record.add(crater2)
     record.add(crater3)
-    result = record.get_nearest_neighbor_distances()
+    result = record.get_mean_nearest_neighbor_distance()
 
     # Assert
-    assert result == [60, 60]
+    assert result == np.mean([60, 60])
 

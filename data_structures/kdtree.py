@@ -1,8 +1,8 @@
 import heapq
 import itertools
 import math
-from functools import wraps
-from typing import Callable, Any
+
+import numpy as np
 
 
 class Node(object):
@@ -117,21 +117,6 @@ class Node(object):
         return id(self)
 
 
-def require_axis(f):
-    """ Check if the object of the function has axis and sel_axis members """
-
-    @wraps(f)
-    def _wrapper(self, *args, **kwargs):
-        if None in (self.axis, self.sel_axis):
-            raise ValueError('%(func_name) requires the node %(node)s '
-                             'to have an axis and a sel_axis function' %
-                             dict(func_name=f.__name__, node=repr(self)))
-
-        return f(self, *args, **kwargs)
-
-    return _wrapper
-
-
 class KDNode(Node):
     """ A Node that contains kd-tree specific data and methods """
 
@@ -155,7 +140,6 @@ class KDNode(Node):
         self.sel_axis = sel_axis
         self.dimensions = dimensions
 
-    @require_axis
     def add(self, point):
         """
         Adds a point to the current node or iteratively
@@ -184,7 +168,6 @@ class KDNode(Node):
                 else:
                     current = current.right
 
-    @require_axis
     def create_subnode(self, data):
         """ Creates a subnode for the current node """
 
@@ -193,7 +176,6 @@ class KDNode(Node):
                               sel_axis=self.sel_axis,
                               dimensions=self.dimensions)
 
-    @require_axis
     def find_replacement(self):
         """
         Finds a replacement for the current node
@@ -215,7 +197,6 @@ class KDNode(Node):
 
         return (node is None) or (node is self)
 
-    @require_axis
     def remove(self, point, node=None):
         """ Removes the node with the given point from the tree
 
@@ -251,7 +232,6 @@ class KDNode(Node):
 
         return self
 
-    @require_axis
     def _remove(self, point):
         # we have reached the node to be deleted here
 
@@ -310,15 +290,18 @@ class KDNode(Node):
         """
         return math.pow(self.data[axis] - point[axis], 2)
 
-    def dist(self, point):
+    def dist(self, point) -> float:
         """
         Squared distance between the current Node
         and the given point
         """
+        if self.dimensions == 2:
+            return (self.data[0] - point[0])**2 + (self.data[1] - point[1])**2
+
         r = range(self.dimensions)
         return sum([self.axis_dist(point, i) for i in r])
 
-    def search_knn(self, point, k, dist=None, filter_func: Callable[[Any, Any], bool] = lambda origin, dest: True):
+    def search_knn(self, point, k, dist=None):
         """ Return the k nearest neighbors of point and their distances
 
         point must be an actual point, not a node.
@@ -343,7 +326,7 @@ class KDNode(Node):
 
         results = []
 
-        self._search_node(point, k, results, get_dist, itertools.count(), filter_func=filter_func)
+        self._search_node(point, k, results, get_dist, itertools.count())
 
         # We sort the final result by the distance in the tuple
         # (<KdNode>, distance).
@@ -354,8 +337,7 @@ class KDNode(Node):
                      k,
                      results,
                      get_dist,
-                     counter,
-                     filter_func: Callable[[Any, Any], bool] = lambda origin, dest: True):
+                     counter):
         if not self:
             return
 
@@ -367,14 +349,13 @@ class KDNode(Node):
         # If the heap is at its capacity, we need to check if the
         # current node is closer than the current farthest node, and if
         # so, replace it.
-        if filter_func(point, self.data):
-            item = (-nodeDist, next(counter), self)
+        item = (-nodeDist, next(counter), self)
 
-            if len(results) >= k:
-                if -nodeDist > results[0][0]:
-                    heapq.heapreplace(results, item)
-            else:
-                heapq.heappush(results, item)
+        if len(results) >= k:
+            if -nodeDist > results[0][0]:
+                heapq.heapreplace(results, item)
+        else:
+            heapq.heappush(results, item)
 
         # get the splitting plane
         split_plane = self.data[self.axis]
@@ -387,10 +368,10 @@ class KDNode(Node):
         # Search the side of the splitting plane that the point is in
         if point[self.axis] < split_plane:
             if self.left is not None:
-                self.left._search_node(point, k, results, get_dist, counter, filter_func=filter_func)
+                self.left._search_node(point, k, results, get_dist, counter)
         else:
             if self.right is not None:
-                self.right._search_node(point, k, results, get_dist, counter, filter_func=filter_func)
+                self.right._search_node(point, k, results, get_dist, counter)
 
         # Search the other side of the splitting plane if it may contain
         # points closer than the farthest point in the current results.
@@ -398,13 +379,12 @@ class KDNode(Node):
             if point[self.axis] < self.data[self.axis]:
                 if self.right is not None:
                     self.right._search_node(point, k, results, get_dist,
-                                            counter, filter_func=filter_func)
+                                            counter)
             else:
                 if self.left is not None:
                     self.left._search_node(point, k, results, get_dist,
-                                           counter, filter_func=filter_func)
+                                           counter)
 
-    @require_axis
     def search_nn(self, point, dist=None):
         """
         Search the nearest node of the given point
@@ -419,6 +399,21 @@ class KDNode(Node):
         The result is a (node, distance) tuple.
         """
         return next(iter(self.search_knn(point, 1, dist)), None)
+
+    def get_nn_dist(self, point, dist=None) -> float:
+        """
+        Find the distance to the closest point that is not equal to the provided point.
+        """
+        iterable = iter(self.search_knn(point, 2, dist))
+        result = next(iterable, None)
+        if result is not None:
+            if result[1] == 0:
+                result = next(iterable, None)
+
+        if result is None:
+            return 0.0
+
+        return np.sqrt(result[1])
 
     def _search_nn_dist(self, point, dist, results, get_dist):
         if not self:
@@ -440,7 +435,6 @@ class KDNode(Node):
             if self.right is not None:
                 self.right._search_nn_dist(point, dist, results, get_dist)
 
-    @require_axis
     def search_nn_dist(self, point, distance, best=None):
         """
         Search the n nearest nodes of the given point which are within given
@@ -456,7 +450,6 @@ class KDNode(Node):
         self._search_nn_dist(point, distance, results, get_dist)
         return results
 
-    @require_axis
     def is_valid(self):
         """ Checks recursively if the tree is valid
 

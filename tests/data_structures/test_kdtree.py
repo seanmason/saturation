@@ -177,25 +177,6 @@ def test_search_knn():
     assert result[2][1] == all_dist[2][1]
 
 
-def test_search_knn_with_filter():
-    tree = KDNode(
-        data=(100, 100, 1.2345),
-        sel_axis=lambda prev_axis: (prev_axis + 1) % 2,
-        axis=0,
-        dimensions=2
-    )
-    tree.add((50, 50, 0.05))
-    tree.add((101, 101, 1.05))
-    tree.add((102, 102, 1.10))
-    tree.add((103, 103, 1.20))
-
-    result = tree.search_knn((105, 105), 1, filter_func=lambda origin, dest: dest[2] < 1)
-    assert [x[0].data[0] for x in result] == [50]
-
-    result = tree.search_knn((105, 105), 2, filter_func=lambda origin, dest: dest[2] > 1)
-    assert [x[0].data[0] for x in result] == [103, 102]
-
-
 def test_search_nn():
     points = list(islice(random_points(), 0, 10))
     tree = kdtree.create(points)
@@ -246,6 +227,18 @@ def test_search_nn3():
     nn, dist = tree.search_nn(point)
     best, best_dist = find_best(tree, point)
     assert best_dist == dist
+
+
+def test_get_nn_dist():
+    points = [
+        (1, 1),
+        (2, 2),
+        (3.1, 3.1)
+    ]
+    tree = kdtree.create(points)
+
+    dist = tree.get_nn_dist((1, 2))
+    assert dist == 1
 
 
 def test_search_nn_dist():
