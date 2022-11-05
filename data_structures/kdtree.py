@@ -1,6 +1,13 @@
+"""
+Heavily adapted from https://github.com/stefankoegl/kdtree
+"""
+
 import heapq
 import itertools
 import math
+import sys
+from collections import deque
+from typing import Tuple, Iterable
 
 import numpy as np
 
@@ -45,18 +52,8 @@ class Node(object):
     def children(self):
         """
         Returns an iterator for the non-empty children of the Node
-
         The children are returned as (Node, pos) tuples where pos is 0 for the
         left subnode and 1 for the right.
-
-        >>> len(list(create(dimensions=2).children))
-        0
-
-        >>> len(list(create([ (1, 2) ]).children))
-        0
-
-        >>> len(list(create([ (2, 2), (2, 1), (2, 3) ]).children))
-        2
         """
 
         if self.left and self.left.data is not None:
@@ -78,15 +75,6 @@ class Node(object):
         """
         Returns height of the (sub)tree, without considering
         empty leaf-nodes
-
-        >>> create(dimensions=2).height()
-        0
-
-        >>> create([ (1, 2) ]).height()
-        1
-
-        >>> create([ (1, 2), (2, 3) ]).height()
-        2
         """
 
         min_height = int(bool(self))
@@ -315,7 +303,6 @@ class KDNode(Node):
 
         The result is an ordered list of (node, distance) tuples.
         """
-
         if k < 1:
             raise ValueError("k must be greater than 0.")
 
@@ -331,6 +318,79 @@ class KDNode(Node):
         # We sort the final result by the distance in the tuple
         # (<KdNode>, distance).
         return [(node, -d) for d, _, node in sorted(results, reverse=True)]
+
+    def get_mean_nn_distance(self, points: Iterable[Tuple]) -> float:
+        """
+        Returns the mean nearest neighbor distance of all the supplied points.
+        Assumes that the supplied points are already in the tree.
+        """
+        result = 0.0
+        counter = 0
+
+        for point in points:
+            root = self
+            node_stack = deque()
+            closest_dist = np.inf
+
+            while True:
+                while root is not None and root.data is not None:
+                    # Update the closest squared distance if necessary
+                    dist = root.dist(point)
+                    if dist < closest_dist and dist != 0.0:
+                        closest_dist = dist
+
+                    split_plane = root.data[root.axis]
+
+                    if point[root.axis] < split_plane:
+                        new_node = root.right
+                        new_root = root.left
+                    else:
+                        new_node = root.left
+                        new_root = root.right
+
+                    if new_node is not None and new_node.data is not None:
+                        node_stack.append(new_node)
+
+                    node_stack.append(root)
+                    root = new_root
+
+                # Get the leaf node
+                root = node_stack.pop()
+
+                # get the squared distance between the point and the splitting plane
+                # (squared since all distances are squared).
+                split_plane = root.data[root.axis]
+                plane_dist = point[root.axis] - split_plane
+                plane_dist2 = plane_dist * plane_dist
+
+                # Search the other side of the splitting plane if it may contain
+                # points closer than the farthest point in the current results.
+                new_node = None
+                if plane_dist2 < closest_dist:
+                    if point[root.axis] < root.data[root.axis]:
+                        new_node = root.right
+                    else:
+                        new_node = root.left
+
+                if new_node is not None and new_node.data is not None and node_stack and node_stack[-1] == new_node:
+                    node_stack.pop()
+                    node_stack.append(root)
+                    root = new_node
+                else:
+                    # Update the closest squared distance if necessary
+                    dist = root.dist(point)
+                    if dist < closest_dist and dist != 0.0:
+                        closest_dist = dist
+
+                    root = None
+
+                if not node_stack:
+                    break
+
+            result += np.sqrt(closest_dist)
+            counter += 1
+
+        return result / counter
 
     def _search_node(self,
                      point,

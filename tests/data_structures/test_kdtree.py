@@ -9,6 +9,10 @@ from data_structures import kdtree
 from data_structures.kdtree import KDNode
 
 
+def dist_2d(point1, point2):
+    return np.sqrt((point1[0] - point2[0])**2 + (point1[1] - point2[1])**2)
+
+
 def random_tree(nodes=20):
     points = list(islice(random_points(), 0, nodes))
     tree = kdtree.create(points)
@@ -227,6 +231,17 @@ def test_search_nn3():
     nn, dist = tree.search_nn(point)
     best, best_dist = find_best(tree, point)
     assert best_dist == dist
+
+
+def test_get_mean_nn_distance():
+    points = list(islice(random_points(dimensions=2), 0, 100))
+    tree = kdtree.create(point_list=points, dimensions=2)
+
+    for point in points:
+        expected = min([dist_2d(x, point) for x in points if x != point])
+
+        actual = tree.get_mean_nn_distance([point])
+        assert actual == expected
 
 
 def test_get_nn_dist():

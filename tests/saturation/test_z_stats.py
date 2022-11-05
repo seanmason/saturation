@@ -1,4 +1,3 @@
-import numpy as np
 from numpy.testing import assert_almost_equal
 
 from saturation.z_stats import calculate_z_statistic, calculate_za_statistic
