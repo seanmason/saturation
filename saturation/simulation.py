@@ -49,6 +49,85 @@ class StatisticsRow:
     za: float
 
 
+class StatisticsWriter:
+    def __init__(self, output_path: str):
+        self._outfile = open(f"{output_path}/statistics.csv", "w")
+        self._outfile.write("crater_id,n_craters_added_in_study_region,n_craters_in_study_region,areal_density,z,za\n")
+
+    def write_row(self,
+                  crater_id: int,
+                  n_craters_added_in_study_region: int,
+                  n_craters_in_study_region: int,
+                  areal_density: float,
+                  z: float,
+                  za: float) -> None:
+        self._outfile.write(f"{crater_id},{n_craters_added_in_study_region},{n_craters_in_study_region},{areal_density},{z},{za}\n")
+
+    def close(self):
+        self._outfile.close()
+
+
+class RemovalsWriter:
+    def __init__(self, output_path: str):
+        self._outfile = open(f"{output_path}/removals.csv", "w")
+        self._outfile.write("crater_id,removed_by_id\n")
+
+    def write_row(self, crater_id: int, removed_by_id: int) -> None:
+        self._outfile.write(f"{crater_id},{removed_by_id}\n")
+
+    def close(self):
+        self._outfile.close()
+
+
+class CratersWriter:
+    def __init__(self, output_path: str):
+        self._outfile = open(f"{output_path}/all_craters.csv", "w")
+        self._outfile.write("crater_id,n_craters_added_in_study_region,n_craters_in_study_region,areal_density,z,za\n")
+
+    def write_row(self,
+                  crater_id: int,
+                  x: float,
+                  y: float,
+                  radius: float) -> None:
+        self._outfile.write(f"{crater_id},{x},{y},{radius}\n")
+
+    def close(self):
+        self._outfile.close()
+
+
+class StateSnapshotWriter:
+    def __init__(self, output_path: str):
+        self._output_path = output_path
+
+    def write_state_snapshot(self,
+                             crater_record: CraterRecord,
+                             last_crater: Crater,
+                             n_craters_current: int) -> None:
+        state_rows = []
+        for report_crater in crater_record.all_craters_in_record:
+            state_rows.append(StateRow(
+                last_crater_id=last_crater.id,
+                n_craters_added_in_study_region=n_craters_current,
+                crater_id=report_crater.id,
+                x=report_crater.x,
+                y=report_crater.y,
+                radius=report_crater.radius,
+                erased_rim_segments=list(crater_record.get_erased_rim_segments(report_crater.id)),
+                rim_percent_remaining=crater_record.get_remaining_rim_percent(report_crater.id)
+            ))
+
+        state_filename = f'{self._output_path}/state_{n_craters_current}.parquet'
+        pd.DataFrame(state_rows).to_parquet(state_filename, index=False)
+
+
+class StopCondition:
+    def __init__(self, n_craters: int):
+        self._n_craters = n_craters
+
+    def should_stop(self, statistics_rows: List[StatisticsRow]) -> bool:
+        return statistics_rows and statistics_rows[-1].n_craters_added_in_study_region == self._n_craters
+
+
 def get_crater_location() -> np.array:
     """
     Returns an (x, y) crater location, uniformly distributed on [0, 1]
@@ -76,14 +155,14 @@ def get_craters(size_distribution: ProbabilityDistribution,
 
 
 def run_simulation(crater_generator: Iterable[Crater],
-                   n_craters: int,
                    r_stat: float,
                    r_stat_multiplier: float,
                    min_rim_percentage: float,
                    effective_radius_multiplier: float,
                    study_region_size: int,
                    study_region_padding: int,
-                   output_path: str):
+                   output_path: str,
+                   stop_condition: StopCondition):
     """
     Runs a simulation.
     Writes several output files to the output directory:
@@ -94,7 +173,6 @@ def run_simulation(crater_generator: Iterable[Crater],
     - Sample output images of the study region, as PNGs.
 
     :param crater_generator: Crater generator.
-    :param n_craters: Number of craters above r_stat to generate.
     :param r_stat: Minimum crater radius for statistics
     :param r_stat_multiplier: r_stat multiplier
     :param min_rim_percentage: Minimum rim percentage for a crater to remain in the record.
@@ -102,12 +180,16 @@ def run_simulation(crater_generator: Iterable[Crater],
     :param study_region_size: Size of the study region.
     :param study_region_padding: Padding around the edges of the study region.
     :param output_path: Path to the output directory.
+    :param stop_condition: Determines if the simulation should stop.
     """
     output_image_cadence = 50
 
     statistics_rows = []
-    removals_rows = []
-    all_craters_rows = []
+
+    statistics_writer = StatisticsWriter(output_path)
+    removals_writer = RemovalsWriter(output_path)
+    craters_writer = CratersWriter(output_path)
+    state_snapshot_writer = StateSnapshotWriter(output_path)
 
     study_region_area = study_region_size ** 2
 
@@ -126,25 +208,24 @@ def run_simulation(crater_generator: Iterable[Crater],
     for crater in crater_generator:
         n_craters_current = crater_record.n_craters_added_in_study_region
 
-        all_craters_rows.append(CraterRow(
+        craters_writer.write_row(
             crater_id=crater.id,
             x=crater.x,
             y=crater.y,
             radius=crater.radius
-        ))
-
+        )
         removed_craters = crater_record.add(crater)
 
         areal_density_calculator.add_crater(crater)
         if removed_craters:
             areal_density_calculator.remove_craters(removed_craters)
 
-            # Save removals
+            # Write removals
             for removed in removed_craters:
-                removals_rows.append(RemovalRow(
+                removals_writer.write_row(
                     crater_id=removed.id,
                     removed_by_id=crater.id
-                ))
+                )
 
         # Only perform updates if the study region crater count ticked up
         if last_n_craters != n_craters_current:
@@ -164,6 +245,14 @@ def run_simulation(crater_generator: Iterable[Crater],
                 za = np.nan
 
             # Save stats
+            statistics_writer.write_row(
+                crater_id=crater.id,
+                n_craters_added_in_study_region=n_craters_current,
+                n_craters_in_study_region=crater_record.n_craters_in_study_region,
+                areal_density=areal_density,
+                z=z,
+                za=za
+            )
             statistics_rows.append(StatisticsRow(
                 crater_id=crater.id,
                 n_craters_added_in_study_region=n_craters_current,
@@ -173,31 +262,15 @@ def run_simulation(crater_generator: Iterable[Crater],
                 za=za
             ))
 
-            # Save state snapshot
-            state_rows = []
-            for report_crater in crater_record.all_craters_in_record:
-                state_rows.append(StateRow(
-                    last_crater_id=crater.id,
-                    n_craters_added_in_study_region=n_craters_current,
-                    crater_id=report_crater.id,
-                    x=report_crater.x,
-                    y=report_crater.y,
-                    radius=report_crater.radius,
-                    erased_rim_segments=list(crater_record.get_erased_rim_segments(report_crater.id)),
-                    rim_percent_remaining=crater_record.get_remaining_rim_percent(report_crater.id)
-                ))
-
-            state_filename = f'{output_path}/state_{n_craters_current}.parquet'
-            pd.DataFrame(state_rows).to_parquet(state_filename, index=False)
+            state_snapshot_writer.write_state_snapshot(crater_record, crater, n_craters_current)
 
             if n_craters_current % output_image_cadence == 0:
                 png_name = f'{output_path}/study_region_{n_craters_current}.png'
                 save_study_region(areal_density_calculator, png_name)
 
-        # Exit if we have generated our target number of craters.
-        if n_craters_current == n_craters:
+        if stop_condition.should_stop(statistics_rows):
             break
 
-    pd.DataFrame(statistics_rows).to_csv(f'{output_path}/statistics.csv', index=False)
-    pd.DataFrame(removals_rows).to_csv(f'{output_path}/removals.csv', index=False)
-    pd.DataFrame(all_craters_rows).to_csv(f'{output_path}/all_craters.csv', index=False)
+    statistics_writer.close()
+    removals_writer.close()
+    craters_writer.close()

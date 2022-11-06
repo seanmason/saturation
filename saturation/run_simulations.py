@@ -9,7 +9,7 @@ import yaml
 import traceback
 
 from saturation.distributions import ParetoProbabilityDistribution
-from saturation.simulation import run_simulation, get_craters
+from saturation.simulation import run_simulation, get_craters, StopCondition
 
 
 @dataclass(frozen=True, kw_only=True)
@@ -26,6 +26,22 @@ class SimulationConfig:
     min_crater_radius: float
     max_crater_radius: float
     n_craters: int
+
+    def to_dict(self) -> Dict:
+        return {
+            "simulation_name": self.simulation_name,
+            "simulation_id": self.simulation_id,
+            "output_path": self.output_path,
+            "slope": self.slope,
+            "r_stat_multiplier": self.r_stat_multiplier,
+            "min_rim_percentage": self.min_rim_percentage,
+            "effective_radius_multiplier": self.effective_radius_multiplier,
+            "study_region_size": self.study_region_size,
+            "study_region_padding": self.study_region_padding,
+            "min_crater_radius": self.min_crater_radius,
+            "max_crater_radius": self.max_crater_radius,
+            "n_craters": self.n_craters
+        }
 
 
 def run_single_simulation(config: SimulationConfig):
@@ -52,15 +68,24 @@ def run_single_simulation(config: SimulationConfig):
 
         path = Path(config.output_path)
         path.mkdir(parents=True, exist_ok=True)
+        # Write out the config file
+        with open(f'{config.output_path}/config.yaml', 'w') as config_output:
+            yaml.dump(config.to_dict(), config_output)
+
+        stop_condition = StopCondition(config.n_craters)
         run_simulation(crater_generator,
-                       config.n_craters,
                        r_stat,
                        config.r_stat_multiplier,
                        config.min_rim_percentage,
                        config.effective_radius_multiplier,
                        config.study_region_size,
                        config.study_region_padding,
-                       config.output_path)
+                       config.output_path,
+                       stop_condition)
+
+        # Write out the completion file.
+        with open(f'{config.output_path}/completed.txt', 'w'):
+            pass
     except:
         traceback.print_exc()
 
