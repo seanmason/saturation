@@ -233,8 +233,19 @@ def test_search_nn3():
     assert best_dist == dist
 
 
+def test_get_mean_nn_distance_iterative():
+    points = list(islice(random_points(dimensions=2), 0, 1000))
+    tree = kdtree.create(point_list=points, dimensions=2)
+
+    for point in points:
+        expected = min([dist_2d(x, point) for x in points if x != point])
+
+        actual = tree.get_mean_nn_distance_iterative([point])
+        assert actual == expected
+
+
 def test_get_mean_nn_distance():
-    points = list(islice(random_points(dimensions=2), 0, 100))
+    points = list(islice(random_points(dimensions=2, minval=-10000, maxval=10000), 0, 1000))
     tree = kdtree.create(point_list=points, dimensions=2)
 
     for point in points:

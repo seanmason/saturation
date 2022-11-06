@@ -33,7 +33,12 @@ def run_single_simulation(config: SimulationConfig):
     start_time = datetime.datetime.now()
 
     try:
-        np.random.seed(hash(config) % 2**32)
+        seed = hash((config.simulation_id,
+                     config.slope,
+                     config.r_stat_multiplier,
+                     config.effective_radius_multiplier,
+                     config.min_rim_percentage)) % 2**32
+        np.random.seed(seed)
 
         r_stat = config.r_stat_multiplier * config.min_crater_radius
 
@@ -104,12 +109,16 @@ def main(config_filename: str):
     n_workers = config['n_workers']
     simulation_configs = get_simulation_configs(config)
 
-    with multiprocessing.Pool(processes=n_workers) as pool:
-        for simulation_config in simulation_configs:
-            pool.apply_async(run_single_simulation, (simulation_config, ))
+    if n_workers > 1:
+        with multiprocessing.Pool(processes=n_workers) as pool:
+            for simulation_config in simulation_configs:
+                pool.apply_async(run_single_simulation, (simulation_config, ))
 
-        pool.close()
-        pool.join()
+            pool.close()
+            pool.join()
+    else:
+        for simulation_config in simulation_configs:
+            run_single_simulation(simulation_config)
 
 
 if __name__ == '__main__':

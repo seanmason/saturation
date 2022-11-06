@@ -193,7 +193,7 @@ def test_get_mean_nearest_neighbor_distance_empty_from():
     result = record.get_mean_nearest_neighbor_distance()
 
     # Assert
-    assert np.isnan(result)
+    assert result == 0.0
 
 
 def test_nearest_neighbor_single_from_and_to():

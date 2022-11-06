@@ -284,7 +284,9 @@ class KDNode(Node):
         and the given point
         """
         if self.dimensions == 2:
-            return (self.data[0] - point[0])**2 + (self.data[1] - point[1])**2
+            x = self.data[0] - point[0]
+            y = self.data[1] - point[1]
+            return x * x + y * y
 
         r = range(self.dimensions)
         return sum([self.axis_dist(point, i) for i in r])
@@ -320,6 +322,19 @@ class KDNode(Node):
         return [(node, -d) for d, _, node in sorted(results, reverse=True)]
 
     def get_mean_nn_distance(self, points: Iterable[Tuple]) -> float:
+        result = 0.0
+        counter = 0
+
+        for point in points:
+            result += self.get_nn_dist(point)
+            counter += 1
+
+        if counter == 0:
+            return 0.0
+
+        return result / counter
+
+    def get_mean_nn_distance_iterative(self, points: Iterable[Tuple]) -> float:
         """
         Returns the mean nearest neighbor distance of all the supplied points.
         Assumes that the supplied points are already in the tree.
@@ -354,7 +369,6 @@ class KDNode(Node):
                     node_stack.append(root)
                     root = new_root
 
-                # Get the leaf node
                 root = node_stack.pop()
 
                 # get the squared distance between the point and the splitting plane
@@ -389,6 +403,9 @@ class KDNode(Node):
 
             result += np.sqrt(closest_dist)
             counter += 1
+
+        if counter == 0:
+            return 0.0
 
         return result / counter
 

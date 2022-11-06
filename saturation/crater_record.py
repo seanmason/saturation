@@ -30,7 +30,7 @@ class CraterDictionary(object):
         return crater_id in self._craters
 
     def __iter__(self) -> Iterable[Crater]:
-        return (x for x in self._craters.values())
+        return iter(self._craters.values())
 
     def __len__(self):
         return len(self._craters)
@@ -83,10 +83,6 @@ class CraterRecord(object):
     def n_craters_in_study_region(self) -> int:
         return len(self._craters_in_study_region)
 
-    @staticmethod
-    def _get_distance(crater1: Crater, crater2: Crater) -> float:
-        return np.sqrt((crater1.x - crater2.x) ** 2 + (crater1.y - crater2.y) ** 2)
-
     def get_mean_nearest_neighbor_distance(self) -> float:
         return self._nearest_neighbors.get_mean_nearest_neighbor_distance(self._craters_in_study_region)
 
@@ -97,7 +93,10 @@ class CraterRecord(object):
         effective_radius = new_crater.radius * self._effective_radius_multiplier
 
         for existing_crater in self._all_craters_in_record:
-            distance = self._get_distance(new_crater, existing_crater)
+            x = new_crater.x - existing_crater.x
+            y = new_crater.y - existing_crater.y
+            distance = math.sqrt(x * x + y * y)
+
             if distance < existing_crater.radius + effective_radius:
                 # Craters that may overlap
                 if distance > existing_crater.radius - effective_radius:
@@ -155,14 +154,16 @@ class CraterRecord(object):
     def _remove_craters_with_destroyed_rims(self) -> List[Crater]:
         removed_craters = []
 
-        for crater in list(self._all_craters_in_record):
+        for crater in self._all_craters_in_record:
             remaining_rim_percentage = self.get_remaining_rim_percent(crater.id)
             if remaining_rim_percentage < self._min_rim_percentage:
                 removed_craters.append(crater)
-                del self._erased_arcs[crater.id]
-                self._all_craters_in_record.remove(crater)
-                if crater.id in self._craters_in_study_region:
-                    self._craters_in_study_region.remove(crater)
+
+        for crater in removed_craters:
+            del self._erased_arcs[crater.id]
+            self._all_craters_in_record.remove(crater)
+            if crater.id in self._craters_in_study_region:
+                self._craters_in_study_region.remove(crater)
 
         return removed_craters
 

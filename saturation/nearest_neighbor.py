@@ -1,3 +1,4 @@
+from statistics import mean
 from typing import Optional, Iterable
 
 import numpy as np
@@ -33,11 +34,10 @@ class NearestNeighbor:
 
     def remove(self, crater: Crater):
         point = (crater.x, crater.y)
-        self._tree.remove(point)
+        self._tree = self._tree.remove(point)
 
     def get_mean_nearest_neighbor_distance(self, craters: Iterable[Crater]) -> float:
         if self._tree is None:
             return 0.0
 
-        return np.mean([self._tree.get_nn_dist((crater.x, crater.y))
-                        for crater in craters])
+        return self._tree.get_mean_nn_distance(((crater.x, crater.y, crater.id, crater.radius) for crater in craters))
