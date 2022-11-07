@@ -1,5 +1,6 @@
 import datetime
 import multiprocessing
+import os
 import sys
 from dataclasses import dataclass
 from pathlib import Path
@@ -10,6 +11,7 @@ import traceback
 
 from saturation.distributions import ParetoProbabilityDistribution
 from saturation.simulation import run_simulation, get_craters, StopCondition
+from saturation.stop_conditions import CraterCountAndArealDensityStopCondition, NCratersStopCondition
 
 
 @dataclass(frozen=True, kw_only=True)
@@ -25,7 +27,7 @@ class SimulationConfig:
     study_region_padding: int
     min_crater_radius: float
     max_crater_radius: float
-    n_craters: int
+    stop_condition: Dict
 
     def to_dict(self) -> Dict:
         return {
@@ -40,12 +42,25 @@ class SimulationConfig:
             "study_region_padding": self.study_region_padding,
             "min_crater_radius": self.min_crater_radius,
             "max_crater_radius": self.max_crater_radius,
-            "n_craters": self.n_craters
+            "stop_condition": self.stop_condition
         }
+
+
+def get_stop_condition(stop_condition_config: Dict):
+    name = stop_condition_config["name"]
+    if name == "crater_count_and_areal_density":
+        return CraterCountAndArealDensityStopCondition()
+    elif name == "n_craters":
+        return NCratersStopCondition(stop_condition_config["n_craters"])
 
 
 def run_single_simulation(config: SimulationConfig):
     print(f'Starting simulation {config.simulation_name}')
+    # Check if we should skip the run
+    if os.path.exists(f"{config.output_path}/completed.txt"):
+        print(f'Found completion file for {config.simulation_name}, skipping...')
+        return
+
     start_time = datetime.datetime.now()
 
     try:
@@ -72,7 +87,7 @@ def run_single_simulation(config: SimulationConfig):
         with open(f'{config.output_path}/config.yaml', 'w') as config_output:
             yaml.dump(config.to_dict(), config_output)
 
-        stop_condition = StopCondition(config.n_craters)
+        stop_condition = get_stop_condition(config.stop_condition)
         run_simulation(crater_generator,
                        r_stat,
                        config.r_stat_multiplier,
@@ -121,7 +136,7 @@ def get_simulation_configs(config: Dict) -> List[SimulationConfig]:
                 study_region_padding=values['study_region_padding'],
                 min_crater_radius=values['min_crater_radius'],
                 max_crater_radius=values['max_crater_radius'],
-                n_craters=values['n_craters']
+                stop_condition=values['stop_condition']
             ))
 
     return result

@@ -1,5 +1,5 @@
-n_workers: 3
-output_path: /home/mason/full_runs/python/functionality_testing
+n_workers: 15
+output_path: /home/mason/full_runs/python/stop_condition_testing
 
 run_configurations:
   - 1.00_3.00_0.40_1.50:
@@ -11,5 +11,33 @@ run_configurations:
       study_region_padding: 1250
       min_crater_radius: 2.5
       max_crater_radius: 2500
-      n_craters: 500
-      n_simulations: 3
+      stop_condition:
+        name: crater_count_and_areal_density
+      n_simulations: 5
+
+  - 2.00_5.00_0.60_1.90:
+        slope: 2.00
+        r_stat_multiplier: 5.00
+        min_rim_percentage: 0.60
+        effective_radius_multiplier: 1.90
+        study_region_size: 10000
+        study_region_padding: 1250
+        min_crater_radius: 2.5
+        max_crater_radius: 2500
+        stop_condition:
+          name: crater_count_and_areal_density
+        n_simulations: 5
+
+
+  - 3.00_3.00_0.60_1.10:
+        slope: 3.00
+        r_stat_multiplier: 3.00
+        min_rim_percentage: 0.60
+        effective_radius_multiplier: 1.10
+        study_region_size: 10000
+        study_region_padding: 1250
+        min_crater_radius: 2.5
+        max_crater_radius: 2500
+        stop_condition:
+          name: crater_count_and_areal_density
+        n_simulations: 5
