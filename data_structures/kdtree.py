@@ -7,7 +7,7 @@ import itertools
 import math
 import sys
 from collections import deque
-from typing import Tuple, Iterable
+from typing import Tuple, Iterable, Optional
 
 import numpy as np
 
@@ -413,7 +413,7 @@ class KDNode(Node):
                 result = next(iterable, None)
 
         if result is None:
-            return 0.0
+            return np.nan
 
         return np.sqrt(result[1])
 

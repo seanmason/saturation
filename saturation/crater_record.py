@@ -155,7 +155,7 @@ class CraterRecord(object):
         removed_craters = []
 
         for crater in self._all_craters_in_record:
-            remaining_rim_percentage = self.get_remaining_rim_percent(crater.id)
+            remaining_rim_percentage = self._remaining_rim_percentages.get(crater.id, 1.0)
             if remaining_rim_percentage < self._min_rim_percentage:
                 removed_craters.append(crater)
 
@@ -189,8 +189,7 @@ class CraterRecord(object):
 
         removed = self._remove_craters_with_destroyed_rims()
         if removed:
-            for crater in removed:
-                self._nearest_neighbors.remove(crater)
+            self._nearest_neighbors.remove(removed)
 
         return removed
 
