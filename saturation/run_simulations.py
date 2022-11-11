@@ -10,7 +10,7 @@ import yaml
 import traceback
 
 from saturation.distributions import ParetoProbabilityDistribution
-from saturation.simulation import run_simulation, get_craters, StopCondition
+from saturation.simulation import run_simulation, get_craters
 from saturation.stop_conditions import CraterCountAndArealDensityStopCondition, NCratersStopCondition
 
 
