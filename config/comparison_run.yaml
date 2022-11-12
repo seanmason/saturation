@@ -1,5 +1,7 @@
 n_workers: 1
 output_path: /home/mason/full_runs/python/stop_condition_testing
+write_state: False
+write_images: False
 
 run_configurations:
 #  - 1.00_3.00_0.40_1.50_comparison:
@@ -15,7 +17,7 @@ run_configurations:
 #        name: crater_count_and_areal_density
 #      n_simulations: 1
 
-  - 2.00_5.00_0.60_1.90_comparison_profile:
+  - 2.00_5.00_0.60_1.90_comparison:
         slope: 2.00
         r_stat_multiplier: 5.00
         min_rim_percentage: 0.60

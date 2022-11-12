@@ -7,7 +7,7 @@ import itertools
 import math
 import sys
 from collections import deque
-from typing import Tuple, Iterable, Optional
+from typing import Tuple, Iterable, Optional, Any
 
 import numpy as np
 
@@ -269,7 +269,7 @@ class KDNode(Node):
         """
         Returns the (possibly new) root of the rebalanced tree
         """
-        return create([x.data for x in self.inorder()])
+        return create([x.data for x in self.inorder()], dimensions=self.dimensions)
 
     def axis_dist(self, point, axis):
         """
@@ -320,19 +320,6 @@ class KDNode(Node):
         # We sort the final result by the distance in the tuple
         # (<KdNode>, distance).
         return [(node, -d) for d, _, node in sorted(results, reverse=True)]
-
-    def get_mean_nn_distance(self, points: Iterable[Tuple]) -> float:
-        result = 0.0
-        counter = 0
-
-        for point in points:
-            result += self.get_nn_dist(point)
-            counter += 1
-
-        if counter == 0:
-            return 0.0
-
-        return result / counter
 
     def _search_node(self,
                      point,
@@ -402,20 +389,20 @@ class KDNode(Node):
         """
         return next(iter(self.search_knn(point, 1, dist)), None)
 
-    def get_nn_dist(self, point, dist=None) -> float:
+    def get_nn_dist(self, point, dist=None) -> Tuple[Any, float]:
         """
         Find the distance to the closest point that is not equal to the provided point.
         """
         iterable = iter(self.search_knn(point, 2, dist))
         result = next(iterable, None)
         if result is not None:
-            if result[1] == 0:
+            if result[0] == point:
                 result = next(iterable, None)
 
         if result is None:
-            return np.nan
+            return None, np.nan
 
-        return np.sqrt(result[1])
+        return result[0].data, np.sqrt(result[1])
 
     def _search_nn_dist(self, point, dist, results, get_dist):
         if not self:
@@ -424,7 +411,7 @@ class KDNode(Node):
         nodeDist = get_dist(self)
 
         if nodeDist < dist:
-            results.append(self.data)
+            results.append((self.data, math.sqrt(nodeDist)))
 
         # get the splitting plane
         split_plane = self.data[self.axis]
@@ -449,7 +436,7 @@ class KDNode(Node):
         results = []
         get_dist = lambda n: n.dist(point)
 
-        self._search_nn_dist(point, distance, results, get_dist)
+        self._search_nn_dist(point, distance * distance, results, get_dist)
         return results
 
     def is_valid(self):

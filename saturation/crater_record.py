@@ -7,7 +7,7 @@ import numpy as np
 from saturation.geometry import get_intersection_arc, normalize_arcs, SortedArcList, merge_arcs, \
     get_study_region_boundary_intersection_arc
 from saturation.datatypes import Crater, Arc
-from saturation.nearest_neighbor import NearestNeighbor
+from saturation.distances import Distances
 
 
 class CraterDictionary(object):
@@ -59,7 +59,7 @@ class CraterRecord(object):
         self._max_x = study_region_size + study_region_padding - 1
         self._max_y = study_region_size + study_region_padding - 1
 
-        self._nearest_neighbors = NearestNeighbor()
+        self._distances = Distances(max_search_distance=(study_region_size + 2 * study_region_padding) * 1.5)
 
         # Contains all craters with r > r_stat, may be outside the study region
         self._all_craters_in_record = CraterDictionary()
@@ -84,24 +84,7 @@ class CraterRecord(object):
         return len(self._craters_in_study_region)
 
     def get_mean_nearest_neighbor_distance(self) -> float:
-        return self._nearest_neighbors.get_mean_nearest_neighbor_distance(self._craters_in_study_region)
-
-    def _get_craters_with_overlapping_rims(self, new_crater: Crater) -> Iterable[Crater]:
-        """"
-        Returns a list of crater IDs that may be affected by the addition of new_crater
-        """
-        effective_radius = new_crater.radius * self._effective_radius_multiplier
-
-        for existing_crater in self._all_craters_in_record:
-            x = new_crater.x - existing_crater.x
-            y = new_crater.y - existing_crater.y
-            distance = math.sqrt(x * x + y * y)
-
-            if distance < existing_crater.radius + effective_radius:
-                # Craters that may overlap
-                if distance > existing_crater.radius - effective_radius:
-                    # The new crater's rim is not entirely within the existing crater's bowl
-                    yield existing_crater
+        return self._distances.get_mean_nearest_neighbor_distance(self._craters_in_study_region)
 
     def _update_rim_arcs(self, new_crater: Crater):
         new_x = new_crater.x
@@ -131,8 +114,13 @@ class CraterRecord(object):
                                                                        - 2 * np.pi + initial_rim_radians)
                                                                       / initial_rim_radians)
 
-        craters_in_range = self._get_craters_with_overlapping_rims(new_crater)
+        craters_in_range = self._distances.get_craters_with_overlapping_rims(new_x,
+                                                                             new_y,
+                                                                             effective_radius)
         for old_crater in craters_in_range:
+            if old_crater == new_crater:
+                continue
+
             # For a new crater to affect an old crater, (new crater radius) > (old crater radius) / r_stat_multiplier
             if new_crater.radius > old_crater.radius / self._r_stat_multiplier:
                 arc = get_intersection_arc((old_crater.x, old_crater.y),
@@ -176,7 +164,7 @@ class CraterRecord(object):
         self._all_craters.add(crater)
 
         if crater.radius >= self._r_stat:
-            self._nearest_neighbors.add(crater)
+            self._distances.add(crater)
 
         self._update_rim_arcs(crater)
 
@@ -189,7 +177,7 @@ class CraterRecord(object):
 
         removed = self._remove_craters_with_destroyed_rims()
         if removed:
-            self._nearest_neighbors.remove(removed)
+            self._distances.remove(removed)
 
         return removed
 

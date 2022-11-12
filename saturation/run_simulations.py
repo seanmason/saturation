@@ -28,6 +28,8 @@ class SimulationConfig:
     min_crater_radius: float
     max_crater_radius: float
     stop_condition: Dict
+    write_state: bool
+    write_images: bool
 
     def to_dict(self) -> Dict:
         return {
@@ -42,7 +44,9 @@ class SimulationConfig:
             "study_region_padding": self.study_region_padding,
             "min_crater_radius": self.min_crater_radius,
             "max_crater_radius": self.max_crater_radius,
-            "stop_condition": self.stop_condition
+            "stop_condition": self.stop_condition,
+            "write_state": self.write_state,
+            "write_images": self.write_images
         }
 
 
@@ -96,7 +100,9 @@ def run_single_simulation(config: SimulationConfig):
                        config.study_region_size,
                        config.study_region_padding,
                        config.output_path,
-                       stop_condition)
+                       stop_condition,
+                       config.write_state,
+                       config.write_images)
 
         # Write out the completion file.
         with open(f'{config.output_path}/completed.txt', 'w'):
@@ -114,6 +120,8 @@ def get_simulation_configs(config: Dict) -> List[SimulationConfig]:
     creates a set of SimulationConfigs, one per run.
     """
     base_output_path = config['output_path']
+    write_state = config['write_state']
+    write_images = config['write_images']
 
     result = []
     for sim_group_config in config['run_configurations']:
@@ -136,7 +144,9 @@ def get_simulation_configs(config: Dict) -> List[SimulationConfig]:
                 study_region_padding=values['study_region_padding'],
                 min_crater_radius=values['min_crater_radius'],
                 max_crater_radius=values['max_crater_radius'],
-                stop_condition=values['stop_condition']
+                stop_condition=values['stop_condition'],
+                write_state=write_state,
+                write_images=write_images
             ))
 
     return result
