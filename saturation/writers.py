@@ -1,10 +1,10 @@
 from dataclasses import dataclass
-from typing import NamedTuple, List
+from typing import NamedTuple
 
 import pandas as pd
 
 from saturation.crater_record import CraterRecord
-from saturation.datatypes import Crater, Arc
+from saturation.datatypes import Crater
 
 
 class StateRow(NamedTuple):
@@ -14,7 +14,6 @@ class StateRow(NamedTuple):
     x: float
     y: float
     radius: float
-    erased_rim_segments: List[Arc]
     rim_percent_remaining: float
 
 
@@ -92,7 +91,6 @@ class StateSnapshotWriter:
                 x=report_crater.x,
                 y=report_crater.y,
                 radius=report_crater.radius,
-                erased_rim_segments=list(crater_record.get_erased_rim_segments(report_crater.id)),
                 rim_percent_remaining=crater_record.get_remaining_rim_percent(report_crater.id)
             ))
 
