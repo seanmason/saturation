@@ -1,27 +1,8 @@
 import math
 from collections import defaultdict
-from dataclasses import dataclass
 from typing import Set, Tuple, Dict, List, Iterable, Optional
 
 from saturation.datatypes import Crater
-
-
-@dataclass(kw_only=True, frozen=True)
-class IntPoint:
-    x: int
-    y: int
-
-
-@dataclass(kw_only=True, frozen=True)
-class FloatPoint:
-    x: float
-    y: float
-
-
-@dataclass(kw_only=True, frozen=True)
-class BoundingBox:
-    min_point: FloatPoint
-    max_point: FloatPoint
 
 
 class SpatialHash:
@@ -33,44 +14,36 @@ class SpatialHash:
         self._max_search_distance = max_search_distance
 
         # Tracking of crater rims
-        self._rim_contents: Dict[IntPoint, Set[Crater]] = defaultdict(lambda: set())
+        self._rim_contents: Dict[Tuple[int, int], Set[Crater]] = defaultdict(lambda: set())
         self._buckets_for_crater_rims: Dict[Crater, List[Set[Crater]]] = defaultdict(lambda: [])
 
         # Tracking of crater centers
-        self._center_contents: Dict[IntPoint, Set[Crater]] = defaultdict(lambda: set())
+        self._center_contents: Dict[Tuple[int, int], Set[Crater]] = defaultdict(lambda: set())
         self._buckets_for_crater_centers: Dict[Crater, Set[Crater]] = dict()
 
-    def _hash(self, point: FloatPoint) -> IntPoint:
-        return IntPoint(
-            x=int(point.x / self._cell_size),
-            y=int(point.y / self._cell_size)
-        )
+    def _hash(self, x: float, y: float) -> Tuple[int, int]:
+        return int(x / self._cell_size), int(y / self._cell_size)
 
-    @staticmethod
-    def _get_bounding_box(x: float, y: float, radius: float) -> BoundingBox:
-        return BoundingBox(
-            min_point=FloatPoint(x=x - radius, y=y - radius),
-            max_point=FloatPoint(x=x + radius, y=y + radius)
-        )
+    def _get_hash_min_and_max(self, x: float, y: float, radius: float) -> Tuple[Tuple[int, int], Tuple[int, int]]:
+        return self._hash(x - radius, y - radius), self._hash(x + radius, y + radius)
 
     def _add_to_crater_rims(self, crater: Crater):
-        box = self._get_bounding_box(crater.x, crater.y, crater.radius)
-        min_point, max_point = self._hash(box.min_point), self._hash(box.max_point)
+        min_point, max_point = self._get_hash_min_and_max(crater.x, crater.y, crater.radius)
 
         buckets = []
 
         # iterate over the rectangular region
-        for i in range(min_point.x, max_point.x + 1):
-            for j in range(min_point.y, max_point.y + 1):
+        for i in range(min_point[0], max_point[0] + 1):
+            for j in range(min_point[1], max_point[1] + 1):
                 # append to each intersecting cell
-                bucket = self._rim_contents[IntPoint(x=i, y=j)]
+                bucket = self._rim_contents[(i, j)]
                 buckets.append(bucket)
                 bucket.add(crater)
 
         self._buckets_for_crater_rims[crater] = buckets
 
     def _add_to_crater_centers(self, crater: Crater):
-        point = self._hash(FloatPoint(x=crater.x, y=crater.y))
+        point = self._hash(crater.x, crater.y)
         bucket = self._center_contents[point]
         bucket.add(crater)
         self._buckets_for_crater_centers[crater] = bucket
@@ -97,15 +70,14 @@ class SpatialHash:
         """
         Returns overlapping craters.
         """
-        box = self._get_bounding_box(x, y, radius)
-        min_point, max_point = self._hash(box.min_point), self._hash(box.max_point)
+        min_point, max_point = self._get_hash_min_and_max(x, y, radius)
 
         results: Set[Crater] = set()
 
         # iterate over the rectangular region
-        for i in range(min_point.x, max_point.x + 1):
-            for j in range(min_point.y, max_point.y + 1):
-                candidates = self._rim_contents.get(IntPoint(x=i, y=j), set())
+        for i in range(min_point[0], max_point[0] + 1):
+            for j in range(min_point[1], max_point[1] + 1):
+                candidates = self._rim_contents.get((i, j), set())
 
                 for crater in candidates:
                     x_diff = crater.x - x
@@ -124,15 +96,14 @@ class SpatialHash:
                                                x: float,
                                                y: float,
                                                radius: float) -> Iterable[Tuple[Crater, float]]:
-        box = self._get_bounding_box(x, y, radius)
-        min_point, max_point = self._hash(box.min_point), self._hash(box.max_point)
+        min_point, max_point = self._get_hash_min_and_max(x, y, radius)
 
         results: Set[Tuple[Crater, float]] = set()
 
         # iterate over the rectangular region
-        for i in range(min_point.x, max_point.x + 1):
-            for j in range(min_point.y, max_point.y + 1):
-                candidates = self._center_contents.get(IntPoint(x=i, y=j), set())
+        for i in range(min_point[0], max_point[0] + 1):
+            for j in range(min_point[1], max_point[1] + 1):
+                candidates = self._center_contents.get((i, j), set())
 
                 for crater in candidates:
                     x_diff = crater.x - x

@@ -11,7 +11,7 @@ class Distances:
     MAX_SEARCH_DISTANCE = 15000
 
     def __init__(self, max_search_distance: float):
-        self._spatial_hash: SpatialHash = SpatialHash(200, max_search_distance)
+        self._spatial_hash: SpatialHash = SpatialHash(100, max_search_distance)
 
         self._all_craters: Dict[int, Crater] = dict()
 

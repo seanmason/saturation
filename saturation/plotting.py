@@ -61,7 +61,7 @@ def plot_crater_record(crater_record: CraterRecord,
     ax.set_ylim([study_region_padding, study_region_size + 1])
 
     # Plot craters
-    for crater in crater_record.all_craters:
+    for crater in crater_record.all_craters_in_record:
         plot_circle((crater.x, crater.y), crater.radius, ax)
 
     # Plot erased rim arcs

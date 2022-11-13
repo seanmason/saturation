@@ -30,6 +30,7 @@ class SimulationConfig:
     stop_condition: Dict
     write_state: bool
     write_images: bool
+    write_all_craters: bool
 
     def to_dict(self) -> Dict:
         return {
@@ -46,7 +47,8 @@ class SimulationConfig:
             "max_crater_radius": self.max_crater_radius,
             "stop_condition": self.stop_condition,
             "write_state": self.write_state,
-            "write_images": self.write_images
+            "write_images": self.write_images,
+            "write_all_craters": self.write_all_craters
         }
 
 
@@ -102,7 +104,8 @@ def run_single_simulation(config: SimulationConfig):
                        config.output_path,
                        stop_condition,
                        config.write_state,
-                       config.write_images)
+                       config.write_images,
+                       config.write_all_craters)
 
         # Write out the completion file.
         with open(f'{config.output_path}/completed.txt', 'w'):
@@ -122,6 +125,7 @@ def get_simulation_configs(config: Dict) -> List[SimulationConfig]:
     base_output_path = config['output_path']
     write_state = config['write_state']
     write_images = config['write_images']
+    write_all_craters = config['write_all_craters']
 
     result = []
     for sim_group_config in config['run_configurations']:
@@ -146,7 +150,8 @@ def get_simulation_configs(config: Dict) -> List[SimulationConfig]:
                 max_crater_radius=values['max_crater_radius'],
                 stop_condition=values['stop_condition'],
                 write_state=write_state,
-                write_images=write_images
+                write_images=write_images,
+                write_all_craters=write_all_craters
             ))
 
     return result

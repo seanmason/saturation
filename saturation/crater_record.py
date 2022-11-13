@@ -68,12 +68,13 @@ class CraterRecord(object):
         self._craters_in_study_region = CraterDictionary()
 
         # Contains all craters, even those below r_stat and those outside the study region
-        self._all_craters = CraterDictionary()
         self._n_craters_added_in_study_region = 0
 
         self._erased_arcs = defaultdict(lambda: SortedArcList())
         self._remaining_rim_percentages: Dict[int, float] = dict()
         self._initial_rim_radians = defaultdict(lambda: math.pi * 2)
+
+        self._craters_to_remove: List[Crater] = []
 
     @property
     def n_craters_added_in_study_region(self) -> int:
@@ -110,9 +111,12 @@ class CraterRecord(object):
                 initial_rim_radians = 2 * np.pi - sum([x[1] - x[0] for x in merged_arcs])
                 self._initial_rim_radians[new_crater.id] = initial_rim_radians
 
-                self._remaining_rim_percentages[new_crater.id] = 1 - ((sum((x[1] - x[0] for x in merged_arcs))
-                                                                       - 2 * np.pi + initial_rim_radians)
-                                                                      / initial_rim_radians)
+                remaining_percentage = 1 - ((sum((x[1] - x[0] for x in merged_arcs))
+                                             - 2 * np.pi + initial_rim_radians) / initial_rim_radians)
+                self._remaining_rim_percentages[new_crater.id] = remaining_percentage
+
+                if remaining_percentage < self._min_rim_percentage:
+                    self._craters_to_remove.append(new_crater)
 
         craters_in_range = self._distances.get_craters_with_overlapping_rims(new_x,
                                                                              new_y,
@@ -135,25 +139,24 @@ class CraterRecord(object):
 
                 initial_rim_radians = self._initial_rim_radians[old_crater.id]
 
-                self._remaining_rim_percentages[old_crater.id] = 1 - ((sum((x[1] - x[0] for x in merged_arcs))
-                                                                       - 2 * np.pi + initial_rim_radians)
-                                                                      / initial_rim_radians)
+                remaining_rim_percentage = 1 - ((sum((x[1] - x[0] for x in merged_arcs))
+                                                 - 2 * np.pi + initial_rim_radians) / initial_rim_radians)
+                self._remaining_rim_percentages[old_crater.id] = remaining_rim_percentage
+
+                if remaining_rim_percentage < self._min_rim_percentage:
+                    self._craters_to_remove.append(old_crater)
 
     def _remove_craters_with_destroyed_rims(self) -> List[Crater]:
-        removed_craters = []
-
-        for crater in self._all_craters_in_record:
-            remaining_rim_percentage = self._remaining_rim_percentages.get(crater.id, 1.0)
-            if remaining_rim_percentage < self._min_rim_percentage:
-                removed_craters.append(crater)
-
-        for crater in removed_craters:
+        for crater in self._craters_to_remove:
             del self._erased_arcs[crater.id]
             self._all_craters_in_record.remove(crater)
+            del self._remaining_rim_percentages[crater.id]
             if crater.id in self._craters_in_study_region:
                 self._craters_in_study_region.remove(crater)
 
-        return removed_craters
+        result = self._craters_to_remove
+        self._craters_to_remove = []
+        return result
 
     def add(self, crater: Crater) -> List[Crater]:
         """
@@ -161,8 +164,6 @@ class CraterRecord(object):
         :param crater: New crater to be added.
         :return: A list of craters that were erased as a result of the addition.
         """
-        self._all_craters.add(crater)
-
         if crater.radius >= self._r_stat:
             self._distances.add(crater)
 
@@ -185,14 +186,7 @@ class CraterRecord(object):
         """
         Returns the crater with the specified id.
         """
-        return self._all_craters[crater_id]
-
-    @property
-    def all_craters(self) -> List[Crater]:
-        """
-        Returns a list of all craters ever seen.
-        """
-        return list(self._all_craters)
+        return self._all_craters_in_record[crater_id]
 
     @property
     def all_craters_in_record(self) -> List[Crater]:

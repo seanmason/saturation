@@ -51,7 +51,8 @@ def run_simulation(crater_generator: Iterable[Crater],
                    output_path: str,
                    stop_condition: StopCondition,
                    write_state: bool,
-                   write_images: bool):
+                   write_images: bool,
+                   write_all_craters: bool):
     """
     Runs a simulation.
     Writes several output files to the output directory:
@@ -72,6 +73,7 @@ def run_simulation(crater_generator: Iterable[Crater],
     :param stop_condition: Determines if the simulation should stop.
     :param write_state: Flag to determine if state will be written.
     :param write_images: Flag to determine if images will be written.
+    :param write_all_craters: Flag to determine if all craters will be written to a csv.
     """
     output_image_cadence = 50
 
@@ -99,12 +101,14 @@ def run_simulation(crater_generator: Iterable[Crater],
     for crater in crater_generator:
         n_craters_current = crater_record.n_craters_added_in_study_region
 
-        craters_writer.write_row(
-            crater_id=crater.id,
-            x=crater.x,
-            y=crater.y,
-            radius=crater.radius
-        )
+        if write_all_craters:
+            craters_writer.write_row(
+                crater_id=crater.id,
+                x=crater.x,
+                y=crater.y,
+                radius=crater.radius
+            )
+
         removed_craters = crater_record.add(crater)
 
         areal_density_calculator.add_crater(crater)
@@ -160,8 +164,8 @@ def run_simulation(crater_generator: Iterable[Crater],
                 png_name = f'{output_path}/study_region_{n_craters_current}.png'
                 save_study_region(areal_density_calculator, png_name)
 
-        if stop_condition.should_stop(statistics_rows):
-            break
+            if stop_condition.should_stop(statistics_rows):
+                break
 
     statistics_writer.close()
     removals_writer.close()
