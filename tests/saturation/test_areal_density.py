@@ -1,5 +1,4 @@
 import numpy as np
-import pandas as pd
 from numpy.testing import assert_almost_equal
 
 from saturation.areal_density import ArealDensityCalculator

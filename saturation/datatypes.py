@@ -19,6 +19,12 @@ class Crater:
     y: float
     radius: float
 
+    def __hash__(self) -> int:
+        return self.id
+
+    def __eq__(self, other) -> bool:
+        return other.id == self.id
+
 
 class SortedArcList(SortedKeyList[Arc]):
     def __init__(self, iterable=None):
