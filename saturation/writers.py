@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import NamedTuple
+from typing import NamedTuple, List
 
 import pandas as pd
 
@@ -29,21 +29,21 @@ class StatisticsRow:
 
 class StatisticsWriter:
     def __init__(self, output_path: str):
-        self._outfile = open(f"{output_path}/statistics.csv", "w")
-        self._outfile.write("crater_id,n_craters_added_in_study_region,n_craters_in_study_region,areal_density,z,za\n")
+        self._output_filename = f"{output_path}/statistics.parquet"
 
-    def write_row(self,
-                  crater_id: int,
-                  n_craters_added_in_study_region: int,
-                  n_craters_in_study_region: int,
-                  areal_density: float,
-                  z: float,
-                  za: float) -> None:
-        self._outfile.write(f"{crater_id},{n_craters_added_in_study_region},{n_craters_in_study_region},"
-                            f"{areal_density},{z},{za}\n")
+    def write(self, statistics: List[StatisticsRow]) -> None:
+        out_df = pd.DataFrame(statistics)
+        out_df.crater_id = out_df.crater_id.astype('uint32')
+        out_df.n_craters_added_in_study_region = out_df.n_craters_added_in_study_region.astype('uint32')
+        out_df.n_craters_in_study_region = out_df.n_craters_in_study_region.astype('uint32')
+        out_df.areal_density = out_df.areal_density.astype('float32')
+        out_df.z = out_df.z.astype('float32')
+        out_df.za = out_df.za.astype('float32')
+
+        out_df.to_parquet(self._output_filename)
 
     def close(self):
-        self._outfile.close()
+        pass
 
 
 class RemovalsWriter:

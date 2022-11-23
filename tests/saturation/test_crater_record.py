@@ -215,7 +215,7 @@ def test_nearest_neighbor_single_from_and_to():
     result = record.get_mean_nearest_neighbor_distance()
 
     # Assert
-    assert result == [100]
+    assert result == 100
 
 
 def test_nearest_neighbor_gets_shortest_distance_from_to_craters():
@@ -241,7 +241,7 @@ def test_nearest_neighbor_gets_shortest_distance_from_to_craters():
     result = record.get_mean_nearest_neighbor_distance()
 
     # Assert
-    assert result == [1]
+    assert result == 1
 
 
 def test_get_mean_nearest_neighbor_distance_is_shortest_distance_for_all_from_craters():

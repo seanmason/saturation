@@ -23,6 +23,7 @@ setup(name='saturation',
             'pillow',
             'pyarrow',
             'pyyaml',
-            'statsmodels'
+            'statsmodels',
+            'dask[distributed]'
       ]
       )

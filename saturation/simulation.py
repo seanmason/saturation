@@ -1,3 +1,4 @@
+import datetime
 from typing import Callable, Generator, Iterable
 
 import numpy as np
@@ -52,7 +53,8 @@ def run_simulation(crater_generator: Iterable[Crater],
                    stop_condition: StopCondition,
                    write_state: bool,
                    write_images: bool,
-                   write_all_craters: bool):
+                   write_all_craters: bool,
+                   write_removals: bool):
     """
     Runs a simulation.
     Writes several output files to the output directory:
@@ -73,8 +75,10 @@ def run_simulation(crater_generator: Iterable[Crater],
     :param stop_condition: Determines if the simulation should stop.
     :param write_state: Flag to determine if state will be written.
     :param write_images: Flag to determine if images will be written.
-    :param write_all_craters: Flag to determine if all craters will be written to a csv.
+    :param write_all_craters: Flag to determine if all craters will be written.
+    :param write_removals: Flag to determine removals will be written.
     """
+    start = datetime.datetime.now()
     output_image_cadence = 50
 
     statistics_rows = []
@@ -116,11 +120,12 @@ def run_simulation(crater_generator: Iterable[Crater],
             areal_density_calculator.remove_craters(removed_craters)
 
             # Write removals
-            for removed in removed_craters:
-                removals_writer.write_row(
-                    crater_id=removed.id,
-                    removed_by_id=crater.id
-                )
+            if write_removals:
+                for removed in removed_craters:
+                    removals_writer.write_row(
+                        crater_id=removed.id,
+                        removed_by_id=crater.id
+                    )
 
         # Only perform updates if the study region crater count ticked up
         if last_n_craters != n_craters_current:
@@ -140,14 +145,6 @@ def run_simulation(crater_generator: Iterable[Crater],
                 za = np.nan
 
             # Save stats
-            statistics_writer.write_row(
-                crater_id=crater.id,
-                n_craters_added_in_study_region=n_craters_current,
-                n_craters_in_study_region=crater_record.n_craters_in_study_region,
-                areal_density=areal_density,
-                z=z,
-                za=za
-            )
             statistics_rows.append(StatisticsRow(
                 crater_id=crater.id,
                 n_craters_added_in_study_region=n_craters_current,
@@ -166,6 +163,8 @@ def run_simulation(crater_generator: Iterable[Crater],
 
             if stop_condition.should_stop(statistics_rows):
                 break
+
+    statistics_writer.write(statistics_rows)
 
     statistics_writer.close()
     removals_writer.close()

@@ -66,7 +66,7 @@ class SpatialHash:
         self._buckets_for_crater_centers[crater].remove(crater)
         del self._buckets_for_crater_centers[crater]
 
-    def get_craters_with_intersecting_rims(self, x: float, y: float, radius: float) -> Set[Crater]:
+    def get_craters_with_intersecting_rims(self, x: float, y: float, radius: float) -> Iterable[Crater]:
         """
         Returns overlapping craters.
         """
@@ -80,6 +80,9 @@ class SpatialHash:
                 candidates = self._rim_contents.get((i, j), set())
 
                 for crater in candidates:
+                    if crater in results:
+                        continue
+
                     x_diff = crater.x - x
                     y_diff = crater.y - y
                     distance = math.sqrt(x_diff * x_diff + y_diff * y_diff)
@@ -88,9 +91,8 @@ class SpatialHash:
                         # Craters that may overlap
                         if distance > crater.radius - radius:
                             # The new crater's rim is not entirely within the existing crater's bowl
+                            yield crater
                             results.add(crater)
-
-        return results
 
     def get_craters_with_centers_within_radius(self,
                                                x: float,
@@ -98,7 +100,7 @@ class SpatialHash:
                                                radius: float) -> Iterable[Tuple[Crater, float]]:
         min_point, max_point = self._get_hash_min_and_max(x, y, radius)
 
-        results: Set[Tuple[Crater, float]] = set()
+        results: Set[Crater] = set()
 
         # iterate over the rectangular region
         for i in range(min_point[0], max_point[0] + 1):
@@ -106,33 +108,41 @@ class SpatialHash:
                 candidates = self._center_contents.get((i, j), set())
 
                 for crater in candidates:
+                    if crater in results:
+                        continue
+
                     x_diff = crater.x - x
                     y_diff = crater.y - y
                     distance = math.sqrt(x_diff * x_diff + y_diff * y_diff)
 
                     if distance < crater.radius + radius:
-                        results.add((crater, distance))
-
-        return results
+                        yield crater, distance
+                        results.add(crater)
 
     def get_nearest_neighbor(self, crater: Crater) -> Tuple[Optional[Crater], float]:
-        search_multiplier = 2
-        search_distance = self._cell_size // 2
+        search_multiplier = 1.2
+        search_distance = self._cell_size // 4
         nearest_crater = None
         closest_distance = self._max_search_distance
 
+        last_min_point = None
         while True:
-            for candidate, distance in self.get_craters_with_centers_within_radius(crater.x, crater.y, search_distance):
-                if distance != 0 and distance < closest_distance:
-                    nearest_crater = candidate
-                    closest_distance = distance
+            min_point, max_point = self._get_hash_min_and_max(crater.x, crater.y, search_distance)
+            if last_min_point != min_point:
+                for candidate, distance in self.get_craters_with_centers_within_radius(crater.x,
+                                                                                       crater.y,
+                                                                                       search_distance):
+                    if distance != 0 and distance < closest_distance:
+                        nearest_crater = candidate
+                        closest_distance = distance
 
-            if nearest_crater:
-                return nearest_crater, closest_distance
+                if nearest_crater:
+                    return nearest_crater, closest_distance
 
             if search_distance == self._max_search_distance:
                 break
 
+            last_min_point = min_point
             search_distance *= search_multiplier
             if search_distance > self._max_search_distance:
                 search_distance = self._max_search_distance

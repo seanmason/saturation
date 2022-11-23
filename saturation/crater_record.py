@@ -164,15 +164,16 @@ class CraterRecord(object):
         :param crater: New crater to be added.
         :return: A list of craters that were erased as a result of the addition.
         """
+        in_study_region = self._min_x <= crater.x <= self._max_x and self._min_y <= crater.y <= self._max_y
         if crater.radius >= self._r_stat:
-            self._distances.add(crater)
+            self._distances.add(crater, in_study_region)
 
         self._update_rim_arcs(crater)
 
         if crater.radius >= self._r_stat:
             self._all_craters_in_record.add(crater)
 
-            if self._min_x <= crater.x <= self._max_x and self._min_y <= crater.y <= self._max_y:
+            if in_study_region:
                 self._craters_in_study_region.add(crater)
                 self._n_craters_added_in_study_region += 1
 

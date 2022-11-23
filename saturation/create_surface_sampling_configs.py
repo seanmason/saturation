@@ -25,6 +25,7 @@ def create_corner_point_and_center_configs(config: Dict):
         "write_state": config["write_state"],
         "write_images": config["write_images"],
         "write_all_craters": config["write_all_craters"],
+        "write_removals": config["write_removals"],
         "run_configurations": run_configurations
     }
 
@@ -101,20 +102,20 @@ def create_interior_point_configs(config: Dict):
         "output_path": config["run_output_path"],
         "write_state": config["write_state"],
         "write_images": config["write_images"],
+        "write_removals": config["write_removals"],
         "write_all_craters": config["write_all_craters"],
         "run_configurations": run_configurations
     }
 
     parameters = config["parameters"]
 
-    # Add the center point
     for simulation_number in range(config["n_simulations_for_interior"]):
         if simulation_number != 0 and simulation_number % config["n_simulations_per_interior_config"] == 0:
             output_path = f"{config['config_output_path']}/interior_points_config_{simulation_number}.yaml"
             with open(output_path, 'w') as output_file:
                 yaml.dump(output_config, output_file)
 
-            run_configurations = []
+            run_configurations.clear()
 
         interior_parameters = []
         for parameter_dict in parameters:
@@ -128,7 +129,7 @@ def create_interior_point_configs(config: Dict):
         new_config_section = copy.deepcopy(config["base_config"])
         config_addition = {x[0]: x[1] for x in interior_parameters}
         new_config_section.update(config_addition)
-        name = "center_point_" + "_".join([f"{x[1]:.3f}" for x in interior_parameters])
+        name = "interior_point_" + "_".join([f"{x[1]:.3f}" for x in interior_parameters])
 
         run_configurations.append({
             name: new_config_section

@@ -26,7 +26,7 @@ def test_get_mean_nearest_neighbor_distance_single_pair():
         Crater(id=2, x=20, y=10, radius=10)
     ]
     for crater in craters:
-        nn.add(crater)
+        nn.add(crater, True)
 
     # Act
     dist = nn.get_mean_nearest_neighbor_distance(craters)
@@ -48,7 +48,7 @@ def test_get_mean_nearest_neighbor_distance_random_adds_and_deletes():
         for x, point in enumerate(points)
     ]
     for crater in craters:
-        nn.add(crater)
+        nn.add(crater, True)
 
     # Randomly remove some points
     to_remove = [craters[x] for x in np.random.choice(N_POINTS, N_POINTS // 2, replace=False)]
@@ -67,4 +67,4 @@ def test_get_mean_nearest_neighbor_distance_random_adds_and_deletes():
     ]
     expected = np.mean(results)
 
-    assert dist == expected
+    assert abs(dist - expected) < 0.0001
