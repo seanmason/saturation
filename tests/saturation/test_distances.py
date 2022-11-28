@@ -12,7 +12,7 @@ def test_get_all_nearest_neighbor_distances_no_craters():
     crater = Crater(id=1, x=10, y=10, radius=10)
 
     # Act
-    dist = nn.get_mean_nearest_neighbor_distance([crater])
+    dist = nn.get_mean_nearest_neighbor_distance()
 
     # Assert
     assert dist == 0.0
@@ -29,7 +29,7 @@ def test_get_mean_nearest_neighbor_distance_single_pair():
         nn.add(crater, True)
 
     # Act
-    dist = nn.get_mean_nearest_neighbor_distance(craters)
+    dist = nn.get_mean_nearest_neighbor_distance()
 
     # Assert
     assert dist == 10.0
@@ -56,7 +56,7 @@ def test_get_mean_nearest_neighbor_distance_random_adds_and_deletes():
 
     # Act
     reduced_set = [x for x in craters if x not in to_remove]
-    dist = nn.get_mean_nearest_neighbor_distance(reduced_set)
+    dist = nn.get_mean_nearest_neighbor_distance()
     print(f"Took {datetime.now() - start} seconds")
 
     # Assert

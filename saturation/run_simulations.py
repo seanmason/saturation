@@ -28,7 +28,7 @@ class SimulationConfig:
     min_crater_radius: float
     max_crater_radius: float
     stop_condition: Dict
-    write_state: bool
+    write_state_cadence: int
     write_images: bool
     write_all_craters: bool
     write_removals: bool
@@ -47,7 +47,7 @@ class SimulationConfig:
             "min_crater_radius": self.min_crater_radius,
             "max_crater_radius": self.max_crater_radius,
             "stop_condition": self.stop_condition,
-            "write_state": self.write_state,
+            "write_state_cadence": self.write_state_cadence,
             "write_images": self.write_images,
             "write_all_craters": self.write_all_craters,
             "write_removals": self.write_removals
@@ -105,19 +105,20 @@ def run_single_simulation(config: SimulationConfig):
                        config.study_region_padding,
                        config.output_path,
                        stop_condition,
-                       config.write_state,
+                       config.write_state_cadence,
                        config.write_images,
                        config.write_all_craters,
                        config.write_removals)
 
         # Write out the completion file.
-        with open(f'{config.output_path}/completed.txt', 'w'):
-            pass
+        with open(f'{config.output_path}/completed.txt', 'w') as completed_file:
+            completed_file.write(f'duration: {(datetime.datetime.now() - start_time).total_seconds():.2f}')
     except:
         traceback.print_exc()
 
     duration = datetime.datetime.now() - start_time
     print(f'Finished simulation {config.simulation_name}, duration (seconds): {duration.total_seconds():.2f}')
+    sys.stdout.flush()
 
 
 def get_simulation_configs(config: Dict) -> List[SimulationConfig]:
@@ -126,7 +127,7 @@ def get_simulation_configs(config: Dict) -> List[SimulationConfig]:
     creates a set of SimulationConfigs, one per run.
     """
     base_output_path = config['output_path']
-    write_state = config['write_state']
+    write_state_cadence = config['write_state_cadence']
     write_images = config['write_images']
     write_all_craters = config['write_all_craters']
     write_removals = config['write_removals']
@@ -153,7 +154,7 @@ def get_simulation_configs(config: Dict) -> List[SimulationConfig]:
                 min_crater_radius=values['min_crater_radius'],
                 max_crater_radius=values['max_crater_radius'],
                 stop_condition=values['stop_condition'],
-                write_state=write_state,
+                write_state_cadence=write_state_cadence,
                 write_images=write_images,
                 write_all_craters=write_all_craters,
                 write_removals=write_removals

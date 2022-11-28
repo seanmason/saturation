@@ -66,7 +66,7 @@ class SpatialHash:
         self._buckets_for_crater_centers[crater].remove(crater)
         del self._buckets_for_crater_centers[crater]
 
-    def get_craters_with_intersecting_rims(self, x: float, y: float, radius: float) -> Iterable[Crater]:
+    def get_craters_with_intersecting_rims(self, x: float, y: float, radius: float) -> Set[Crater]:
         """
         Returns overlapping craters.
         """
@@ -77,7 +77,9 @@ class SpatialHash:
         # iterate over the rectangular region
         for i in range(min_point[0], max_point[0] + 1):
             for j in range(min_point[1], max_point[1] + 1):
-                candidates = self._rim_contents.get((i, j), set())
+                candidates = self._rim_contents.get((i, j), None)
+                if not candidates:
+                    continue
 
                 for crater in candidates:
                     if crater in results:
@@ -91,21 +93,24 @@ class SpatialHash:
                         # Craters that may overlap
                         if distance > crater.radius - radius:
                             # The new crater's rim is not entirely within the existing crater's bowl
-                            yield crater
                             results.add(crater)
+
+        return results
 
     def get_craters_with_centers_within_radius(self,
                                                x: float,
                                                y: float,
-                                               radius: float) -> Iterable[Tuple[Crater, float]]:
+                                               radius: float) -> Set[Tuple[Crater, float]]:
         min_point, max_point = self._get_hash_min_and_max(x, y, radius)
 
-        results: Set[Crater] = set()
+        results: Set[Tuple[Crater, float]] = set()
 
         # iterate over the rectangular region
         for i in range(min_point[0], max_point[0] + 1):
             for j in range(min_point[1], max_point[1] + 1):
-                candidates = self._center_contents.get((i, j), set())
+                candidates = self._center_contents.get((i, j), None)
+                if not candidates:
+                    continue
 
                 for crater in candidates:
                     if crater in results:
@@ -116,8 +121,9 @@ class SpatialHash:
                     distance = math.sqrt(x_diff * x_diff + y_diff * y_diff)
 
                     if distance < crater.radius + radius:
-                        yield crater, distance
-                        results.add(crater)
+                        results.add((crater, distance))
+
+        return results
 
     def get_nearest_neighbor(self, crater: Crater) -> Tuple[Optional[Crater], float]:
         search_multiplier = 1.2

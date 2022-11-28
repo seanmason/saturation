@@ -8,13 +8,13 @@ from saturation.datatypes import Crater
 
 
 class StateRow(NamedTuple):
-    last_crater_id: int
-    n_craters_added_in_study_region: int
-    crater_id: int
-    x: float
-    y: float
+    # last_crater_id: int
+    # n_craters_added_in_study_region: int
+    # crater_id: int
+    # x: float
+    # y: float
     radius: float
-    rim_percent_remaining: float
+    # rim_percent_remaining: float
 
 
 @dataclass(frozen=True, kw_only=True)
@@ -85,14 +85,24 @@ class StateSnapshotWriter:
         state_rows = []
         for report_crater in crater_record.all_craters_in_record:
             state_rows.append(StateRow(
-                last_crater_id=last_crater.id,
-                n_craters_added_in_study_region=n_craters_current,
-                crater_id=report_crater.id,
-                x=report_crater.x,
-                y=report_crater.y,
+                # last_crater_id=last_crater.id,
+                # n_craters_added_in_study_region=n_craters_current,
+                # crater_id=report_crater.id,
+                # x=report_crater.x,
+                # y=report_crater.y,
                 radius=report_crater.radius,
-                rim_percent_remaining=crater_record.get_remaining_rim_percent(report_crater.id)
+                # rim_percent_remaining=crater_record.get_remaining_rim_percent(report_crater.id)
             ))
 
         state_filename = f'{self._output_path}/state_{n_craters_current}.parquet'
-        pd.DataFrame(state_rows).to_parquet(state_filename, index=False)
+        state_df = pd.DataFrame(state_rows)
+        state_df = state_df.astype({
+            # "last_crater_id": "uint32",
+            # "n_craters_added_in_study_region": "uint32",
+            # "crater_id": "uint32",
+            # "x": "uint32",
+            # "y": "uint32",
+            "radius": "float32",
+            # "rim_percent_remaining": "float32",
+        })
+        state_df.to_parquet(state_filename, index=False)

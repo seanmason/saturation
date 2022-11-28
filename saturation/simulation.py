@@ -51,7 +51,7 @@ def run_simulation(crater_generator: Iterable[Crater],
                    study_region_padding: int,
                    output_path: str,
                    stop_condition: StopCondition,
-                   write_state: bool,
+                   write_state_cadence: int,
                    write_images: bool,
                    write_all_craters: bool,
                    write_removals: bool):
@@ -73,7 +73,7 @@ def run_simulation(crater_generator: Iterable[Crater],
     :param study_region_padding: Padding around the edges of the study region.
     :param output_path: Path to the output directory.
     :param stop_condition: Determines if the simulation should stop.
-    :param write_state: Flag to determine if state will be written.
+    :param write_state_cadence: Write the state every n craters.
     :param write_images: Flag to determine if images will be written.
     :param write_all_craters: Flag to determine if all craters will be written.
     :param write_removals: Flag to determine removals will be written.
@@ -154,7 +154,7 @@ def run_simulation(crater_generator: Iterable[Crater],
                 za=za
             ))
 
-            if write_state:
+            if write_state_cadence != 0 and n_craters_current % write_state_cadence == 0:
                 state_snapshot_writer.write_state_snapshot(crater_record, crater, n_craters_current)
 
             if write_images and n_craters_current % output_image_cadence == 0:

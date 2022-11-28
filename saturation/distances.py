@@ -109,9 +109,8 @@ class Distances:
                                           radius: float) -> Iterable[Crater]:
         return self._spatial_hash.get_craters_with_intersecting_rims(x, y, radius)
 
-    def get_mean_nearest_neighbor_distance(self, craters: Iterable[Crater]) -> float:
+    def get_mean_nearest_neighbor_distance(self) -> float:
         if not self._nearest_neighbor_distances:
             return 0.0
 
-        # return np.mean([self._nearest_neighbor_distances[x.id] for x in craters])
         return self._total_tracked_nn_distances / self._total_tracked_nn_count

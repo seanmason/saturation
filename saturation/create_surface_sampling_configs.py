@@ -22,7 +22,7 @@ def create_corner_point_and_center_configs(config: Dict):
     output_config = {
         "n_workers": config["n_workers"],
         "output_path": config["run_output_path"],
-        "write_state": config["write_state"],
+        "write_state_cadence": config["write_state_cadence"],
         "write_images": config["write_images"],
         "write_all_craters": config["write_all_craters"],
         "write_removals": config["write_removals"],
@@ -100,7 +100,7 @@ def create_interior_point_configs(config: Dict):
     output_config = {
         "n_workers": config["n_workers"],
         "output_path": config["run_output_path"],
-        "write_state": config["write_state"],
+        "write_state_cadence": config["write_state_cadence"],
         "write_images": config["write_images"],
         "write_removals": config["write_removals"],
         "write_all_craters": config["write_all_craters"],

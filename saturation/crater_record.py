@@ -85,7 +85,7 @@ class CraterRecord(object):
         return len(self._craters_in_study_region)
 
     def get_mean_nearest_neighbor_distance(self) -> float:
-        return self._distances.get_mean_nearest_neighbor_distance(self._craters_in_study_region)
+        return self._distances.get_mean_nearest_neighbor_distance()
 
     def _update_rim_arcs(self, new_crater: Crater):
         new_x = new_crater.x
@@ -151,6 +151,8 @@ class CraterRecord(object):
             del self._erased_arcs[crater.id]
             self._all_craters_in_record.remove(crater)
             del self._remaining_rim_percentages[crater.id]
+            if crater.id in self._initial_rim_radians:
+                del self._initial_rim_radians[crater.id]
             if crater.id in self._craters_in_study_region:
                 self._craters_in_study_region.remove(crater)
 

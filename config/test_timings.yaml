@@ -1,6 +1,6 @@
 n_workers: 1
 output_path: /home/mason/full_runs/python/timing_comparison
-write_state: False
+write_state_cadence: 0
 write_images: False
 write_all_craters: False
 write_removals: False
@@ -9,7 +9,7 @@ run_configurations:
   - 3.00_3.00_0.30_1.10:
         slope: 3.00
         r_stat_multiplier: 3.00
-        min_rim_percentage: 0.30
+        min_rim_percentage: 0.40
         effective_radius_multiplier: 1.10
         study_region_size: 10000
         study_region_padding: 1250
