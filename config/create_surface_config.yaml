@@ -1,15 +1,15 @@
 random_seed: 123
-n_simulations_per_corner_point_and_center: 10
+n_simulations_per_corner_point_and_center: 1
 n_simulations_for_interior: 25000
 n_simulations_per_interior_config: 1000
 
 n_workers: 24
-config_output_path: /data/saturation/surface_runs_xl/config
-run_output_path: /data/saturation/surface_runs_xl
+config_output_path: /data/saturation/random_runs_large/config
+run_output_path: /data/saturation/random_runs_large
+
+write_statistics_cadence: 100000
 write_state_cadence: 0
-write_images: False
-write_all_craters: False
-write_removals: False
+write_image_cadence: 0
 
 base_config:
   study_region_size: 10000

@@ -4,7 +4,7 @@ from typing import List, Iterable, Dict
 
 import numpy as np
 
-from saturation.geometry import get_intersection_arc, normalize_arcs, SortedArcList, merge_arcs, \
+from saturation.geometry import get_intersection_arc, add_arc, \
     get_study_region_boundary_intersection_arc
 from saturation.datatypes import Crater, Arc
 from saturation.distances import Distances
@@ -70,7 +70,7 @@ class CraterRecord(object):
         # Contains all craters, even those below r_stat and those outside the study region
         self._n_craters_added_in_study_region = 0
 
-        self._erased_arcs = defaultdict(lambda: SortedArcList())
+        self._erased_arcs = defaultdict(lambda: [])
         self._remaining_rim_percentages: Dict[int, float] = dict()
         self._initial_rim_radians = defaultdict(lambda: math.pi * 2)
 
@@ -103,15 +103,13 @@ class CraterRecord(object):
                                                              self._study_region_size,
                                                              self._study_region_padding)
             if arc:
-                normalized_arcs = normalize_arcs([(arc[0], arc[1])])
-                self._erased_arcs[new_crater.id].update(normalized_arcs)
-                merged_arcs = merge_arcs(self._erased_arcs[new_crater.id])
-                self._erased_arcs[new_crater.id] = merged_arcs
+                erased_arcs = self._erased_arcs[new_crater.id]
+                add_arc(arc, erased_arcs)
 
-                initial_rim_radians = 2 * np.pi - sum([x[1] - x[0] for x in merged_arcs])
+                initial_rim_radians = 2 * np.pi - sum([x[1] - x[0] for x in erased_arcs])
                 self._initial_rim_radians[new_crater.id] = initial_rim_radians
 
-                remaining_percentage = 1 - ((sum((x[1] - x[0] for x in merged_arcs))
+                remaining_percentage = 1 - ((sum((x[1] - x[0] for x in erased_arcs))
                                              - 2 * np.pi + initial_rim_radians) / initial_rim_radians)
                 self._remaining_rim_percentages[new_crater.id] = remaining_percentage
 
@@ -132,14 +130,12 @@ class CraterRecord(object):
                                            (new_x, new_y),
                                            effective_radius)
 
-                normalized_arcs = normalize_arcs([(arc[0], arc[1])])
-                self._erased_arcs[old_crater.id].update(normalized_arcs)
-                merged_arcs = merge_arcs(self._erased_arcs[old_crater.id])
-                self._erased_arcs[old_crater.id] = merged_arcs
+                erased_arcs = self._erased_arcs[old_crater.id]
+                add_arc(arc, erased_arcs)
 
                 initial_rim_radians = self._initial_rim_radians[old_crater.id]
 
-                remaining_rim_percentage = 1 - ((sum((x[1] - x[0] for x in merged_arcs))
+                remaining_rim_percentage = 1 - ((sum((x[1] - x[0] for x in erased_arcs))
                                                  - 2 * np.pi + initial_rim_radians) / initial_rim_radians)
                 self._remaining_rim_percentages[old_crater.id] = remaining_rim_percentage
 
