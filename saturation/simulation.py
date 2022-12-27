@@ -120,11 +120,12 @@ def run_simulation(config: SimulationConfig):
                      config.min_rim_percentage)) % 2 ** 32
         np.random.seed(seed)
 
-        r_stat = config.r_stat_multiplier * config.min_crater_radius
+        # r_stat = config.r_stat_multiplier * config.min_crater_radius
+        r_stat = config.min_crater_radius
 
         full_region_size = config.study_region_size + 2 * config.study_region_padding
         size_distribution = ParetoProbabilityDistribution(cdf_slope=config.slope,
-                                                          x_min=config.min_crater_radius,
+                                                          x_min=config.min_crater_radius / config.r_stat_multiplier,
                                                           x_max=config.max_crater_radius)
         crater_generator = get_craters(size_distribution, full_region_size)
 

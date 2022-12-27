@@ -1,19 +1,20 @@
 n_workers: 1
-output_path: /data/saturation/comparison_runs/
-write_statistics_cadence: 10000
+output_path: /data/saturation/tests/test_timings_python_3.11_10x
+write_statistics_cadence: 1000
 write_state_cadence: 0
 write_image_cadence: 0
 
 run_configurations:
-  - foo:
-        effective_radius_multiplier: 1.348570464030293
-        min_rim_percentage: 0.4003923176960123
-        r_stat_multiplier: 6.376207449208685
-        slope: 1.3553712331722831
-        study_region_size: 10000
-        study_region_padding: 1250
-        min_crater_radius: 2.5
-        max_crater_radius: 2500
+  - test_timings:
+        effective_radius_multiplier: 1.5
+        min_rim_percentage: 0.4
+        r_stat_multiplier: 5.0
+        slope: 2.5
+        study_region_size: 1000000
+        study_region_padding: 12500
+        min_crater_radius: 25
+        max_crater_radius: 25000
         stop_condition:
-          name: crater_count_and_areal_density
+          name: n_craters
+          n_craters: 500000000
         n_simulations: 1

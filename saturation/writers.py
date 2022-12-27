@@ -17,7 +17,7 @@ class StateRow(NamedTuple):
     rim_percent_remaining: float
 
 
-@dataclass(frozen=True, kw_only=True)
+@dataclass(frozen=True, kw_only=True, slots=True)
 class StatisticsRow:
     crater_id: int
     n_craters_added_in_study_region: int

@@ -109,7 +109,7 @@ def create_interior_point_configs(config: Dict):
 
     for simulation_number in range(config["n_simulations_for_interior"]):
         if simulation_number != 0 and simulation_number % config["n_simulations_per_interior_config"] == 0:
-            output_path = f"{config['config_output_path']}/interior_points_config_{simulation_number}.yaml"
+            output_path = f"{config['config_output_path']}/interior_points_config_{simulation_number:07d}.yaml"
             with open(output_path, 'w') as output_file:
                 yaml.dump(output_config, output_file)
 
@@ -134,7 +134,7 @@ def create_interior_point_configs(config: Dict):
         })
 
     if run_configurations:
-        output_path = f"{config['config_output_path']}/interior_points_config_{config['n_simulations_for_interior']}.yaml"
+        output_path = f"{config['config_output_path']}/interior_points_config_{config['n_simulations_for_interior']:07d}.yaml"
         with open(output_path, 'w') as output_file:
             yaml.dump(output_config, output_file)
 

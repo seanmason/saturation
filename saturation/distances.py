@@ -1,7 +1,6 @@
 from collections import defaultdict
-from typing import Iterable, Dict, Set, Tuple
+from typing import Iterable, Dict, Set
 
-import numpy as np
 from sortedcontainers import SortedList
 
 from data_structures.spatial_hash import SpatialHash

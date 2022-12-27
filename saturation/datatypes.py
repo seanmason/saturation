@@ -10,7 +10,7 @@ Arc = Tuple[float, float]
 Location = Tuple[float, float]
 
 
-@dataclass(frozen=True, kw_only=True)
+@dataclass(frozen=True, kw_only=True, slots=True)
 class Crater:
     id: int
     x: float

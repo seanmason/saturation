@@ -32,7 +32,7 @@ class CraterCountAndArealDensityStopCondition(StopCondition):
     Stops the simulation when no new maximum crater count and areal density have been reached in one third of
     the simulation iterations.
     """
-    MIN_CRATERS = 15000
+    MIN_CRATERS = 100000
 
     def __init__(self):
         self._areal_density_high_points: Dict[int, float] = {0: 0.0}
@@ -54,7 +54,7 @@ class CraterCountAndArealDensityStopCondition(StopCondition):
         if self._counter < self.MIN_CRATERS:
             return False
 
-        checkpoint = self._counter // 3 * 2
+        checkpoint = self._counter // 2
         max_areal_density_before_checkpoint = self._areal_density_high_points[checkpoint]
         max_areal_density_after_checkpoint = self._areal_density_high_points[self._counter]
         max_n_craters_before_checkpoint = self._craters_in_study_region_high_points[checkpoint]

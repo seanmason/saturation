@@ -1,6 +1,6 @@
 import math
 from collections import defaultdict
-from typing import Set, Tuple, Dict, List, Iterable, Optional
+from typing import Set, Tuple, Dict, List, Optional
 
 from saturation.datatypes import Crater
 
@@ -24,7 +24,10 @@ class SpatialHash:
     def _hash(self, x: float, y: float) -> Tuple[int, int]:
         return int(x / self._cell_size), int(y / self._cell_size)
 
-    def _get_hash_min_and_max(self, x: float, y: float, radius: float) -> Tuple[Tuple[int, int], Tuple[int, int]]:
+    def _get_hash_min_and_max(self,
+                              x: float,
+                              y: float,
+                              radius: float) -> Tuple[Tuple[int, int], Tuple[int, int]]:
         return self._hash(x - radius, y - radius), self._hash(x + radius, y + radius)
 
     def _add_to_crater_rims(self, crater: Crater):

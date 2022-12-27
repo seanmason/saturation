@@ -18,7 +18,8 @@ def get_simulation_configs(config: Dict) -> List[SimulationConfig]:
     write_image_cadence = config['write_image_cadence']
 
     result = []
-    for sim_group_config in config['run_configurations']:
+    run_configurations = sorted(config['run_configurations'], key=lambda x: x[list(x.keys())[0]]["slope"], reverse=True)
+    for sim_group_config in run_configurations:
         simulation_group_name, values = list(sim_group_config.items())[0]
         n_simulations = values['n_simulations']
 
