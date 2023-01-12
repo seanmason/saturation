@@ -1,5 +1,5 @@
 from collections import defaultdict
-from typing import Iterable, Dict, Set
+from typing import Iterable, Dict, Set, Any, Tuple
 
 from sortedcontainers import SortedList
 
@@ -7,17 +7,30 @@ from data_structures.spatial_hash import SpatialHash
 from saturation.datatypes import Crater
 
 
-class Distances:
-    MAX_SEARCH_DISTANCE = 15000
+class BoundedSortedList(SortedList):
+    def __init__(self, capacity: int = 31):
+        super().__init__()
 
-    def __init__(self, max_search_distance: float):
-        self._spatial_hash: SpatialHash = SpatialHash(50, max_search_distance)
+        self._capacity = capacity
+
+    def add(self, item: Any):
+        if len(self) < self._capacity or item > self[0]:
+            super().add(item)
+
+            if len(self) > self._capacity:
+                del self[0]
+
+
+class Distances:
+    def __init__(self, cell_size: int, boundary_min: float, boundary_max: float):
+        self._max_search_distance = 1.5 * (boundary_max - boundary_min)
+        self._spatial_hash: SpatialHash = SpatialHash(cell_size, boundary_min, boundary_max)
 
         self._all_craters: Dict[int, Crater] = dict()
 
         # Mapping from crater ids to nearest distance
         self._nearest_neighbor_distances: Dict[int, float] = dict()
-        self._nearest_neighbor_distances_list: SortedList[float] = SortedList()
+        self._nearest_neighbor_distances_list = BoundedSortedList()
 
         self._tracked_nearest_neighbors: Set[Crater] = set()
         self._total_tracked_nn_distances: float = 0.0
@@ -46,7 +59,7 @@ class Distances:
                 self._total_tracked_nn_count += 1
 
         max_distance = self._nearest_neighbor_distances_list[-1] if self._nearest_neighbor_distances \
-            else self.MAX_SEARCH_DISTANCE
+            else self._max_search_distance
         candidates_and_distances = self._spatial_hash.get_craters_with_centers_within_radius(crater.x,
                                                                                              crater.y,
                                                                                              max_distance)
@@ -55,18 +68,15 @@ class Distances:
             if existing_crater == crater:
                 continue
 
-            old_distance = self._nearest_neighbor_distances.get(existing_crater.id, self.MAX_SEARCH_DISTANCE)
+            old_distance = self._nearest_neighbor_distances.get(existing_crater.id, self._max_search_distance)
             if new_distance < old_distance:
                 self._nearest_neighbor_distances[existing_crater.id] = new_distance
-                try:
-                    self._nearest_neighbor_distances_list.remove(old_distance)
-                except ValueError:
-                    pass
+                self._remove_from_nearest_neighbor_distances_list(old_distance)
 
                 self._nearest_neighbor_distances_list.add(new_distance)
                 self._nearest_neighbors_reverse_lookup[crater.id].add(existing_crater.id)
                 if existing_crater in self._tracked_nearest_neighbors:
-                    if old_distance != self.MAX_SEARCH_DISTANCE:
+                    if old_distance != self._max_search_distance:
                         self._total_tracked_nn_distances -= old_distance
                     else:
                         self._total_tracked_nn_count += 1
@@ -81,8 +91,9 @@ class Distances:
 
             self._spatial_hash.remove(crater)
             if crater.id in self._nearest_neighbor_distances:
-                self._nearest_neighbor_distances_list.remove(self._nearest_neighbor_distances[crater.id])
+                self._remove_from_nearest_neighbor_distances_list(self._nearest_neighbor_distances[crater.id])
                 del self._nearest_neighbor_distances[crater.id]
+
             del self._all_craters[crater.id]
 
         # Fix up affected neighbors' nearest neighbors
@@ -92,7 +103,7 @@ class Distances:
                     neighbor = self._all_craters[neighbor_id]
                     old_distance = self._nearest_neighbor_distances[neighbor_id]
                     node, distance = self._spatial_hash.get_nearest_neighbor(neighbor)
-                    self._nearest_neighbor_distances_list.remove(self._nearest_neighbor_distances[neighbor_id])
+                    self._remove_from_nearest_neighbor_distances_list(self._nearest_neighbor_distances[neighbor_id])
                     self._nearest_neighbor_distances[neighbor_id] = distance
                     self._nearest_neighbor_distances_list.add(distance)
 
@@ -108,8 +119,24 @@ class Distances:
                                           radius: float) -> Iterable[Crater]:
         return self._spatial_hash.get_craters_with_intersecting_rims(x, y, radius)
 
+    def get_nearest_neighbor(self, crater: Crater) -> Tuple[Crater, float]:
+        return self._spatial_hash.get_nearest_neighbor(crater)
+
     def get_mean_nearest_neighbor_distance(self) -> float:
         if not self._nearest_neighbor_distances:
             return 0.0
 
         return self._total_tracked_nn_distances / self._total_tracked_nn_count
+
+    def _remove_from_nearest_neighbor_distances_list(self, to_remove: Any):
+        """
+        If the nearest neighbor distances list is empty, repopulate it.
+        """
+        try:
+            self._nearest_neighbor_distances_list.remove(to_remove)
+        except ValueError:
+            pass
+
+        if not self._nearest_neighbor_distances_list:
+            for distance in self._nearest_neighbor_distances.values():
+                self._nearest_neighbor_distances_list.add(distance)

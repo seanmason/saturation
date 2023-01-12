@@ -43,6 +43,7 @@ def get_simulation_configs(config: Dict) -> List[SimulationConfig]:
                 write_statistics_cadence=write_statistics_cadence,
                 write_state_cadence=write_state_cadence,
                 write_image_cadence=write_image_cadence,
+                spatial_hash_cell_size=values['spatial_hash_cell_size'],
             ))
 
     return result

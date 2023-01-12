@@ -46,7 +46,8 @@ class CraterRecord(object):
                  min_rim_percentage: float,
                  effective_radius_multiplier: float,
                  study_region_size: int,
-                 study_region_padding: int):
+                 study_region_padding: int,
+                 cell_size: int):
         self._r_stat = r_stat
         self._r_stat_multiplier = r_stat_multiplier
         self._min_rim_percentage = min_rim_percentage
@@ -59,7 +60,11 @@ class CraterRecord(object):
         self._max_x = study_region_size + study_region_padding - 1
         self._max_y = study_region_size + study_region_padding - 1
 
-        self._distances = Distances(max_search_distance=(study_region_size + 2 * study_region_padding) * 1.5)
+        self._distances = Distances(
+            cell_size=cell_size,
+            boundary_min=0,
+            boundary_max=study_region_size + 2 * study_region_padding
+        )
 
         # Contains all craters with r > r_stat, may be outside the study region
         self._all_craters_in_record = CraterDictionary()
@@ -72,7 +77,6 @@ class CraterRecord(object):
 
         self._erased_arcs = defaultdict(lambda: [])
         self._remaining_rim_percentages: Dict[int, float] = dict()
-        self._initial_rim_radians = defaultdict(lambda: math.pi * 2)
 
         self._craters_to_remove: List[Crater] = []
 
@@ -92,29 +96,8 @@ class CraterRecord(object):
         new_y = new_crater.y
         effective_radius = new_crater.radius * self._effective_radius_multiplier
 
-        # If the new crater runs outside the study region, remove those portions of its rim.
-        lower_limit = self._study_region_padding
-        upper_limit = self._study_region_padding + self._study_region_size
-        if new_crater.radius >= self._r_stat \
-                and lower_limit <= new_x <= upper_limit \
-                and lower_limit <= new_y <= upper_limit:
-            arc = get_study_region_boundary_intersection_arc((new_x, new_y),
-                                                             new_crater.radius,
-                                                             self._study_region_size,
-                                                             self._study_region_padding)
-            if arc:
-                erased_arcs = self._erased_arcs[new_crater.id]
-                add_arc(arc, erased_arcs)
-
-                initial_rim_radians = 2 * np.pi - sum([x[1] - x[0] for x in erased_arcs])
-                self._initial_rim_radians[new_crater.id] = initial_rim_radians
-
-                remaining_percentage = 1 - ((sum((x[1] - x[0] for x in erased_arcs))
-                                             - 2 * np.pi + initial_rim_radians) / initial_rim_radians)
-                self._remaining_rim_percentages[new_crater.id] = remaining_percentage
-
-                if remaining_percentage < self._min_rim_percentage:
-                    self._craters_to_remove.append(new_crater)
+        if new_crater.radius >= self._r_stat:
+            self._remaining_rim_percentages[new_crater.id] = 1.
 
         craters_in_range = self._distances.get_craters_with_overlapping_rims(new_x,
                                                                              new_y,
@@ -124,7 +107,7 @@ class CraterRecord(object):
                 continue
 
             # For a new crater to affect an old crater, (new crater radius) > (old crater radius) / r_stat_multiplier
-            if new_crater.radius > old_crater.radius / self._r_stat_multiplier:
+            if new_crater.radius >= self._r_stat:
                 arc = get_intersection_arc((old_crater.x, old_crater.y),
                                            old_crater.radius,
                                            (new_x, new_y),
@@ -133,10 +116,7 @@ class CraterRecord(object):
                 erased_arcs = self._erased_arcs[old_crater.id]
                 add_arc(arc, erased_arcs)
 
-                initial_rim_radians = self._initial_rim_radians[old_crater.id]
-
-                remaining_rim_percentage = 1 - ((sum((x[1] - x[0] for x in erased_arcs))
-                                                 - 2 * np.pi + initial_rim_radians) / initial_rim_radians)
+                remaining_rim_percentage = 1 - sum((x[1] - x[0] for x in erased_arcs)) / (2 * math.pi)
                 self._remaining_rim_percentages[old_crater.id] = remaining_rim_percentage
 
                 if remaining_rim_percentage < self._min_rim_percentage:
@@ -147,8 +127,6 @@ class CraterRecord(object):
             del self._erased_arcs[crater.id]
             self._all_craters_in_record.remove(crater)
             del self._remaining_rim_percentages[crater.id]
-            if crater.id in self._initial_rim_radians:
-                del self._initial_rim_radians[crater.id]
             if crater.id in self._craters_in_study_region:
                 self._craters_in_study_region.remove(crater)
 

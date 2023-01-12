@@ -39,6 +39,7 @@ class SimulationConfig:
     write_statistics_cadence: int
     write_state_cadence: int
     write_image_cadence: int
+    spatial_hash_cell_size: int
 
     def to_dict(self) -> Dict:
         return {
@@ -57,6 +58,7 @@ class SimulationConfig:
             "write_statistics_cadence": self.write_statistics_cadence,
             "write_state_cadence": self.write_state_cadence,
             "write_image_cadence": self.write_image_cadence,
+            "spatial_hash_cell_size": self.spatial_hash_cell_size,
         }
 
 
@@ -150,9 +152,12 @@ def run_simulation(config: SimulationConfig):
                                      config.min_rim_percentage,
                                      config.effective_radius_multiplier,
                                      config.study_region_size,
-                                     config.study_region_padding)
+                                     config.study_region_padding,
+                                     config.spatial_hash_cell_size)
 
-        areal_density_calculator = ArealDensityCalculator(config.study_region_size, config.study_region_padding, r_stat)
+        areal_density_calculator = ArealDensityCalculator(config.study_region_size,
+                                                          config.study_region_padding,
+                                                          r_stat)
 
         last_n_craters = 0
         for crater in crater_generator:
