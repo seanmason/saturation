@@ -62,3 +62,34 @@ class CraterCountAndArealDensityStopCondition(StopCondition):
 
         return max_areal_density_before_checkpoint >= max_areal_density_after_checkpoint \
                and max_n_craters_before_checkpoint >= max_n_craters_after_checkpoint
+
+
+class ArealDensityStopCondition(StopCondition):
+    """
+    Stops the simulation when the maximum areal density has not increased by more than a given percentage in half the
+    total simulation time
+    """
+    MIN_CRATERS = 500000
+
+    def __init__(self, percentage_increase: float):
+        self._percentage_increase = percentage_increase
+        self._areal_density_high_points: Dict[int, float] = {0: 0.0}
+        self._counter = 0
+
+    def should_stop(self, statistics_row: StatisticsRow) -> bool:
+        self._counter += 1
+
+        self._areal_density_high_points[self._counter] = max(
+            self._areal_density_high_points[self._counter - 1],
+            statistics_row.areal_density
+        )
+
+        if self._counter < self.MIN_CRATERS:
+            return False
+
+        checkpoint = self._counter // 3 * 2
+        max_areal_density_before_checkpoint = self._areal_density_high_points[checkpoint]
+        max_areal_density_after_checkpoint = self._areal_density_high_points[self._counter]
+
+        return (max_areal_density_after_checkpoint - max_areal_density_before_checkpoint) \
+            / max_areal_density_after_checkpoint < self._percentage_increase

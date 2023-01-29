@@ -1,0 +1,37 @@
+random_seed: 123
+n_simulations_per_location: 3
+n_levels: 3
+
+n_workers: 30
+config_output_path: /data/saturation/central_composite_design/ccd4/config
+run_output_path: /data/saturation/central_composite_design/ccd4
+
+write_statistics_cadence: 100000
+write_state_cadence: 0
+write_image_cadence: 0
+
+base_config:
+  study_region_size: 10000
+  study_region_padding: 1250
+  min_crater_radius: 10
+  max_crater_radius: 2500
+  stop_condition:
+    name: areal_density
+    percentage_increase: .01
+  n_simulations: 1
+  spatial_hash_cell_size: 50
+
+parameters:
+  - slope:
+      min: 1.1
+      max: 3.0
+  - r_stat_multiplier:
+      min: 3.0
+      max: 9.0
+  - min_rim_percentage:
+      min: 0.3
+      max: 0.7
+      stdev: 0.005
+  - effective_radius_multiplier:
+      min: 1.1
+      max: 1.9

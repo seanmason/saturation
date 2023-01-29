@@ -13,7 +13,8 @@ from saturation.areal_density import ArealDensityCalculator
 from saturation.crater_record import CraterRecord
 from saturation.distributions import ProbabilityDistribution, ParetoProbabilityDistribution
 from saturation.plotting import save_study_region
-from saturation.stop_conditions import CraterCountAndArealDensityStopCondition, NCratersStopCondition
+from saturation.stop_conditions import CraterCountAndArealDensityStopCondition, NCratersStopCondition, \
+    ArealDensityStopCondition
 from saturation.writers import StatisticsWriter, StateSnapshotWriter, StatisticsRow
 from saturation.z_stats import calculate_z_statistic, calculate_za_statistic
 from saturation.datatypes import Crater
@@ -92,6 +93,8 @@ def get_stop_condition(stop_condition_config: Dict):
     name = stop_condition_config["name"]
     if name == "crater_count_and_areal_density":
         return CraterCountAndArealDensityStopCondition()
+    elif name == "areal_density":
+        return ArealDensityStopCondition(stop_condition_config["percentage_increase"])
     elif name == "n_craters":
         return NCratersStopCondition(stop_condition_config["n_craters"])
 
