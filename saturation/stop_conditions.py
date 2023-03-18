@@ -4,6 +4,17 @@ from typing import Dict
 from saturation.writers import StatisticsRow
 
 
+def get_stop_condition(stop_condition_config: Dict):
+    name = stop_condition_config["name"]
+    if name == "crater_count_and_areal_density":
+        return CraterCountAndArealDensityStopCondition()
+    elif name == "areal_density":
+        return ArealDensityStopCondition(stop_condition_config["percentage_increase"],
+                                         stop_condition_config["min_craters"])
+    elif name == "n_craters":
+        return NCratersStopCondition(stop_condition_config["n_craters"])
+
+
 class StopCondition(ABC):
     @abstractmethod
     def should_stop(self, statistics_row: StatisticsRow) -> bool:
@@ -69,10 +80,10 @@ class ArealDensityStopCondition(StopCondition):
     Stops the simulation when the maximum areal density has not increased by more than a given percentage in half the
     total simulation time
     """
-    MIN_CRATERS = 500000
-
-    def __init__(self, percentage_increase: float):
+    def __init__(self, percentage_increase: float, min_craters: int):
         self._percentage_increase = percentage_increase
+        self._min_craters = min_craters
+
         self._areal_density_high_points: Dict[int, float] = {0: 0.0}
         self._counter = 0
 
@@ -84,7 +95,7 @@ class ArealDensityStopCondition(StopCondition):
             statistics_row.areal_density
         )
 
-        if self._counter < self.MIN_CRATERS:
+        if self._counter < self._min_craters:
             return False
 
         checkpoint = self._counter // 3 * 2

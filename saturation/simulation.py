@@ -13,9 +13,8 @@ from saturation.areal_density import ArealDensityCalculator
 from saturation.crater_record import CraterRecord
 from saturation.distributions import ProbabilityDistribution, ParetoProbabilityDistribution
 from saturation.plotting import save_study_region
-from saturation.stop_conditions import CraterCountAndArealDensityStopCondition, NCratersStopCondition, \
-    ArealDensityStopCondition
-from saturation.writers import StatisticsWriter, StateSnapshotWriter, StatisticsRow
+from saturation.stop_conditions import get_stop_condition
+from saturation.writers import StatisticsWriter, StateSnapshotWriter, StatisticsRow, CraterWriter, CraterRemovalWriter
 from saturation.z_stats import calculate_z_statistic, calculate_za_statistic
 from saturation.datatypes import Crater
 
@@ -25,9 +24,9 @@ LocationFunc = Callable[[], np.array]
 
 @dataclass(frozen=True, kw_only=True)
 class SimulationConfig:
+    simulation_id: int
     simulation_name: str
     output_path: str
-    simulation_id: int
     slope: float
     r_stat_multiplier: float
     min_rim_percentage: float
@@ -38,14 +37,16 @@ class SimulationConfig:
     max_crater_radius: float
     stop_condition: Dict
     write_statistics_cadence: int
+    write_craters_cadence: int
+    write_crater_removals_cadence: int
     write_state_cadence: int
     write_image_cadence: int
     spatial_hash_cell_size: int
 
     def to_dict(self) -> Dict:
         return {
-            "simulation_name": self.simulation_name,
             "simulation_id": self.simulation_id,
+            "simulation_name": self.simulation_name,
             "output_path": self.output_path,
             "slope": self.slope,
             "r_stat_multiplier": self.r_stat_multiplier,
@@ -57,6 +58,8 @@ class SimulationConfig:
             "max_crater_radius": self.max_crater_radius,
             "stop_condition": self.stop_condition,
             "write_statistics_cadence": self.write_statistics_cadence,
+            "write_craters_cadence": self.write_craters_cadence,
+            "write_crater_removals_cadence": self.write_crater_removals_cadence,
             "write_state_cadence": self.write_state_cadence,
             "write_image_cadence": self.write_image_cadence,
             "spatial_hash_cell_size": self.spatial_hash_cell_size,
@@ -89,16 +92,6 @@ def get_craters(size_distribution: ProbabilityDistribution,
         crater_id += 1
 
 
-def get_stop_condition(stop_condition_config: Dict):
-    name = stop_condition_config["name"]
-    if name == "crater_count_and_areal_density":
-        return CraterCountAndArealDensityStopCondition()
-    elif name == "areal_density":
-        return ArealDensityStopCondition(stop_condition_config["percentage_increase"])
-    elif name == "n_craters":
-        return NCratersStopCondition(stop_condition_config["n_craters"])
-
-
 def run_simulation(config: SimulationConfig):
     """
     Runs a simulation.
@@ -125,7 +118,6 @@ def run_simulation(config: SimulationConfig):
                      config.min_rim_percentage)) % 2 ** 32
         np.random.seed(seed)
 
-        # r_stat = config.r_stat_multiplier * config.min_crater_radius
         r_stat = config.min_crater_radius
 
         full_region_size = config.study_region_size + 2 * config.study_region_padding
@@ -143,8 +135,14 @@ def run_simulation(config: SimulationConfig):
         with open(f'{config.output_path}/config.yaml', 'w') as config_output:
             yaml.dump(config.to_dict(), config_output)
 
-        statistics_writer = StatisticsWriter(config.output_path, config.write_statistics_cadence)
-        state_snapshot_writer = StateSnapshotWriter(config.output_path)
+        statistics_writer = StatisticsWriter(config.simulation_id,
+                                             config.output_path,
+                                             config.write_statistics_cadence)
+        state_snapshot_writer = StateSnapshotWriter(config.simulation_id, config.output_path)
+        crater_writer = CraterWriter(config.write_craters_cadence, config.simulation_id, config.output_path)
+        crater_removals_writer = CraterRemovalWriter(config.write_crater_removals_cadence,
+                                                     config.simulation_id,
+                                                     config.output_path)
 
         study_region_area = config.study_region_size ** 2
 
@@ -164,15 +162,18 @@ def run_simulation(config: SimulationConfig):
 
         last_n_craters = 0
         for crater in crater_generator:
-            n_craters_current = crater_record.n_craters_added_in_study_region
-
             removed_craters = crater_record.add(crater)
 
             areal_density_calculator.add_crater(crater)
             if removed_craters:
                 areal_density_calculator.remove_craters(removed_craters)
+                crater_removals_writer.write(removed_craters, crater)
+
+            if crater.radius >= r_stat:
+                crater_writer.write(crater)
 
             # Only perform updates if the study region crater count ticked up
+            n_craters_current = crater_record.n_craters_added_in_study_region
             if last_n_craters != n_craters_current:
                 last_n_craters = n_craters_current
 
@@ -212,6 +213,8 @@ def run_simulation(config: SimulationConfig):
                     break
 
         statistics_writer.close()
+        crater_writer.close()
+        crater_removals_writer.close()
 
         # Write out the completion file.
         with open(f'{config.output_path}/completed.txt', 'w') as completed_file:

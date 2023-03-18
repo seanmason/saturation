@@ -28,16 +28,18 @@ class StatisticsRow:
 
 
 class StatisticsWriter:
-    def __init__(self, output_path: str, output_cadence: int):
+    def __init__(self, simulation_id: int, output_path: str, output_cadence: int):
+        self._simulation_id = simulation_id
         self._output_path = output_path
         self._output_cadence = output_cadence
 
         self._statistics_rows: List[StatisticsRow] = []
         self._total_statistics_rows: int = 0
 
-    def _flush_rows(self) -> None:
+    def _flush(self) -> None:
         if self._statistics_rows:
             out_df = pd.DataFrame(self._statistics_rows)
+            out_df["simulation_id"] = self._simulation_id
             out_df.crater_id = out_df.crater_id.astype('uint32')
             out_df.n_craters_added_in_study_region = out_df.n_craters_added_in_study_region.astype('uint32')
             out_df.n_craters_in_study_region = out_df.n_craters_in_study_region.astype('uint32')
@@ -56,14 +58,15 @@ class StatisticsWriter:
             self._total_statistics_rows += 1
 
             if self._total_statistics_rows % self._output_cadence == 0:
-                self._flush_rows()
+                self._flush()
 
     def close(self):
-        self._flush_rows()
+        self._flush()
 
 
 class StateSnapshotWriter:
-    def __init__(self, output_path: str):
+    def __init__(self, simulation_id: int, output_path: str):
+        self._simulation_id = simulation_id
         self._output_path = output_path
 
     def write_state_snapshot(self,
@@ -84,6 +87,7 @@ class StateSnapshotWriter:
 
         state_filename = f'{self._output_path}/state_{n_craters_current}.parquet'
         state_df = pd.DataFrame(state_rows)
+        state_df["simulation_id"] = self._simulation_id
         state_df = state_df.astype({
             "last_crater_id": "uint32",
             "n_craters_added_in_study_region": "uint32",
@@ -94,3 +98,85 @@ class StateSnapshotWriter:
             "rim_percent_remaining": "float32",
         })
         state_df.to_parquet(state_filename, index=False)
+
+
+class CraterWriter:
+    """
+    Writes records of craters generated.
+    """
+    def __init__(self, output_cadence: int, simulation_id: int, output_path: str):
+        self._output_cadence = output_cadence
+        self._simulation_id = simulation_id
+        self._output_path = output_path
+
+        self._total_craters = 0
+        self._craters: List[Crater] = []
+
+    def _flush(self) -> None:
+        if self._craters:
+            out_df = pd.DataFrame(self._craters)
+            out_df["simulation_id"] = self._simulation_id
+            out_df.id = out_df.id.astype('uint32')
+            out_df.x = out_df.x.astype('float32')
+            out_df.y = out_df.y.astype('float32')
+            out_df.radius = out_df.radius.astype('float32')
+
+            output_filename = f"{self._output_path}/craters_{self._total_craters}.parquet"
+            out_df.to_parquet(output_filename)
+
+            self._craters = []
+
+    def write(self, crater: Crater) -> None:
+        if self._output_cadence != 0:
+            self._craters.append(crater)
+            self._total_craters += 1
+
+            if self._total_craters % self._output_cadence == 0:
+                self._flush()
+
+    def close(self):
+        self._flush()
+
+
+@dataclass(frozen=True, kw_only=True, slots=True)
+class CraterRemoval:
+    removed_crater_id: int
+    removed_by_crater_id: int
+
+
+class CraterRemovalWriter:
+    """
+    Writes records of craters removed.
+    """
+    def __init__(self, output_cadence: int, simulation_id: int, output_path: str):
+        self._output_cadence = output_cadence
+        self._simulation_id = simulation_id
+        self._output_path = output_path
+
+        self._total_removals = 0
+        self._removals: List[CraterRemoval] = []
+
+    def _flush(self) -> None:
+        if self._removals:
+            out_df = pd.DataFrame(self._removals)
+            out_df["simulation_id"] = self._simulation_id
+            out_df.removed_crater_id = out_df.removed_crater_id.astype('uint32')
+            out_df.removed_by_crater_id = out_df.removed_by_crater_id.astype('uint32')
+
+            output_filename = f"{self._output_path}/crater_removals_{self._total_removals}.parquet"
+            out_df.to_parquet(output_filename)
+
+            self._removals = []
+
+    def write(self, removed_craters: List[Crater], removed_by_crater: Crater) -> None:
+        if self._output_cadence != 0:
+            for removed_crater in removed_craters:
+                self._removals.append(CraterRemoval(removed_crater_id=removed_crater.id,
+                                                    removed_by_crater_id=removed_by_crater.id))
+                self._total_removals += 1
+
+                if self._total_removals % self._output_cadence == 0:
+                    self._flush()
+
+    def close(self):
+        self._flush()

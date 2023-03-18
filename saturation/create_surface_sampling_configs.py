@@ -24,6 +24,8 @@ def create_corner_point_and_center_configs(config: Dict):
         "output_path": config["run_output_path"],
         "write_statistics_cadence": config["write_statistics_cadence"],
         "write_state_cadence": config["write_state_cadence"],
+        "write_craters_cadence": config["write_craters_cadence"],
+        "write_crater_removals_cadence": config["write_crater_removals_cadence"],
         "write_image_cadence": config["write_image_cadence"],
         "spatial_hash_cell_size": config["spatial_hash_cell_size"],
         "run_configurations": run_configurations
@@ -102,6 +104,8 @@ def create_interior_point_configs(config: Dict):
         "output_path": config["run_output_path"],
         "write_statistics_cadence": config["write_statistics_cadence"],
         "write_state_cadence": config["write_state_cadence"],
+        "write_craters_cadence": config["write_craters_cadence"],
+        "write_crater_removals_cadence": config["write_crater_removals_cadence"],
         "write_image_cadence": config["write_image_cadence"],
         "spatial_hash_cell_size": config["spatial_hash_cell_size"],
         "run_configurations": run_configurations
