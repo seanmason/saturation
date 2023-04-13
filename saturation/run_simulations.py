@@ -18,6 +18,7 @@ def get_simulation_configs(config: Dict) -> List[SimulationConfig]:
     write_crater_removals_cadence = config['write_crater_removals_cadence']
     write_state_cadence = config['write_state_cadence']
     write_image_cadence = config['write_image_cadence']
+    write_image_points = config['write_image_points']
 
     result = []
     run_configurations = sorted(config['run_configurations'], key=lambda x: x[list(x.keys())[0]]["slope"], reverse=True)
@@ -44,6 +45,7 @@ def get_simulation_configs(config: Dict) -> List[SimulationConfig]:
             write_crater_removals_cadence=write_crater_removals_cadence,
             write_state_cadence=write_state_cadence,
             write_image_cadence=write_image_cadence,
+            write_image_points=write_image_points,
             spatial_hash_cell_size=values['spatial_hash_cell_size'],
         ))
 

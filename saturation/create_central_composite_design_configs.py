@@ -27,6 +27,7 @@ def create_central_composite_design_configs(config: Dict):
         "write_crater_removals_cadence": config["write_crater_removals_cadence"],
         "write_state_cadence": config["write_state_cadence"],
         "write_image_cadence": config["write_image_cadence"],
+        "write_image_points": config["write_image_points"],
         "run_configurations": run_configurations
     }
 
@@ -71,6 +72,7 @@ def create_central_composite_design_configs(config: Dict):
 
             new_config_section = copy.deepcopy(config["base_config"])
             config_addition = {x[0]: x[1] for x in ccd_point_parameters}
+            config_addition["random_seed"] = np.random.randint(0, 2**32-1)
             new_config_section.update(config_addition)
 
             run_configurations.append({

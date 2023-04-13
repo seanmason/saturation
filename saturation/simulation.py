@@ -4,7 +4,7 @@ import sys
 import traceback
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Callable, Generator, Dict
+from typing import Callable, Generator, Dict, List
 
 import numpy as np
 import yaml
@@ -41,6 +41,7 @@ class SimulationConfig:
     write_crater_removals_cadence: int
     write_state_cadence: int
     write_image_cadence: int
+    write_image_points: List[int]
     spatial_hash_cell_size: int
 
     def to_dict(self) -> Dict:
@@ -62,6 +63,7 @@ class SimulationConfig:
             "write_crater_removals_cadence": self.write_crater_removals_cadence,
             "write_state_cadence": self.write_state_cadence,
             "write_image_cadence": self.write_image_cadence,
+            "write_image_points": self.write_image_points,
             "spatial_hash_cell_size": self.spatial_hash_cell_size,
         }
 
@@ -205,7 +207,8 @@ def run_simulation(config: SimulationConfig):
                 if config.write_state_cadence != 0 and n_craters_current % config.write_state_cadence == 0:
                     state_snapshot_writer.write_state_snapshot(crater_record, crater, n_craters_current)
 
-                if config.write_image_cadence != 0 and n_craters_current % config.write_image_cadence == 0:
+                if n_craters_current in config.write_image_points \
+                        or config.write_image_cadence != 0 and n_craters_current % config.write_image_cadence == 0:
                     png_name = f'{config.output_path}/study_region_{n_craters_current}.png'
                     save_study_region(areal_density_calculator, png_name)
 
