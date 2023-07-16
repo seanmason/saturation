@@ -1,0 +1,1928 @@
+n_workers: 20
+output_path: /data/saturation/edge_point_runs
+write_all_craters: false
+write_images: false
+write_state: false
+
+run_configurations:
+- 0.891_3.249_0.225_1.114:
+    effective_radius_multiplier: 1.1141489249025998
+    max_crater_radius: 2500
+    min_crater_radius: 2.5
+    min_rim_percentage: 0.22468526430409538
+    n_simulations: 1
+    r_stat_multiplier: 3.2493363616458963
+    slope: 0.8914369396699439
+    stop_condition:
+      name: crater_count_and_areal_density
+    study_region_padding: 1250
+    study_region_size: 10000
+- 0.834_3.662_0.203_0.993:
+    effective_radius_multiplier: 0.992814962732946
+    max_crater_radius: 2500
+    min_crater_radius: 2.5
+    min_rim_percentage: 0.20323963286128652
+    n_simulations: 1
+    r_stat_multiplier: 3.662195495920184
+    slope: 0.8335769144730902
+    stop_condition:
+      name: crater_count_and_areal_density
+    study_region_padding: 1250
+    study_region_size: 10000
+- 0.960_3.446_0.199_0.959:
+    effective_radius_multiplier: 0.9588706551518433
+    max_crater_radius: 2500
+    min_crater_radius: 2.5
+    min_rim_percentage: 0.19850418441444195
+    n_simulations: 1
+    r_stat_multiplier: 3.445510395353909
+    slope: 0.9601705403436437
+    stop_condition:
+      name: crater_count_and_areal_density
+    study_region_padding: 1250
+    study_region_size: 10000
+- 1.109_3.286_0.177_0.937:
+    effective_radius_multiplier: 0.9366715571695401
+    max_crater_radius: 2500
+    min_crater_radius: 2.5
+    min_rim_percentage: 0.17678662063351608
+    n_simulations: 1
+    r_stat_multiplier: 3.2857848961827463
+    slope: 1.1093095029560724
+    stop_condition:
+      name: crater_count_and_areal_density
+    study_region_padding: 1250
+    study_region_size: 10000
+- 1.330_3.832_0.196_0.987:
+    effective_radius_multiplier: 0.9868742520634839
+    max_crater_radius: 2500
+    min_crater_radius: 2.5
+    min_rim_percentage: 0.19609594059225888
+    n_simulations: 1
+    r_stat_multiplier: 3.832481418426193
+    slope: 1.329902511228618
+    stop_condition:
+      name: crater_count_and_areal_density
+    study_region_padding: 1250
+    study_region_size: 10000
+- 1.404_4.205_0.255_0.940:
+    effective_radius_multiplier: 0.9400825586433643
+    max_crater_radius: 2500
+    min_crater_radius: 2.5
+    min_rim_percentage: 0.2548873928313641
+    n_simulations: 1
+    r_stat_multiplier: 4.2051644254638925
+    slope: 1.4036393688182423
+    stop_condition:
+      name: crater_count_and_areal_density
+    study_region_padding: 1250
+    study_region_size: 10000
+- 1.278_4.046_0.183_0.985:
+    effective_radius_multiplier: 0.9854378184333794
+    max_crater_radius: 2500
+    min_crater_radius: 2.5
+    min_rim_percentage: 0.1834533578200656
+    n_simulations: 1
+    r_stat_multiplier: 4.0457265498505395
+    slope: 1.278251302043341
+    stop_condition:
+      name: crater_count_and_areal_density
+    study_region_padding: 1250
+    study_region_size: 10000
+- 1.264_3.830_0.044_0.973:
+    effective_radius_multiplier: 0.9726568499068495
+    max_crater_radius: 2500
+    min_crater_radius: 2.5
+    min_rim_percentage: 0.0435239025470294
+    n_simulations: 1
+    r_stat_multiplier: 3.830287825885618
+    slope: 1.2642444300244744
+    stop_condition:
+      name: crater_count_and_areal_density
+    study_region_padding: 1250
+    study_region_size: 10000
+- 1.087_3.655_0.035_1.019:
+    effective_radius_multiplier: 1.0190299714947786
+    max_crater_radius: 2500
+    min_crater_radius: 2.5
+    min_rim_percentage: 0.03484211840751861
+    n_simulations: 1
+    r_stat_multiplier: 3.6553185172361387
+    slope: 1.0870911195734898
+    stop_condition:
+      name: crater_count_and_areal_density
+    study_region_padding: 1250
+    study_region_size: 10000
+- 1.087_3.827_0.049_0.975:
+    effective_radius_multiplier: 0.9750531543443259
+    max_crater_radius: 2500
+    min_crater_radius: 2.5
+    min_rim_percentage: 0.04902348459788316
+    n_simulations: 1
+    r_stat_multiplier: 3.8273741950117097
+    slope: 1.087375711163171
+    stop_condition:
+      name: crater_count_and_areal_density
+    study_region_padding: 1250
+    study_region_size: 10000
+- 0.919_2.568_0.329_1.680:
+    effective_radius_multiplier: 1.6804550103122449
+    max_crater_radius: 2500
+    min_crater_radius: 2.5
+    min_rim_percentage: 0.3286902931202529
+    n_simulations: 1
+    r_stat_multiplier: 2.568082626469848
+    slope: 0.9194633481934384
+    stop_condition:
+      name: crater_count_and_areal_density
+    study_region_padding: 1250
+    study_region_size: 10000
+- 0.953_2.565_0.349_1.800:
+    effective_radius_multiplier: 1.8000732736091312
+    max_crater_radius: 2500
+    min_crater_radius: 2.5
+    min_rim_percentage: 0.34933590113569185
+    n_simulations: 1
+    r_stat_multiplier: 2.565125002850143
+    slope: 0.9533222532934186
+    stop_condition:
+      name: crater_count_and_areal_density
+    study_region_padding: 1250
+    study_region_size: 10000
+- 1.051_3.125_0.297_1.735:
+    effective_radius_multiplier: 1.7353690074510688
+    max_crater_radius: 2500
+    min_crater_radius: 2.5
+    min_rim_percentage: 0.29739649062544415
+    n_simulations: 1
+    r_stat_multiplier: 3.124660837474631
+    slope: 1.0511958538871533
+    stop_condition:
+      name: crater_count_and_areal_density
+    study_region_padding: 1250
+    study_region_size: 10000
+- 1.226_2.925_0.351_1.737:
+    effective_radius_multiplier: 1.7368531689662354
+    max_crater_radius: 2500
+    min_crater_radius: 2.5
+    min_rim_percentage: 0.3508622890966616
+    n_simulations: 1
+    r_stat_multiplier: 2.9251451536643653
+    slope: 1.2255670763994464
+    stop_condition:
+      name: crater_count_and_areal_density
+    study_region_padding: 1250
+    study_region_size: 10000
+- 1.315_3.364_0.404_1.812:
+    effective_radius_multiplier: 1.811635375817909
+    max_crater_radius: 2500
+    min_crater_radius: 2.5
+    min_rim_percentage: 0.40433192258194844
+    n_simulations: 1
+    r_stat_multiplier: 3.363866699159643
+    slope: 1.3146377155287634
+    stop_condition:
+      name: crater_count_and_areal_density
+    study_region_padding: 1250
+    study_region_size: 10000
+- 1.237_3.563_0.338_1.827:
+    effective_radius_multiplier: 1.8273489755432522
+    max_crater_radius: 2500
+    min_crater_radius: 2.5
+    min_rim_percentage: 0.33801864958492567
+    n_simulations: 1
+    r_stat_multiplier: 3.5625823661079474
+    slope: 1.2373668441040442
+    stop_condition:
+      name: crater_count_and_areal_density
+    study_region_padding: 1250
+    study_region_size: 10000
+- 1.379_3.764_0.326_1.830:
+    effective_radius_multiplier: 1.829623479574807
+    max_crater_radius: 2500
+    min_crater_radius: 2.5
+    min_rim_percentage: 0.326364046535705
+    n_simulations: 1
+    r_stat_multiplier: 3.764391499752589
+    slope: 1.3790967487517294
+    stop_condition:
+      name: crater_count_and_areal_density
+    study_region_padding: 1250
+    study_region_size: 10000
+- 1.259_3.814_0.285_1.853:
+    effective_radius_multiplier: 1.8530454355470891
+    max_crater_radius: 2500
+    min_crater_radius: 2.5
+    min_rim_percentage: 0.284806297323541
+    n_simulations: 1
+    r_stat_multiplier: 3.814272518142247
+    slope: 1.2592666342816508
+    stop_condition:
+      name: crater_count_and_areal_density
+    study_region_padding: 1250
+    study_region_size: 10000
+- 1.375_3.540_0.337_1.747:
+    effective_radius_multiplier: 1.7468904180449671
+    max_crater_radius: 2500
+    min_crater_radius: 2.5
+    min_rim_percentage: 0.33679265186817603
+    n_simulations: 1
+    r_stat_multiplier: 3.5399717565214885
+    slope: 1.3754870391916036
+    stop_condition:
+      name: crater_count_and_areal_density
+    study_region_padding: 1250
+    study_region_size: 10000
+- 1.335_3.508_0.256_1.705:
+    effective_radius_multiplier: 1.7050145819037146
+    max_crater_radius: 2500
+    min_crater_radius: 2.5
+    min_rim_percentage: 0.25649451383230587
+    n_simulations: 1
+    r_stat_multiplier: 3.508464360193235
+    slope: 1.3351504353813928
+    stop_condition:
+      name: crater_count_and_areal_density
+    study_region_padding: 1250
+    study_region_size: 10000
+- 1.126_2.828_0.640_1.183:
+    effective_radius_multiplier: 1.183047624407397
+    max_crater_radius: 2500
+    min_crater_radius: 2.5
+    min_rim_percentage: 0.6403654093105364
+    n_simulations: 1
+    r_stat_multiplier: 2.8277827540382696
+    slope: 1.1255237374724218
+    stop_condition:
+      name: crater_count_and_areal_density
+    study_region_padding: 1250
+    study_region_size: 10000
+- 1.094_2.556_0.580_1.146:
+    effective_radius_multiplier: 1.1464245250713743
+    max_crater_radius: 2500
+    min_crater_radius: 2.5
+    min_rim_percentage: 0.579739252755778
+    n_simulations: 1
+    r_stat_multiplier: 2.556307153756553
+    slope: 1.0940479228006759
+    stop_condition:
+      name: crater_count_and_areal_density
+    study_region_padding: 1250
+    study_region_size: 10000
+- 1.303_2.597_0.516_1.204:
+    effective_radius_multiplier: 1.203934802198706
+    max_crater_radius: 2500
+    min_crater_radius: 2.5
+    min_rim_percentage: 0.5163716503052667
+    n_simulations: 1
+    r_stat_multiplier: 2.5974174613140093
+    slope: 1.3027592587594945
+    stop_condition:
+      name: crater_count_and_areal_density
+    study_region_padding: 1250
+    study_region_size: 10000
+- 1.321_2.892_0.568_1.187:
+    effective_radius_multiplier: 1.1871842641020551
+    max_crater_radius: 2500
+    min_crater_radius: 2.5
+    min_rim_percentage: 0.5679273732513538
+    n_simulations: 1
+    r_stat_multiplier: 2.8918829460161537
+    slope: 1.320862771719195
+    stop_condition:
+      name: crater_count_and_areal_density
+    study_region_padding: 1250
+    study_region_size: 10000
+- 1.212_2.551_0.549_1.206:
+    effective_radius_multiplier: 1.206154294705962
+    max_crater_radius: 2500
+    min_crater_radius: 2.5
+    min_rim_percentage: 0.5489685515227262
+    n_simulations: 1
+    r_stat_multiplier: 2.551015059861508
+    slope: 1.2124059805186183
+    stop_condition:
+      name: crater_count_and_areal_density
+    study_region_padding: 1250
+    study_region_size: 10000
+- 1.277_2.057_0.679_1.242:
+    effective_radius_multiplier: 1.2417675264794878
+    max_crater_radius: 2500
+    min_crater_radius: 2.5
+    min_rim_percentage: 0.6788837478861919
+    n_simulations: 1
+    r_stat_multiplier: 2.0565430769813955
+    slope: 1.2766114494458014
+    stop_condition:
+      name: crater_count_and_areal_density
+    study_region_padding: 1250
+    study_region_size: 10000
+- 1.274_2.065_0.586_1.251:
+    effective_radius_multiplier: 1.2507450007114218
+    max_crater_radius: 2500
+    min_crater_radius: 2.5
+    min_rim_percentage: 0.5857849623466025
+    n_simulations: 1
+    r_stat_multiplier: 2.065078609208856
+    slope: 1.2741488513026533
+    stop_condition:
+      name: crater_count_and_areal_density
+    study_region_padding: 1250
+    study_region_size: 10000
+- 1.317_1.664_0.648_1.229:
+    effective_radius_multiplier: 1.2293610208052317
+    max_crater_radius: 2500
+    min_crater_radius: 2.5
+    min_rim_percentage: 0.6479284398267894
+    n_simulations: 1
+    r_stat_multiplier: 1.6637261732048647
+    slope: 1.3167635152716843
+    stop_condition:
+      name: crater_count_and_areal_density
+    study_region_padding: 1250
+    study_region_size: 10000
+- 1.243_1.789_0.662_1.280:
+    effective_radius_multiplier: 1.2799979735030502
+    max_crater_radius: 2500
+    min_crater_radius: 2.5
+    min_rim_percentage: 0.6618654826315894
+    n_simulations: 1
+    r_stat_multiplier: 1.7890384205967147
+    slope: 1.2432418196616768
+    stop_condition:
+      name: crater_count_and_areal_density
+    study_region_padding: 1250
+    study_region_size: 10000
+- 1.106_1.706_0.561_1.378:
+    effective_radius_multiplier: 1.3779685406224644
+    max_crater_radius: 2500
+    min_crater_radius: 2.5
+    min_rim_percentage: 0.5606131944817159
+    n_simulations: 1
+    r_stat_multiplier: 1.7059196017588611
+    slope: 1.106146972652216
+    stop_condition:
+      name: crater_count_and_areal_density
+    study_region_padding: 1250
+    study_region_size: 10000
+- 0.972_2.862_0.637_1.706:
+    effective_radius_multiplier: 1.7060373681548568
+    max_crater_radius: 2500
+    min_crater_radius: 2.5
+    min_rim_percentage: 0.6374107808593615
+    n_simulations: 1
+    r_stat_multiplier: 2.861972982127973
+    slope: 0.9724213986133825
+    stop_condition:
+      name: crater_count_and_areal_density
+    study_region_padding: 1250
+    study_region_size: 10000
+- 1.133_2.794_0.662_1.747:
+    effective_radius_multiplier: 1.7466544346536979
+    max_crater_radius: 2500
+    min_crater_radius: 2.5
+    min_rim_percentage: 0.6623977881026202
+    n_simulations: 1
+    r_stat_multiplier: 2.7944148841256835
+    slope: 1.1332904954155878
+    stop_condition:
+      name: crater_count_and_areal_density
+    study_region_padding: 1250
+    study_region_size: 10000
+- 1.181_2.653_0.607_1.697:
+    effective_radius_multiplier: 1.6967883612149028
+    max_crater_radius: 2500
+    min_crater_radius: 2.5
+    min_rim_percentage: 0.6073956324715853
+    n_simulations: 1
+    r_stat_multiplier: 2.6534339012440653
+    slope: 1.1807252252027678
+    stop_condition:
+      name: crater_count_and_areal_density
+    study_region_padding: 1250
+    study_region_size: 10000
+- 1.105_2.734_0.624_1.735:
+    effective_radius_multiplier: 1.7348358308713192
+    max_crater_radius: 2500
+    min_crater_radius: 2.5
+    min_rim_percentage: 0.6235690748644301
+    n_simulations: 1
+    r_stat_multiplier: 2.733855545210622
+    slope: 1.1050815042628555
+    stop_condition:
+      name: crater_count_and_areal_density
+    study_region_padding: 1250
+    study_region_size: 10000
+- 1.050_3.185_0.606_1.811:
+    effective_radius_multiplier: 1.8107791120528962
+    max_crater_radius: 2500
+    min_crater_radius: 2.5
+    min_rim_percentage: 0.6058690692269215
+    n_simulations: 1
+    r_stat_multiplier: 3.185348072693741
+    slope: 1.0501859946432814
+    stop_condition:
+      name: crater_count_and_areal_density
+    study_region_padding: 1250
+    study_region_size: 10000
+- 0.968_3.218_0.623_1.874:
+    effective_radius_multiplier: 1.8741440443056139
+    max_crater_radius: 2500
+    min_crater_radius: 2.5
+    min_rim_percentage: 0.6225073180896273
+    n_simulations: 1
+    r_stat_multiplier: 3.2179018112332334
+    slope: 0.9678428540447148
+    stop_condition:
+      name: crater_count_and_areal_density
+    study_region_padding: 1250
+    study_region_size: 10000
+- 1.023_3.165_0.700_1.897:
+    effective_radius_multiplier: 1.8969575890657253
+    max_crater_radius: 2500
+    min_crater_radius: 2.5
+    min_rim_percentage: 0.6997345406624342
+    n_simulations: 1
+    r_stat_multiplier: 3.164881780664327
+    slope: 1.0234977245357193
+    stop_condition:
+      name: crater_count_and_areal_density
+    study_region_padding: 1250
+    study_region_size: 10000
+- 1.000_3.201_0.714_1.910:
+    effective_radius_multiplier: 1.9096484128932067
+    max_crater_radius: 2500
+    min_crater_radius: 2.5
+    min_rim_percentage: 0.713920808450986
+    n_simulations: 1
+    r_stat_multiplier: 3.200708713791295
+    slope: 0.9995308463879482
+    stop_condition:
+      name: crater_count_and_areal_density
+    study_region_padding: 1250
+    study_region_size: 10000
+- 0.858_2.731_0.722_1.859:
+    effective_radius_multiplier: 1.8586656593471147
+    max_crater_radius: 2500
+    min_crater_radius: 2.5
+    min_rim_percentage: 0.7223179232210695
+    n_simulations: 1
+    r_stat_multiplier: 2.7314915498228216
+    slope: 0.8583419587808254
+    stop_condition:
+      name: crater_count_and_areal_density
+    study_region_padding: 1250
+    study_region_size: 10000
+- 0.914_2.599_0.715_1.928:
+    effective_radius_multiplier: 1.92752853349048
+    max_crater_radius: 2500
+    min_crater_radius: 2.5
+    min_rim_percentage: 0.7151591245047602
+    n_simulations: 1
+    r_stat_multiplier: 2.5988229098794156
+    slope: 0.9137275753811466
+    stop_condition:
+      name: crater_count_and_areal_density
+    study_region_padding: 1250
+    study_region_size: 10000
+- 1.002_14.952_0.335_1.107:
+    effective_radius_multiplier: 1.1067013396373333
+    max_crater_radius: 2500
+    min_crater_radius: 2.5
+    min_rim_percentage: 0.3352237037021802
+    n_simulations: 1
+    r_stat_multiplier: 14.951509032361834
+    slope: 1.0020315998234623
+    stop_condition:
+      name: crater_count_and_areal_density
+    study_region_padding: 1250
+    study_region_size: 10000
+- 1.069_14.727_0.280_1.183:
+    effective_radius_multiplier: 1.1828845284612597
+    max_crater_radius: 2500
+    min_crater_radius: 2.5
+    min_rim_percentage: 0.2804723808308343
+    n_simulations: 1
+    r_stat_multiplier: 14.726903297209436
+    slope: 1.0685969436146954
+    stop_condition:
+      name: crater_count_and_areal_density
+    study_region_padding: 1250
+    study_region_size: 10000
+- 1.077_14.658_0.277_1.130:
+    effective_radius_multiplier: 1.1304349445953352
+    max_crater_radius: 2500
+    min_crater_radius: 2.5
+    min_rim_percentage: 0.27671635143214274
+    n_simulations: 1
+    r_stat_multiplier: 14.658304153828848
+    slope: 1.0765196450237566
+    stop_condition:
+      name: crater_count_and_areal_density
+    study_region_padding: 1250
+    study_region_size: 10000
+- 1.002_14.677_0.350_1.151:
+    effective_radius_multiplier: 1.1505892426563036
+    max_crater_radius: 2500
+    min_crater_radius: 2.5
+    min_rim_percentage: 0.3503128198808063
+    n_simulations: 1
+    r_stat_multiplier: 14.67653096464786
+    slope: 1.0024382676945167
+    stop_condition:
+      name: crater_count_and_areal_density
+    study_region_padding: 1250
+    study_region_size: 10000
+- 1.033_14.524_0.357_1.131:
+    effective_radius_multiplier: 1.1310082521203235
+    max_crater_radius: 2500
+    min_crater_radius: 2.5
+    min_rim_percentage: 0.3573117251865345
+    n_simulations: 1
+    r_stat_multiplier: 14.523724629571653
+    slope: 1.033176689557258
+    stop_condition:
+      name: crater_count_and_areal_density
+    study_region_padding: 1250
+    study_region_size: 10000
+- 1.043_14.889_0.339_1.201:
+    effective_radius_multiplier: 1.2007758986081714
+    max_crater_radius: 2500
+    min_crater_radius: 2.5
+    min_rim_percentage: 0.33936492887442143
+    n_simulations: 1
+    r_stat_multiplier: 14.888621946628758
+    slope: 1.0425227725034731
+    stop_condition:
+      name: crater_count_and_areal_density
+    study_region_padding: 1250
+    study_region_size: 10000
+- 0.988_14.249_0.290_1.173:
+    effective_radius_multiplier: 1.1733298779420605
+    max_crater_radius: 2500
+    min_crater_radius: 2.5
+    min_rim_percentage: 0.2904620435702072
+    n_simulations: 1
+    r_stat_multiplier: 14.249358295611794
+    slope: 0.9876585596848533
+    stop_condition:
+      name: crater_count_and_areal_density
+    study_region_padding: 1250
+    study_region_size: 10000
+- 0.952_14.347_0.289_1.182:
+    effective_radius_multiplier: 1.18218949440201
+    max_crater_radius: 2500
+    min_crater_radius: 2.5
+    min_rim_percentage: 0.2889636432178301
+    n_simulations: 1
+    r_stat_multiplier: 14.347254356199322
+    slope: 0.9521761138753714
+    stop_condition:
+      name: crater_count_and_areal_density
+    study_region_padding: 1250
+    study_region_size: 10000
+- 0.972_14.316_0.127_1.192:
+    effective_radius_multiplier: 1.1920404410291838
+    max_crater_radius: 2500
+    min_crater_radius: 2.5
+    min_rim_percentage: 0.12741089282186446
+    n_simulations: 1
+    r_stat_multiplier: 14.315724912891573
+    slope: 0.9721343249842227
+    stop_condition:
+      name: crater_count_and_areal_density
+    study_region_padding: 1250
+    study_region_size: 10000
+- 0.945_14.288_0.117_1.175:
+    effective_radius_multiplier: 1.1749773552188545
+    max_crater_radius: 2500
+    min_crater_radius: 2.5
+    min_rim_percentage: 0.11651357971671737
+    n_simulations: 1
+    r_stat_multiplier: 14.288012232628322
+    slope: 0.9452049760091473
+    stop_condition:
+      name: crater_count_and_areal_density
+    study_region_padding: 1250
+    study_region_size: 10000
+- 1.070_14.850_0.334_1.810:
+    effective_radius_multiplier: 1.8100351049608563
+    max_crater_radius: 2500
+    min_crater_radius: 2.5
+    min_rim_percentage: 0.3344148465111044
+    n_simulations: 1
+    r_stat_multiplier: 14.850473667164794
+    slope: 1.070331011780673
+    stop_condition:
+      name: crater_count_and_areal_density
+    study_region_padding: 1250
+    study_region_size: 10000
+- 1.070_14.799_0.289_1.806:
+    effective_radius_multiplier: 1.8057089906417496
+    max_crater_radius: 2500
+    min_crater_radius: 2.5
+    min_rim_percentage: 0.28864949301390547
+    n_simulations: 1
+    r_stat_multiplier: 14.798808091365402
+    slope: 1.0697002866892857
+    stop_condition:
+      name: crater_count_and_areal_density
+    study_region_padding: 1250
+    study_region_size: 10000
+- 1.060_14.868_0.318_1.835:
+    effective_radius_multiplier: 1.8346860714204112
+    max_crater_radius: 2500
+    min_crater_radius: 2.5
+    min_rim_percentage: 0.31763398197112214
+    n_simulations: 1
+    r_stat_multiplier: 14.868478970547166
+    slope: 1.0601800327634847
+    stop_condition:
+      name: crater_count_and_areal_density
+    study_region_padding: 1250
+    study_region_size: 10000
+- 1.033_14.514_0.398_1.801:
+    effective_radius_multiplier: 1.801230940108739
+    max_crater_radius: 2500
+    min_crater_radius: 2.5
+    min_rim_percentage: 0.3982436341117416
+    n_simulations: 1
+    r_stat_multiplier: 14.514458407416683
+    slope: 1.0326922781068912
+    stop_condition:
+      name: crater_count_and_areal_density
+    study_region_padding: 1250
+    study_region_size: 10000
+- 1.122_14.607_0.398_1.763:
+    effective_radius_multiplier: 1.7631662278707327
+    max_crater_radius: 2500
+    min_crater_radius: 2.5
+    min_rim_percentage: 0.3984258918604305
+    n_simulations: 1
+    r_stat_multiplier: 14.606863303992727
+    slope: 1.122298109447886
+    stop_condition:
+      name: crater_count_and_areal_density
+    study_region_padding: 1250
+    study_region_size: 10000
+- 0.997_14.469_0.380_1.751:
+    effective_radius_multiplier: 1.750906060786473
+    max_crater_radius: 2500
+    min_crater_radius: 2.5
+    min_rim_percentage: 0.38034389526716983
+    n_simulations: 1
+    r_stat_multiplier: 14.468879085068709
+    slope: 0.9967312408816379
+    stop_condition:
+      name: crater_count_and_areal_density
+    study_region_padding: 1250
+    study_region_size: 10000
+- 1.092_14.114_0.312_1.708:
+    effective_radius_multiplier: 1.7076344472107152
+    max_crater_radius: 2500
+    min_crater_radius: 2.5
+    min_rim_percentage: 0.31160949671605886
+    n_simulations: 1
+    r_stat_multiplier: 14.114197606559845
+    slope: 1.0923914339872391
+    stop_condition:
+      name: crater_count_and_areal_density
+    study_region_padding: 1250
+    study_region_size: 10000
+- 0.969_14.145_0.349_1.628:
+    effective_radius_multiplier: 1.6276124205579017
+    max_crater_radius: 2500
+    min_crater_radius: 2.5
+    min_rim_percentage: 0.3493029356579407
+    n_simulations: 1
+    r_stat_multiplier: 14.145211580671507
+    slope: 0.9686561127184538
+    stop_condition:
+      name: crater_count_and_areal_density
+    study_region_padding: 1250
+    study_region_size: 10000
+- 0.944_14.162_0.328_1.644:
+    effective_radius_multiplier: 1.643741257457762
+    max_crater_radius: 2500
+    min_crater_radius: 2.5
+    min_rim_percentage: 0.32759460964536113
+    n_simulations: 1
+    r_stat_multiplier: 14.162408663803001
+    slope: 0.9439745350243463
+    stop_condition:
+      name: crater_count_and_areal_density
+    study_region_padding: 1250
+    study_region_size: 10000
+- 1.047_14.114_0.318_1.673:
+    effective_radius_multiplier: 1.6734447702197155
+    max_crater_radius: 2500
+    min_crater_radius: 2.5
+    min_rim_percentage: 0.3176389905074985
+    n_simulations: 1
+    r_stat_multiplier: 14.113822982121093
+    slope: 1.047222506599684
+    stop_condition:
+      name: crater_count_and_areal_density
+    study_region_padding: 1250
+    study_region_size: 10000
+- 1.029_15.070_0.551_1.112:
+    effective_radius_multiplier: 1.1124984969727767
+    max_crater_radius: 2500
+    min_crater_radius: 2.5
+    min_rim_percentage: 0.551284607518954
+    n_simulations: 1
+    r_stat_multiplier: 15.06991566753949
+    slope: 1.0290874387424924
+    stop_condition:
+      name: crater_count_and_areal_density
+    study_region_padding: 1250
+    study_region_size: 10000
+- 1.073_14.990_0.444_1.144:
+    effective_radius_multiplier: 1.1440228984972727
+    max_crater_radius: 2500
+    min_crater_radius: 2.5
+    min_rim_percentage: 0.4436599352983388
+    n_simulations: 1
+    r_stat_multiplier: 14.990176420264591
+    slope: 1.0726750157972365
+    stop_condition:
+      name: crater_count_and_areal_density
+    study_region_padding: 1250
+    study_region_size: 10000
+- 0.926_15.081_0.485_1.237:
+    effective_radius_multiplier: 1.237169277752534
+    max_crater_radius: 2500
+    min_crater_radius: 2.5
+    min_rim_percentage: 0.48541287263890065
+    n_simulations: 1
+    r_stat_multiplier: 15.081037810798348
+    slope: 0.9261633935917414
+    stop_condition:
+      name: crater_count_and_areal_density
+    study_region_padding: 1250
+    study_region_size: 10000
+- 0.858_14.658_0.481_1.274:
+    effective_radius_multiplier: 1.274303588810615
+    max_crater_radius: 2500
+    min_crater_radius: 2.5
+    min_rim_percentage: 0.48138371153675313
+    n_simulations: 1
+    r_stat_multiplier: 14.658024706953858
+    slope: 0.8579183001717433
+    stop_condition:
+      name: crater_count_and_areal_density
+    study_region_padding: 1250
+    study_region_size: 10000
+- 0.917_14.687_0.629_1.276:
+    effective_radius_multiplier: 1.2757857350666397
+    max_crater_radius: 2500
+    min_crater_radius: 2.5
+    min_rim_percentage: 0.6293149838314119
+    n_simulations: 1
+    r_stat_multiplier: 14.686849387506555
+    slope: 0.9169887219611819
+    stop_condition:
+      name: crater_count_and_areal_density
+    study_region_padding: 1250
+    study_region_size: 10000
+- 0.916_14.647_0.600_1.270:
+    effective_radius_multiplier: 1.2697133012964386
+    max_crater_radius: 2500
+    min_crater_radius: 2.5
+    min_rim_percentage: 0.600138147996029
+    n_simulations: 1
+    r_stat_multiplier: 14.64703808519324
+    slope: 0.916375725856624
+    stop_condition:
+      name: crater_count_and_areal_density
+    study_region_padding: 1250
+    study_region_size: 10000
+- 1.015_14.559_0.614_1.302:
+    effective_radius_multiplier: 1.301510436578668
+    max_crater_radius: 2500
+    min_crater_radius: 2.5
+    min_rim_percentage: 0.6143682994867069
+    n_simulations: 1
+    r_stat_multiplier: 14.558599501747903
+    slope: 1.0153890153281553
+    stop_condition:
+      name: crater_count_and_areal_density
+    study_region_padding: 1250
+    study_region_size: 10000
+- 1.137_14.664_0.548_1.241:
+    effective_radius_multiplier: 1.2408411975312856
+    max_crater_radius: 2500
+    min_crater_radius: 2.5
+    min_rim_percentage: 0.5480439102340099
+    n_simulations: 1
+    r_stat_multiplier: 14.663644400994993
+    slope: 1.137287601541398
+    stop_condition:
+      name: crater_count_and_areal_density
+    study_region_padding: 1250
+    study_region_size: 10000
+- 1.278_14.511_0.515_1.175:
+    effective_radius_multiplier: 1.174811068541803
+    max_crater_radius: 2500
+    min_crater_radius: 2.5
+    min_rim_percentage: 0.5145629802405219
+    n_simulations: 1
+    r_stat_multiplier: 14.511466700178882
+    slope: 1.2781245161490882
+    stop_condition:
+      name: crater_count_and_areal_density
+    study_region_padding: 1250
+    study_region_size: 10000
+- 1.405_14.156_0.481_1.131:
+    effective_radius_multiplier: 1.1314863083538225
+    max_crater_radius: 2500
+    min_crater_radius: 2.5
+    min_rim_percentage: 0.48122260480069595
+    n_simulations: 1
+    r_stat_multiplier: 14.156413450441754
+    slope: 1.4045870448458888
+    stop_condition:
+      name: crater_count_and_areal_density
+    study_region_padding: 1250
+    study_region_size: 10000
+- 0.875_14.704_0.577_1.624:
+    effective_radius_multiplier: 1.624094601236817
+    max_crater_radius: 2500
+    min_crater_radius: 2.5
+    min_rim_percentage: 0.5769406293431639
+    n_simulations: 1
+    r_stat_multiplier: 14.703918165372084
+    slope: 0.8748810126526805
+    stop_condition:
+      name: crater_count_and_areal_density
+    study_region_padding: 1250
+    study_region_size: 10000
+- 0.839_14.533_0.640_1.541:
+    effective_radius_multiplier: 1.541409709288435
+    max_crater_radius: 2500
+    min_crater_radius: 2.5
+    min_rim_percentage: 0.6396074266859637
+    n_simulations: 1
+    r_stat_multiplier: 14.533283626821257
+    slope: 0.839390129478672
+    stop_condition:
+      name: crater_count_and_areal_density
+    study_region_padding: 1250
+    study_region_size: 10000
+- 0.706_14.603_0.673_1.488:
+    effective_radius_multiplier: 1.4876713796324912
+    max_crater_radius: 2500
+    min_crater_radius: 2.5
+    min_rim_percentage: 0.6730232700230401
+    n_simulations: 1
+    r_stat_multiplier: 14.602792054826974
+    slope: 0.706482246561456
+    stop_condition:
+      name: crater_count_and_areal_density
+    study_region_padding: 1250
+    study_region_size: 10000
+- 0.802_14.383_0.708_1.391:
+    effective_radius_multiplier: 1.3914855931476349
+    max_crater_radius: 2500
+    min_crater_radius: 2.5
+    min_rim_percentage: 0.7078126359800204
+    n_simulations: 1
+    r_stat_multiplier: 14.38338865817006
+    slope: 0.8020654820781724
+    stop_condition:
+      name: crater_count_and_areal_density
+    study_region_padding: 1250
+    study_region_size: 10000
+- 0.990_14.487_0.749_1.400:
+    effective_radius_multiplier: 1.3995128142216209
+    max_crater_radius: 2500
+    min_crater_radius: 2.5
+    min_rim_percentage: 0.7488006664605299
+    n_simulations: 1
+    r_stat_multiplier: 14.48731229314317
+    slope: 0.9896455367495359
+    stop_condition:
+      name: crater_count_and_areal_density
+    study_region_padding: 1250
+    study_region_size: 10000
+- 1.066_14.280_0.779_1.367:
+    effective_radius_multiplier: 1.3665552486867885
+    max_crater_radius: 2500
+    min_crater_radius: 2.5
+    min_rim_percentage: 0.7793568439633254
+    n_simulations: 1
+    r_stat_multiplier: 14.280065084702917
+    slope: 1.0661510213492378
+    stop_condition:
+      name: crater_count_and_areal_density
+    study_region_padding: 1250
+    study_region_size: 10000
+- 1.052_14.609_0.817_1.331:
+    effective_radius_multiplier: 1.3313381413303504
+    max_crater_radius: 2500
+    min_crater_radius: 2.5
+    min_rim_percentage: 0.8168873398067494
+    n_simulations: 1
+    r_stat_multiplier: 14.609216483668805
+    slope: 1.0517496866012086
+    stop_condition:
+      name: crater_count_and_areal_density
+    study_region_padding: 1250
+    study_region_size: 10000
+- 1.086_14.578_0.851_1.390:
+    effective_radius_multiplier: 1.3901336799220807
+    max_crater_radius: 2500
+    min_crater_radius: 2.5
+    min_rim_percentage: 0.8508909164501209
+    n_simulations: 1
+    r_stat_multiplier: 14.577607092741395
+    slope: 1.0860134847381313
+    stop_condition:
+      name: crater_count_and_areal_density
+    study_region_padding: 1250
+    study_region_size: 10000
+- 0.986_14.738_0.844_1.459:
+    effective_radius_multiplier: 1.4588832114967907
+    max_crater_radius: 2500
+    min_crater_radius: 2.5
+    min_rim_percentage: 0.8443686820008898
+    n_simulations: 1
+    r_stat_multiplier: 14.737661762846358
+    slope: 0.9855167693999209
+    stop_condition:
+      name: crater_count_and_areal_density
+    study_region_padding: 1250
+    study_region_size: 10000
+- 0.961_14.570_0.879_1.458:
+    effective_radius_multiplier: 1.4582030172130231
+    max_crater_radius: 2500
+    min_crater_radius: 2.5
+    min_rim_percentage: 0.8786787163035352
+    n_simulations: 1
+    r_stat_multiplier: 14.570249975935477
+    slope: 0.9606511843614236
+    stop_condition:
+      name: crater_count_and_areal_density
+    study_region_padding: 1250
+    study_region_size: 10000
+- 2.918_2.663_0.231_1.081:
+    effective_radius_multiplier: 1.0812125044509038
+    max_crater_radius: 2500
+    min_crater_radius: 2.5
+    min_rim_percentage: 0.23101375106706248
+    n_simulations: 1
+    r_stat_multiplier: 2.66341060981569
+    slope: 2.918233170042125
+    stop_condition:
+      name: crater_count_and_areal_density
+    study_region_padding: 1250
+    study_region_size: 10000
+- 2.971_2.557_0.214_0.993:
+    effective_radius_multiplier: 0.9934424122233634
+    max_crater_radius: 2500
+    min_crater_radius: 2.5
+    min_rim_percentage: 0.213583375330137
+    n_simulations: 1
+    r_stat_multiplier: 2.55673816731724
+    slope: 2.9705550141703885
+    stop_condition:
+      name: crater_count_and_areal_density
+    study_region_padding: 1250
+    study_region_size: 10000
+- 2.951_2.669_0.307_0.986:
+    effective_radius_multiplier: 0.9861742350656528
+    max_crater_radius: 2500
+    min_crater_radius: 2.5
+    min_rim_percentage: 0.30701969817212743
+    n_simulations: 1
+    r_stat_multiplier: 2.669022070657169
+    slope: 2.9512935155909794
+    stop_condition:
+      name: crater_count_and_areal_density
+    study_region_padding: 1250
+    study_region_size: 10000
+- 2.899_2.653_0.293_0.981:
+    effective_radius_multiplier: 0.9810287043525193
+    max_crater_radius: 2500
+    min_crater_radius: 2.5
+    min_rim_percentage: 0.29288827895177627
+    n_simulations: 1
+    r_stat_multiplier: 2.6534224335115923
+    slope: 2.8994231304370794
+    stop_condition:
+      name: crater_count_and_areal_density
+    study_region_padding: 1250
+    study_region_size: 10000
+- 2.914_2.789_0.214_1.048:
+    effective_radius_multiplier: 1.048033639529341
+    max_crater_radius: 2500
+    min_crater_radius: 2.5
+    min_rim_percentage: 0.21442547258205308
+    n_simulations: 1
+    r_stat_multiplier: 2.7887302578110105
+    slope: 2.9136656889383734
+    stop_condition:
+      name: crater_count_and_areal_density
+    study_region_padding: 1250
+    study_region_size: 10000
+- 2.863_2.677_0.197_1.095:
+    effective_radius_multiplier: 1.0949261543974262
+    max_crater_radius: 2500
+    min_crater_radius: 2.5
+    min_rim_percentage: 0.19659231952838588
+    n_simulations: 1
+    r_stat_multiplier: 2.6767874014729496
+    slope: 2.862631401557761
+    stop_condition:
+      name: crater_count_and_areal_density
+    study_region_padding: 1250
+    study_region_size: 10000
+- 2.673_2.699_0.206_1.093:
+    effective_radius_multiplier: 1.0932416928203792
+    max_crater_radius: 2500
+    min_crater_radius: 2.5
+    min_rim_percentage: 0.20557989781695163
+    n_simulations: 1
+    r_stat_multiplier: 2.6987200174395936
+    slope: 2.6731138422498293
+    stop_condition:
+      name: crater_count_and_areal_density
+    study_region_padding: 1250
+    study_region_size: 10000
+- 2.569_3.128_0.196_1.077:
+    effective_radius_multiplier: 1.0770487036311118
+    max_crater_radius: 2500
+    min_crater_radius: 2.5
+    min_rim_percentage: 0.1961650548922683
+    n_simulations: 1
+    r_stat_multiplier: 3.1284786877107194
+    slope: 2.569097554151881
+    stop_condition:
+      name: crater_count_and_areal_density
+    study_region_padding: 1250
+    study_region_size: 10000
+- 2.479_2.896_0.176_1.016:
+    effective_radius_multiplier: 1.0159118556436726
+    max_crater_radius: 2500
+    min_crater_radius: 2.5
+    min_rim_percentage: 0.17649951230321045
+    n_simulations: 1
+    r_stat_multiplier: 2.8957281867420384
+    slope: 2.4790966971709647
+    stop_condition:
+      name: crater_count_and_areal_density
+    study_region_padding: 1250
+    study_region_size: 10000
+- 2.383_3.410_0.120_0.921:
+    effective_radius_multiplier: 0.9214872366243319
+    max_crater_radius: 2500
+    min_crater_radius: 2.5
+    min_rim_percentage: 0.12008298489412075
+    n_simulations: 1
+    r_stat_multiplier: 3.409845022048344
+    slope: 2.383338513295301
+    stop_condition:
+      name: crater_count_and_areal_density
+    study_region_padding: 1250
+    study_region_size: 10000
+- 2.960_3.168_0.334_1.679:
+    effective_radius_multiplier: 1.679312155930997
+    max_crater_radius: 2500
+    min_crater_radius: 2.5
+    min_rim_percentage: 0.33379816965014886
+    n_simulations: 1
+    r_stat_multiplier: 3.1683728195245813
+    slope: 2.9598585571542984
+    stop_condition:
+      name: crater_count_and_areal_density
+    study_region_padding: 1250
+    study_region_size: 10000
+- 2.861_3.183_0.285_1.767:
+    effective_radius_multiplier: 1.7665142102815385
+    max_crater_radius: 2500
+    min_crater_radius: 2.5
+    min_rim_percentage: 0.28541094986517496
+    n_simulations: 1
+    r_stat_multiplier: 3.183195602998258
+    slope: 2.8611781682252664
+    stop_condition:
+      name: crater_count_and_areal_density
+    study_region_padding: 1250
+    study_region_size: 10000
+- 2.903_3.235_0.256_1.654:
+    effective_radius_multiplier: 1.6539374609821451
+    max_crater_radius: 2500
+    min_crater_radius: 2.5
+    min_rim_percentage: 0.25596242254164103
+    n_simulations: 1
+    r_stat_multiplier: 3.234927482819073
+    slope: 2.9031349358148058
+    stop_condition:
+      name: crater_count_and_areal_density
+    study_region_padding: 1250
+    study_region_size: 10000
+- 3.016_3.269_0.291_1.593:
+    effective_radius_multiplier: 1.5933240128373418
+    max_crater_radius: 2500
+    min_crater_radius: 2.5
+    min_rim_percentage: 0.29050128618742316
+    n_simulations: 1
+    r_stat_multiplier: 3.2686969009402476
+    slope: 3.0162501263454047
+    stop_condition:
+      name: crater_count_and_areal_density
+    study_region_padding: 1250
+    study_region_size: 10000
+- 2.968_3.359_0.235_1.612:
+    effective_radius_multiplier: 1.6121700185592234
+    max_crater_radius: 2500
+    min_crater_radius: 2.5
+    min_rim_percentage: 0.23456650613014451
+    n_simulations: 1
+    r_stat_multiplier: 3.358709582960457
+    slope: 2.9683378318139693
+    stop_condition:
+      name: crater_count_and_areal_density
+    study_region_padding: 1250
+    study_region_size: 10000
+- 3.047_3.107_0.190_1.547:
+    effective_radius_multiplier: 1.5468807252421413
+    max_crater_radius: 2500
+    min_crater_radius: 2.5
+    min_rim_percentage: 0.19042505674404267
+    n_simulations: 1
+    r_stat_multiplier: 3.106832382651663
+    slope: 3.047320635287399
+    stop_condition:
+      name: crater_count_and_areal_density
+    study_region_padding: 1250
+    study_region_size: 10000
+- 3.013_3.134_0.228_1.508:
+    effective_radius_multiplier: 1.5082515386235193
+    max_crater_radius: 2500
+    min_crater_radius: 2.5
+    min_rim_percentage: 0.22766602236379846
+    n_simulations: 1
+    r_stat_multiplier: 3.1341831717619786
+    slope: 3.01271163190108
+    stop_condition:
+      name: crater_count_and_areal_density
+    study_region_padding: 1250
+    study_region_size: 10000
+- 3.038_2.960_0.286_1.553:
+    effective_radius_multiplier: 1.552701184503262
+    max_crater_radius: 2500
+    min_crater_radius: 2.5
+    min_rim_percentage: 0.2857194402461226
+    n_simulations: 1
+    r_stat_multiplier: 2.960483617985603
+    slope: 3.0378580503054393
+    stop_condition:
+      name: crater_count_and_areal_density
+    study_region_padding: 1250
+    study_region_size: 10000
+- 3.028_2.907_0.265_1.464:
+    effective_radius_multiplier: 1.4640126168404446
+    max_crater_radius: 2500
+    min_crater_radius: 2.5
+    min_rim_percentage: 0.26534381062654916
+    n_simulations: 1
+    r_stat_multiplier: 2.9067378567446305
+    slope: 3.027989580624488
+    stop_condition:
+      name: crater_count_and_areal_density
+    study_region_padding: 1250
+    study_region_size: 10000
+- 2.999_2.968_0.278_1.456:
+    effective_radius_multiplier: 1.455591295258921
+    max_crater_radius: 2500
+    min_crater_radius: 2.5
+    min_rim_percentage: 0.2775451575335739
+    n_simulations: 1
+    r_stat_multiplier: 2.9680827085595536
+    slope: 2.9988389093679513
+    stop_condition:
+      name: crater_count_and_areal_density
+    study_region_padding: 1250
+    study_region_size: 10000
+- 3.153_2.868_0.535_1.075:
+    effective_radius_multiplier: 1.0754513858717076
+    max_crater_radius: 2500
+    min_crater_radius: 2.5
+    min_rim_percentage: 0.5345417342848708
+    n_simulations: 1
+    r_stat_multiplier: 2.8675214753415808
+    slope: 3.1534090289303864
+    stop_condition:
+      name: crater_count_and_areal_density
+    study_region_padding: 1250
+    study_region_size: 10000
+- 3.153_3.112_0.501_0.988:
+    effective_radius_multiplier: 0.9878978684120892
+    max_crater_radius: 2500
+    min_crater_radius: 2.5
+    min_rim_percentage: 0.5012488859339015
+    n_simulations: 1
+    r_stat_multiplier: 3.1117247209589833
+    slope: 3.152542982256228
+    stop_condition:
+      name: crater_count_and_areal_density
+    study_region_padding: 1250
+    study_region_size: 10000
+- 3.156_3.324_0.518_1.007:
+    effective_radius_multiplier: 1.0070413803634324
+    max_crater_radius: 2500
+    min_crater_radius: 2.5
+    min_rim_percentage: 0.517522067343008
+    n_simulations: 1
+    r_stat_multiplier: 3.3242504418400927
+    slope: 3.15613703250662
+    stop_condition:
+      name: crater_count_and_areal_density
+    study_region_padding: 1250
+    study_region_size: 10000
+- 3.134_3.445_0.432_1.058:
+    effective_radius_multiplier: 1.0577565745401054
+    max_crater_radius: 2500
+    min_crater_radius: 2.5
+    min_rim_percentage: 0.4320724785155478
+    n_simulations: 1
+    r_stat_multiplier: 3.4447190060947714
+    slope: 3.13370575390953
+    stop_condition:
+      name: crater_count_and_areal_density
+    study_region_padding: 1250
+    study_region_size: 10000
+- 3.207_3.420_0.310_1.031:
+    effective_radius_multiplier: 1.0312571313293797
+    max_crater_radius: 2500
+    min_crater_radius: 2.5
+    min_rim_percentage: 0.30991868922158206
+    n_simulations: 1
+    r_stat_multiplier: 3.420029054628093
+    slope: 3.206559293993043
+    stop_condition:
+      name: crater_count_and_areal_density
+    study_region_padding: 1250
+    study_region_size: 10000
+- 3.069_3.845_0.256_0.997:
+    effective_radius_multiplier: 0.9968297047062019
+    max_crater_radius: 2500
+    min_crater_radius: 2.5
+    min_rim_percentage: 0.25568025065892797
+    n_simulations: 1
+    r_stat_multiplier: 3.844543802689906
+    slope: 3.068524161627613
+    stop_condition:
+      name: crater_count_and_areal_density
+    study_region_padding: 1250
+    study_region_size: 10000
+- 3.023_3.658_0.332_1.003:
+    effective_radius_multiplier: 1.0030476363371477
+    max_crater_radius: 2500
+    min_crater_radius: 2.5
+    min_rim_percentage: 0.33152893457125854
+    n_simulations: 1
+    r_stat_multiplier: 3.6582569972252577
+    slope: 3.022881566013254
+    stop_condition:
+      name: crater_count_and_areal_density
+    study_region_padding: 1250
+    study_region_size: 10000
+- 2.964_3.697_0.408_0.946:
+    effective_radius_multiplier: 0.9456857792751359
+    max_crater_radius: 2500
+    min_crater_radius: 2.5
+    min_rim_percentage: 0.40753725668158514
+    n_simulations: 1
+    r_stat_multiplier: 3.6968295098632256
+    slope: 2.9642199709280326
+    stop_condition:
+      name: crater_count_and_areal_density
+    study_region_padding: 1250
+    study_region_size: 10000
+- 2.983_3.426_0.468_0.991:
+    effective_radius_multiplier: 0.990901090281868
+    max_crater_radius: 2500
+    min_crater_radius: 2.5
+    min_rim_percentage: 0.4675366391107158
+    n_simulations: 1
+    r_stat_multiplier: 3.4263747290405706
+    slope: 2.9831243151694435
+    stop_condition:
+      name: crater_count_and_areal_density
+    study_region_padding: 1250
+    study_region_size: 10000
+- 2.999_3.017_0.483_1.080:
+    effective_radius_multiplier: 1.0801595309576917
+    max_crater_radius: 2500
+    min_crater_radius: 2.5
+    min_rim_percentage: 0.4830427651420421
+    n_simulations: 1
+    r_stat_multiplier: 3.0165254871553766
+    slope: 2.999269951510207
+    stop_condition:
+      name: crater_count_and_areal_density
+    study_region_padding: 1250
+    study_region_size: 10000
+- 3.117_2.862_0.606_1.680:
+    effective_radius_multiplier: 1.680068803763305
+    max_crater_radius: 2500
+    min_crater_radius: 2.5
+    min_rim_percentage: 0.6055226554645282
+    n_simulations: 1
+    r_stat_multiplier: 2.862276698720714
+    slope: 3.1170454297361454
+    stop_condition:
+      name: crater_count_and_areal_density
+    study_region_padding: 1250
+    study_region_size: 10000
+- 3.228_2.898_0.619_1.617:
+    effective_radius_multiplier: 1.617227113136621
+    max_crater_radius: 2500
+    min_crater_radius: 2.5
+    min_rim_percentage: 0.6186221153036953
+    n_simulations: 1
+    r_stat_multiplier: 2.8980242057625047
+    slope: 3.2283855975397335
+    stop_condition:
+      name: crater_count_and_areal_density
+    study_region_padding: 1250
+    study_region_size: 10000
+- 3.391_2.914_0.555_1.624:
+    effective_radius_multiplier: 1.623696389325445
+    max_crater_radius: 2500
+    min_crater_radius: 2.5
+    min_rim_percentage: 0.5554949281645043
+    n_simulations: 1
+    r_stat_multiplier: 2.9144757763782128
+    slope: 3.3913390169908104
+    stop_condition:
+      name: crater_count_and_areal_density
+    study_region_padding: 1250
+    study_region_size: 10000
+- 3.251_2.755_0.561_1.607:
+    effective_radius_multiplier: 1.6073705069945088
+    max_crater_radius: 2500
+    min_crater_radius: 2.5
+    min_rim_percentage: 0.5606979649150183
+    n_simulations: 1
+    r_stat_multiplier: 2.7550527416749024
+    slope: 3.2510401082185263
+    stop_condition:
+      name: crater_count_and_areal_density
+    study_region_padding: 1250
+    study_region_size: 10000
+- 3.268_3.156_0.614_1.610:
+    effective_radius_multiplier: 1.6103048789170042
+    max_crater_radius: 2500
+    min_crater_radius: 2.5
+    min_rim_percentage: 0.6139190993355637
+    n_simulations: 1
+    r_stat_multiplier: 3.1555296544291345
+    slope: 3.267635805665944
+    stop_condition:
+      name: crater_count_and_areal_density
+    study_region_padding: 1250
+    study_region_size: 10000
+- 3.264_3.518_0.584_1.517:
+    effective_radius_multiplier: 1.5167850049796443
+    max_crater_radius: 2500
+    min_crater_radius: 2.5
+    min_rim_percentage: 0.5839825110016422
+    n_simulations: 1
+    r_stat_multiplier: 3.5177555573355748
+    slope: 3.2637028722014523
+    stop_condition:
+      name: crater_count_and_areal_density
+    study_region_padding: 1250
+    study_region_size: 10000
+- 3.362_3.475_0.603_1.563:
+    effective_radius_multiplier: 1.5633614856490425
+    max_crater_radius: 2500
+    min_crater_radius: 2.5
+    min_rim_percentage: 0.6032358161405058
+    n_simulations: 1
+    r_stat_multiplier: 3.474856556021396
+    slope: 3.362006211827376
+    stop_condition:
+      name: crater_count_and_areal_density
+    study_region_padding: 1250
+    study_region_size: 10000
+- 3.457_3.628_0.678_1.597:
+    effective_radius_multiplier: 1.59704393233973
+    max_crater_radius: 2500
+    min_crater_radius: 2.5
+    min_rim_percentage: 0.6778585854980833
+    n_simulations: 1
+    r_stat_multiplier: 3.628123488028607
+    slope: 3.45659391019868
+    stop_condition:
+      name: crater_count_and_areal_density
+    study_region_padding: 1250
+    study_region_size: 10000
+- 3.555_3.877_0.649_1.598:
+    effective_radius_multiplier: 1.598064870279009
+    max_crater_radius: 2500
+    min_crater_radius: 2.5
+    min_rim_percentage: 0.6487660750072397
+    n_simulations: 1
+    r_stat_multiplier: 3.876575164812709
+    slope: 3.5552413120687736
+    stop_condition:
+      name: crater_count_and_areal_density
+    study_region_padding: 1250
+    study_region_size: 10000
+- 3.489_4.064_0.583_1.476:
+    effective_radius_multiplier: 1.4761418420767578
+    max_crater_radius: 2500
+    min_crater_radius: 2.5
+    min_rim_percentage: 0.5834071655920254
+    n_simulations: 1
+    r_stat_multiplier: 4.064311314110129
+    slope: 3.489285303241544
+    stop_condition:
+      name: crater_count_and_areal_density
+    study_region_padding: 1250
+    study_region_size: 10000
+- 2.904_14.938_0.363_0.968:
+    effective_radius_multiplier: 0.9684280981595834
+    max_crater_radius: 2500
+    min_crater_radius: 2.5
+    min_rim_percentage: 0.36293606512946663
+    n_simulations: 1
+    r_stat_multiplier: 14.938094655326596
+    slope: 2.903674631412121
+    stop_condition:
+      name: crater_count_and_areal_density
+    study_region_padding: 1250
+    study_region_size: 10000
+- 2.964_15.434_0.414_1.022:
+    effective_radius_multiplier: 1.0215388216057226
+    max_crater_radius: 2500
+    min_crater_radius: 2.5
+    min_rim_percentage: 0.41445503168706804
+    n_simulations: 1
+    r_stat_multiplier: 15.434240254941237
+    slope: 2.9636921550450803
+    stop_condition:
+      name: crater_count_and_areal_density
+    study_region_padding: 1250
+    study_region_size: 10000
+- 3.189_15.292_0.403_0.946:
+    effective_radius_multiplier: 0.9463659016432528
+    max_crater_radius: 2500
+    min_crater_radius: 2.5
+    min_rim_percentage: 0.40283716186243107
+    n_simulations: 1
+    r_stat_multiplier: 15.29150073322688
+    slope: 3.188759758148167
+    stop_condition:
+      name: crater_count_and_areal_density
+    study_region_padding: 1250
+    study_region_size: 10000
+- 3.106_15.227_0.431_0.894:
+    effective_radius_multiplier: 0.8938549521303484
+    max_crater_radius: 2500
+    min_crater_radius: 2.5
+    min_rim_percentage: 0.43123116523513094
+    n_simulations: 1
+    r_stat_multiplier: 15.227289392970768
+    slope: 3.106260552763451
+    stop_condition:
+      name: crater_count_and_areal_density
+    study_region_padding: 1250
+    study_region_size: 10000
+- 3.158_15.221_0.424_0.909:
+    effective_radius_multiplier: 0.9094340272994924
+    max_crater_radius: 2500
+    min_crater_radius: 2.5
+    min_rim_percentage: 0.4241286288786718
+    n_simulations: 1
+    r_stat_multiplier: 15.220558745328699
+    slope: 3.157558837723323
+    stop_condition:
+      name: crater_count_and_areal_density
+    study_region_padding: 1250
+    study_region_size: 10000
+- 3.233_15.238_0.471_0.896:
+    effective_radius_multiplier: 0.8961617460547038
+    max_crater_radius: 2500
+    min_crater_radius: 2.5
+    min_rim_percentage: 0.4706078523758074
+    n_simulations: 1
+    r_stat_multiplier: 15.237968932700038
+    slope: 3.2327622045500513
+    stop_condition:
+      name: crater_count_and_areal_density
+    study_region_padding: 1250
+    study_region_size: 10000
+- 3.359_15.572_0.444_0.847:
+    effective_radius_multiplier: 0.8466480115887297
+    max_crater_radius: 2500
+    min_crater_radius: 2.5
+    min_rim_percentage: 0.4438854919737225
+    n_simulations: 1
+    r_stat_multiplier: 15.572332389110342
+    slope: 3.3588443314727274
+    stop_condition:
+      name: crater_count_and_areal_density
+    study_region_padding: 1250
+    study_region_size: 10000
+- 3.189_15.513_0.437_0.867:
+    effective_radius_multiplier: 0.867454202312611
+    max_crater_radius: 2500
+    min_crater_radius: 2.5
+    min_rim_percentage: 0.43724543324812376
+    n_simulations: 1
+    r_stat_multiplier: 15.51269113455944
+    slope: 3.1886947219979582
+    stop_condition:
+      name: crater_count_and_areal_density
+    study_region_padding: 1250
+    study_region_size: 10000
+- 3.382_15.411_0.466_0.813:
+    effective_radius_multiplier: 0.8130287745381645
+    max_crater_radius: 2500
+    min_crater_radius: 2.5
+    min_rim_percentage: 0.46567064358151755
+    n_simulations: 1
+    r_stat_multiplier: 15.4112302907816
+    slope: 3.3817798087027886
+    stop_condition:
+      name: crater_count_and_areal_density
+    study_region_padding: 1250
+    study_region_size: 10000
+- 3.397_15.549_0.478_0.828:
+    effective_radius_multiplier: 0.828218171077474
+    max_crater_radius: 2500
+    min_crater_radius: 2.5
+    min_rim_percentage: 0.47785893160806125
+    n_simulations: 1
+    r_stat_multiplier: 15.548640939731696
+    slope: 3.3967731915526045
+    stop_condition:
+      name: crater_count_and_areal_density
+    study_region_padding: 1250
+    study_region_size: 10000
+- 2.788_14.818_0.283_1.670:
+    effective_radius_multiplier: 1.6704837541023567
+    max_crater_radius: 2500
+    min_crater_radius: 2.5
+    min_rim_percentage: 0.2826017831032537
+    n_simulations: 1
+    r_stat_multiplier: 14.818471493120663
+    slope: 2.7877701116957407
+    stop_condition:
+      name: crater_count_and_areal_density
+    study_region_padding: 1250
+    study_region_size: 10000
+- 2.743_14.922_0.226_1.701:
+    effective_radius_multiplier: 1.7005278795369576
+    max_crater_radius: 2500
+    min_crater_radius: 2.5
+    min_rim_percentage: 0.22601973676569606
+    n_simulations: 1
+    r_stat_multiplier: 14.921676183542585
+    slope: 2.7429309478496466
+    stop_condition:
+      name: crater_count_and_areal_density
+    study_region_padding: 1250
+    study_region_size: 10000
+- 2.812_15.068_0.155_1.724:
+    effective_radius_multiplier: 1.7238163828388684
+    max_crater_radius: 2500
+    min_crater_radius: 2.5
+    min_rim_percentage: 0.1551250123642126
+    n_simulations: 1
+    r_stat_multiplier: 15.068118218209353
+    slope: 2.8116113885291143
+    stop_condition:
+      name: crater_count_and_areal_density
+    study_region_padding: 1250
+    study_region_size: 10000
+- 2.856_15.089_0.244_1.772:
+    effective_radius_multiplier: 1.7718603865995606
+    max_crater_radius: 2500
+    min_crater_radius: 2.5
+    min_rim_percentage: 0.24434285212927778
+    n_simulations: 1
+    r_stat_multiplier: 15.08876707309342
+    slope: 2.8556696185580144
+    stop_condition:
+      name: crater_count_and_areal_density
+    study_region_padding: 1250
+    study_region_size: 10000
+- 3.014_15.117_0.276_1.772:
+    effective_radius_multiplier: 1.771766652013272
+    max_crater_radius: 2500
+    min_crater_radius: 2.5
+    min_rim_percentage: 0.27594026632974444
+    n_simulations: 1
+    r_stat_multiplier: 15.116928116153401
+    slope: 3.0144764071174404
+    stop_condition:
+      name: crater_count_and_areal_density
+    study_region_padding: 1250
+    study_region_size: 10000
+- 2.903_14.754_0.337_1.748:
+    effective_radius_multiplier: 1.748140122412022
+    max_crater_radius: 2500
+    min_crater_radius: 2.5
+    min_rim_percentage: 0.33696871201547085
+    n_simulations: 1
+    r_stat_multiplier: 14.754257330752202
+    slope: 2.9029724117754965
+    stop_condition:
+      name: crater_count_and_areal_density
+    study_region_padding: 1250
+    study_region_size: 10000
+- 2.870_15.130_0.258_1.609:
+    effective_radius_multiplier: 1.608734478257772
+    max_crater_radius: 2500
+    min_crater_radius: 2.5
+    min_rim_percentage: 0.2576083906760893
+    n_simulations: 1
+    r_stat_multiplier: 15.129902557204561
+    slope: 2.8698595819472494
+    stop_condition:
+      name: crater_count_and_areal_density
+    study_region_padding: 1250
+    study_region_size: 10000
+- 2.857_15.352_0.253_1.605:
+    effective_radius_multiplier: 1.6052533233217674
+    max_crater_radius: 2500
+    min_crater_radius: 2.5
+    min_rim_percentage: 0.25282575345142433
+    n_simulations: 1
+    r_stat_multiplier: 15.35195119253978
+    slope: 2.8574907086616794
+    stop_condition:
+      name: crater_count_and_areal_density
+    study_region_padding: 1250
+    study_region_size: 10000
+- 2.845_14.911_0.219_1.663:
+    effective_radius_multiplier: 1.6631567670437601
+    max_crater_radius: 2500
+    min_crater_radius: 2.5
+    min_rim_percentage: 0.21868751745955575
+    n_simulations: 1
+    r_stat_multiplier: 14.911226758939511
+    slope: 2.8453165591359704
+    stop_condition:
+      name: crater_count_and_areal_density
+    study_region_padding: 1250
+    study_region_size: 10000
+- 2.954_14.894_0.236_1.717:
+    effective_radius_multiplier: 1.7165647864102143
+    max_crater_radius: 2500
+    min_crater_radius: 2.5
+    min_rim_percentage: 0.23585041650843405
+    n_simulations: 1
+    r_stat_multiplier: 14.893595904448924
+    slope: 2.9542698248574157
+    stop_condition:
+      name: crater_count_and_areal_density
+    study_region_padding: 1250
+    study_region_size: 10000
+- 2.989_15.057_0.600_1.026:
+    effective_radius_multiplier: 1.0263511195444213
+    max_crater_radius: 2500
+    min_crater_radius: 2.5
+    min_rim_percentage: 0.6003014663585517
+    n_simulations: 1
+    r_stat_multiplier: 15.056565411767176
+    slope: 2.9893325509441757
+    stop_condition:
+      name: crater_count_and_areal_density
+    study_region_padding: 1250
+    study_region_size: 10000
+- 3.161_15.384_0.626_0.977:
+    effective_radius_multiplier: 0.9770999404095176
+    max_crater_radius: 2500
+    min_crater_radius: 2.5
+    min_rim_percentage: 0.6255857589254479
+    n_simulations: 1
+    r_stat_multiplier: 15.383613802764355
+    slope: 3.160936583155389
+    stop_condition:
+      name: crater_count_and_areal_density
+    study_region_padding: 1250
+    study_region_size: 10000
+- 3.186_15.588_0.614_0.982:
+    effective_radius_multiplier: 0.9818075846856282
+    max_crater_radius: 2500
+    min_crater_radius: 2.5
+    min_rim_percentage: 0.6139105592689429
+    n_simulations: 1
+    r_stat_multiplier: 15.587910872793707
+    slope: 3.185734571630143
+    stop_condition:
+      name: crater_count_and_areal_density
+    study_region_padding: 1250
+    study_region_size: 10000
+- 3.319_15.642_0.663_1.045:
+    effective_radius_multiplier: 1.044580800782944
+    max_crater_radius: 2500
+    min_crater_radius: 2.5
+    min_rim_percentage: 0.6626298694361676
+    n_simulations: 1
+    r_stat_multiplier: 15.64201001486171
+    slope: 3.318797649266208
+    stop_condition:
+      name: crater_count_and_areal_density
+    study_region_padding: 1250
+    study_region_size: 10000
+- 3.286_15.600_0.672_1.141:
+    effective_radius_multiplier: 1.1410724224828952
+    max_crater_radius: 2500
+    min_crater_radius: 2.5
+    min_rim_percentage: 0.6722039857081632
+    n_simulations: 1
+    r_stat_multiplier: 15.60025994627242
+    slope: 3.286348925114317
+    stop_condition:
+      name: crater_count_and_areal_density
+    study_region_padding: 1250
+    study_region_size: 10000
+- 3.210_15.300_0.680_1.190:
+    effective_radius_multiplier: 1.189779044245783
+    max_crater_radius: 2500
+    min_crater_radius: 2.5
+    min_rim_percentage: 0.6802186717629769
+    n_simulations: 1
+    r_stat_multiplier: 15.300249126776164
+    slope: 3.2104860827783144
+    stop_condition:
+      name: crater_count_and_areal_density
+    study_region_padding: 1250
+    study_region_size: 10000
+- 3.131_15.469_0.597_1.198:
+    effective_radius_multiplier: 1.197766478998579
+    max_crater_radius: 2500
+    min_crater_radius: 2.5
+    min_rim_percentage: 0.5971949182248291
+    n_simulations: 1
+    r_stat_multiplier: 15.46889533458532
+    slope: 3.131276887725416
+    stop_condition:
+      name: crater_count_and_areal_density
+    study_region_padding: 1250
+    study_region_size: 10000
+- 3.190_15.802_0.599_1.326:
+    effective_radius_multiplier: 1.3257589905302025
+    max_crater_radius: 2500
+    min_crater_radius: 2.5
+    min_rim_percentage: 0.5989400464279293
+    n_simulations: 1
+    r_stat_multiplier: 15.802193010296127
+    slope: 3.190145443196497
+    stop_condition:
+      name: crater_count_and_areal_density
+    study_region_padding: 1250
+    study_region_size: 10000
+- 3.213_16.204_0.613_1.334:
+    effective_radius_multiplier: 1.3341951038770266
+    max_crater_radius: 2500
+    min_crater_radius: 2.5
+    min_rim_percentage: 0.6127071395819255
+    n_simulations: 1
+    r_stat_multiplier: 16.20384221160483
+    slope: 3.213410409017552
+    stop_condition:
+      name: crater_count_and_areal_density
+    study_region_padding: 1250
+    study_region_size: 10000
+- 3.150_15.855_0.549_1.380:
+    effective_radius_multiplier: 1.3798295006680192
+    max_crater_radius: 2500
+    min_crater_radius: 2.5
+    min_rim_percentage: 0.5490286277413132
+    n_simulations: 1
+    r_stat_multiplier: 15.855248433426532
+    slope: 3.1503485698744944
+    stop_condition:
+      name: crater_count_and_areal_density
+    study_region_padding: 1250
+    study_region_size: 10000
+- 3.114_14.803_0.581_1.713:
+    effective_radius_multiplier: 1.713261697919915
+    max_crater_radius: 2500
+    min_crater_radius: 2.5
+    min_rim_percentage: 0.5813864134320856
+    n_simulations: 1
+    r_stat_multiplier: 14.802958610278084
+    slope: 3.114065624294746
+    stop_condition:
+      name: crater_count_and_areal_density
+    study_region_padding: 1250
+    study_region_size: 10000
+- 3.232_14.878_0.527_1.811:
+    effective_radius_multiplier: 1.811216465545272
+    max_crater_radius: 2500
+    min_crater_radius: 2.5
+    min_rim_percentage: 0.5272025294641065
+    n_simulations: 1
+    r_stat_multiplier: 14.87817021082973
+    slope: 3.2315256480904804
+    stop_condition:
+      name: crater_count_and_areal_density
+    study_region_padding: 1250
+    study_region_size: 10000
+- 3.273_14.890_0.607_1.825:
+    effective_radius_multiplier: 1.8252136441081181
+    max_crater_radius: 2500
+    min_crater_radius: 2.5
+    min_rim_percentage: 0.6069985880446289
+    n_simulations: 1
+    r_stat_multiplier: 14.890005681056513
+    slope: 3.272911956244056
+    stop_condition:
+      name: crater_count_and_areal_density
+    study_region_padding: 1250
+    study_region_size: 10000
+- 3.331_14.603_0.586_1.852:
+    effective_radius_multiplier: 1.8518891850251096
+    max_crater_radius: 2500
+    min_crater_radius: 2.5
+    min_rim_percentage: 0.5862176192368413
+    n_simulations: 1
+    r_stat_multiplier: 14.603124328887212
+    slope: 3.331443759253285
+    stop_condition:
+      name: crater_count_and_areal_density
+    study_region_padding: 1250
+    study_region_size: 10000
+- 3.284_14.865_0.567_1.822:
+    effective_radius_multiplier: 1.821772185873798
+    max_crater_radius: 2500
+    min_crater_radius: 2.5
+    min_rim_percentage: 0.5672311028578345
+    n_simulations: 1
+    r_stat_multiplier: 14.864588660895555
+    slope: 3.284108262246206
+    stop_condition:
+      name: crater_count_and_areal_density
+    study_region_padding: 1250
+    study_region_size: 10000
+- 3.287_15.101_0.556_1.851:
+    effective_radius_multiplier: 1.8508516760168576
+    max_crater_radius: 2500
+    min_crater_radius: 2.5
+    min_rim_percentage: 0.555510357261941
+    n_simulations: 1
+    r_stat_multiplier: 15.101135135081902
+    slope: 3.287348987686593
+    stop_condition:
+      name: crater_count_and_areal_density
+    study_region_padding: 1250
+    study_region_size: 10000
+- 3.260_14.811_0.523_1.813:
+    effective_radius_multiplier: 1.8128599215872245
+    max_crater_radius: 2500
+    min_crater_radius: 2.5
+    min_rim_percentage: 0.5227913029709164
+    n_simulations: 1
+    r_stat_multiplier: 14.81110271969852
+    slope: 3.260131341117854
+    stop_condition:
+      name: crater_count_and_areal_density
+    study_region_padding: 1250
+    study_region_size: 10000
+- 3.245_15.308_0.508_1.779:
+    effective_radius_multiplier: 1.7790864498979029
+    max_crater_radius: 2500
+    min_crater_radius: 2.5
+    min_rim_percentage: 0.5079998495756344
+    n_simulations: 1
+    r_stat_multiplier: 15.30779347899081
+    slope: 3.2452022469431094
+    stop_condition:
+      name: crater_count_and_areal_density
+    study_region_padding: 1250
+    study_region_size: 10000
+- 3.040_15.458_0.463_1.700:
+    effective_radius_multiplier: 1.7002140102065526
+    max_crater_radius: 2500
+    min_crater_radius: 2.5
+    min_rim_percentage: 0.4626703734674165
+    n_simulations: 1
+    r_stat_multiplier: 15.457936252568437
+    slope: 3.039962406445449
+    stop_condition:
+      name: crater_count_and_areal_density
+    study_region_padding: 1250
+    study_region_size: 10000
+- 3.144_14.932_0.503_1.705:
+    effective_radius_multiplier: 1.7050100308263145
+    max_crater_radius: 2500
+    min_crater_radius: 2.5
+    min_rim_percentage: 0.5027168558006728
+    n_simulations: 1
+    r_stat_multiplier: 14.931704145173697
+    slope: 3.144195943289548
+    stop_condition:
+      name: crater_count_and_areal_density
+    study_region_padding: 1250
+    study_region_size: 10000
+

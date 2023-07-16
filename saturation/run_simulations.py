@@ -1,120 +1,10 @@
-import datetime
 import multiprocessing
-import os
 import sys
-from dataclasses import dataclass
-from pathlib import Path
 from typing import Dict, List
-import numpy as np
+
 import yaml
-import traceback
 
-from saturation.distributions import ParetoProbabilityDistribution
-from saturation.simulation import run_simulation, get_craters
-from saturation.stop_conditions import CraterCountAndArealDensityStopCondition, NCratersStopCondition
-
-
-@dataclass(frozen=True, kw_only=True)
-class SimulationConfig:
-    simulation_name: str
-    output_path: str
-    simulation_id: int
-    slope: float
-    r_stat_multiplier: float
-    min_rim_percentage: float
-    effective_radius_multiplier: float
-    study_region_size: int
-    study_region_padding: int
-    min_crater_radius: float
-    max_crater_radius: float
-    stop_condition: Dict
-    write_state: bool
-    write_images: bool
-    write_all_craters: bool
-
-    def to_dict(self) -> Dict:
-        return {
-            "simulation_name": self.simulation_name,
-            "simulation_id": self.simulation_id,
-            "output_path": self.output_path,
-            "slope": self.slope,
-            "r_stat_multiplier": self.r_stat_multiplier,
-            "min_rim_percentage": self.min_rim_percentage,
-            "effective_radius_multiplier": self.effective_radius_multiplier,
-            "study_region_size": self.study_region_size,
-            "study_region_padding": self.study_region_padding,
-            "min_crater_radius": self.min_crater_radius,
-            "max_crater_radius": self.max_crater_radius,
-            "stop_condition": self.stop_condition,
-            "write_state": self.write_state,
-            "write_images": self.write_images,
-            "write_all_craters": self.write_all_craters
-        }
-
-
-def get_stop_condition(stop_condition_config: Dict):
-    name = stop_condition_config["name"]
-    if name == "crater_count_and_areal_density":
-        return CraterCountAndArealDensityStopCondition()
-    elif name == "n_craters":
-        return NCratersStopCondition(stop_condition_config["n_craters"])
-
-
-def run_single_simulation(config: SimulationConfig):
-    print(f'Starting simulation {config.simulation_name}')
-    # Check if we should skip the run
-    if os.path.exists(f"{config.output_path}/completed.txt"):
-        print(f'Found completion file for {config.simulation_name}, skipping...')
-        return
-
-    start_time = datetime.datetime.now()
-
-    try:
-        seed = hash((config.simulation_id,
-                     config.slope,
-                     config.r_stat_multiplier,
-                     config.effective_radius_multiplier,
-                     config.min_rim_percentage)) % 2**32
-        np.random.seed(seed)
-
-        r_stat = config.r_stat_multiplier * config.min_crater_radius
-
-        full_region_size = config.study_region_size + 2 * config.study_region_padding
-        size_distribution = ParetoProbabilityDistribution(cdf_slope=config.slope,
-                                                          x_min=config.min_crater_radius,
-                                                          x_max=config.max_crater_radius)
-        crater_generator = get_craters(size_distribution, full_region_size)
-
-        start_time = datetime.datetime.now()
-
-        path = Path(config.output_path)
-        path.mkdir(parents=True, exist_ok=True)
-        # Write out the config file
-        with open(f'{config.output_path}/config.yaml', 'w') as config_output:
-            yaml.dump(config.to_dict(), config_output)
-
-        stop_condition = get_stop_condition(config.stop_condition)
-        run_simulation(crater_generator,
-                       r_stat,
-                       config.r_stat_multiplier,
-                       config.min_rim_percentage,
-                       config.effective_radius_multiplier,
-                       config.study_region_size,
-                       config.study_region_padding,
-                       config.output_path,
-                       stop_condition,
-                       config.write_state,
-                       config.write_images,
-                       config.write_all_craters)
-
-        # Write out the completion file.
-        with open(f'{config.output_path}/completed.txt', 'w'):
-            pass
-    except:
-        traceback.print_exc()
-
-    duration = datetime.datetime.now() - start_time
-    print(f'Finished simulation {config.simulation_name}, duration (seconds): {duration.total_seconds():.2f}')
+from saturation.simulation import run_simulation, SimulationConfig
 
 
 def get_simulation_configs(config: Dict) -> List[SimulationConfig]:
@@ -123,36 +13,41 @@ def get_simulation_configs(config: Dict) -> List[SimulationConfig]:
     creates a set of SimulationConfigs, one per run.
     """
     base_output_path = config['output_path']
-    write_state = config['write_state']
-    write_images = config['write_images']
-    write_all_craters = config['write_all_craters']
+    write_statistics_cadence = config['write_statistics_cadence']
+    write_craters_cadence = config['write_craters_cadence']
+    write_crater_removals_cadence = config['write_crater_removals_cadence']
+    write_state_cadence = config['write_state_cadence']
+    write_image_cadence = config['write_image_cadence']
+    write_image_points = config['write_image_points']
 
     result = []
-    for sim_group_config in config['run_configurations']:
-        simulation_group_name, values = list(sim_group_config.items())[0]
-        n_simulations = values['n_simulations']
+    run_configurations = sorted(config['run_configurations'], key=lambda x: x[list(x.keys())[0]]["slope"], reverse=True)
+    for sim_group_config in run_configurations:
+        simulation_id, values = list(sim_group_config.items())[0]
+        simulation_name = values["simulation_name"]
+        output_path = f'{base_output_path}/{simulation_name}/'
 
-        for simulation_id in range(1, n_simulations + 1):
-            simulation_name = f'{simulation_group_name}_{simulation_id}'
-            output_path = f'{base_output_path}/{simulation_group_name}/{simulation_id}/'
-
-            result.append(SimulationConfig(
-                simulation_name=simulation_name,
-                output_path=output_path,
-                simulation_id=simulation_id,
-                slope=values['slope'],
-                r_stat_multiplier=values['r_stat_multiplier'],
-                min_rim_percentage=values['min_rim_percentage'],
-                effective_radius_multiplier=values['effective_radius_multiplier'],
-                study_region_size=values['study_region_size'],
-                study_region_padding=values['study_region_padding'],
-                min_crater_radius=values['min_crater_radius'],
-                max_crater_radius=values['max_crater_radius'],
-                stop_condition=values['stop_condition'],
-                write_state=write_state,
-                write_images=write_images,
-                write_all_craters=write_all_craters
-            ))
+        result.append(SimulationConfig(
+            simulation_id=simulation_id,
+            simulation_name=simulation_name,
+            output_path=output_path,
+            slope=values['slope'],
+            r_stat_multiplier=values['r_stat_multiplier'],
+            min_rim_percentage=values['min_rim_percentage'],
+            effective_radius_multiplier=values['effective_radius_multiplier'],
+            study_region_size=values['study_region_size'],
+            study_region_padding=values['study_region_padding'],
+            min_crater_radius=values['min_crater_radius'],
+            max_crater_radius=values['max_crater_radius'],
+            stop_condition=values['stop_condition'],
+            write_statistics_cadence=write_statistics_cadence,
+            write_craters_cadence=write_craters_cadence,
+            write_crater_removals_cadence=write_crater_removals_cadence,
+            write_state_cadence=write_state_cadence,
+            write_image_cadence=write_image_cadence,
+            write_image_points=write_image_points,
+            spatial_hash_cell_size=values['spatial_hash_cell_size'],
+        ))
 
     return result
 
@@ -167,13 +62,14 @@ def main(config_filename: str):
     if n_workers > 1:
         with multiprocessing.Pool(processes=n_workers) as pool:
             for simulation_config in simulation_configs:
-                pool.apply_async(run_single_simulation, (simulation_config, ))
+                pool.apply_async(run_simulation, (simulation_config, ))
+                sys.stdout.flush()
 
             pool.close()
             pool.join()
     else:
         for simulation_config in simulation_configs:
-            run_single_simulation(simulation_config)
+            run_simulation(simulation_config)
 
 
 if __name__ == '__main__':

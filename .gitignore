@@ -1,3 +1,13 @@
 /.idea/
 /saturation.egg-info/
 /notebooks/.ipynb_checkpoints/
+/notebooks/iframe_figures/*
+/notebooks/figures/
+/notebooks/iframe_figures/
+/notebooks/Discussion 2023-02-02/
+/notebooks/scratch/
+/notebooks/thesis/Chapter3/figures/
+/notebooks/thesis/Chapter3/.ipynb_checkpoints/
+/notebooks/thesis/Chapter4/.ipynb_checkpoints/
+/notebooks/thesis/Chapter4/iframe_figures/
+/notebooks/thesis/Chapter4/backup/

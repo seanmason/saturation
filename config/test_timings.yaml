@@ -1,0 +1,96 @@
+n_workers: 10
+output_path: /data/saturation/tests/test_timings_cell_sizes_buffer_31_boundaries
+write_statistics_cadence: 100000
+write_state_cadence: 0
+write_image_cadence: 0
+
+run_configurations:
+  - cell_size_40:
+        effective_radius_multiplier: 1.8932878263931265
+        max_crater_radius: 2500
+        min_crater_radius: 2.5
+        min_rim_percentage: 0.30188460057218813
+        r_stat_multiplier: 3.02160304368485
+        slope: 1.9952087705468564
+        study_region_padding: 1250
+        study_region_size: 10000
+        spatial_hash_cell_size: 40
+        stop_condition:
+          name: n_craters
+          n_craters: 5000000
+        n_simulations: 1
+
+  - cell_size_60:
+        effective_radius_multiplier: 1.8932878263931265
+        max_crater_radius: 2500
+        min_crater_radius: 2.5
+        min_rim_percentage: 0.30188460057218813
+        r_stat_multiplier: 3.02160304368485
+        slope: 1.9952087705468564
+        study_region_padding: 1250
+        study_region_size: 10000
+        spatial_hash_cell_size: 60
+        stop_condition:
+          name: n_craters
+          n_craters: 5000000
+        n_simulations: 1
+
+  - cell_size_50:
+        effective_radius_multiplier: 1.8932878263931265
+        max_crater_radius: 2500
+        min_crater_radius: 2.5
+        min_rim_percentage: 0.30188460057218813
+        r_stat_multiplier: 3.02160304368485
+        slope: 1.9952087705468564
+        study_region_padding: 1250
+        study_region_size: 10000
+        spatial_hash_cell_size: 50
+        stop_condition:
+          name: n_craters
+          n_craters: 5000000
+        n_simulations: 1
+
+  - cell_size_75:
+        effective_radius_multiplier: 1.8932878263931265
+        max_crater_radius: 2500
+        min_crater_radius: 2.5
+        min_rim_percentage: 0.30188460057218813
+        r_stat_multiplier: 3.02160304368485
+        slope: 1.9952087705468564
+        study_region_padding: 1250
+        study_region_size: 10000
+        spatial_hash_cell_size: 75
+        stop_condition:
+          name: n_craters
+          n_craters: 5000000
+        n_simulations: 1
+
+  - cell_size_100:
+        effective_radius_multiplier: 1.8932878263931265
+        max_crater_radius: 2500
+        min_crater_radius: 2.5
+        min_rim_percentage: 0.30188460057218813
+        r_stat_multiplier: 3.02160304368485
+        slope: 1.9952087705468564
+        study_region_padding: 1250
+        study_region_size: 10000
+        spatial_hash_cell_size: 100
+        stop_condition:
+          name: n_craters
+          n_craters: 5000000
+        n_simulations: 1
+
+  - cell_size_150:
+        effective_radius_multiplier: 1.8932878263931265
+        max_crater_radius: 2500
+        min_crater_radius: 2.5
+        min_rim_percentage: 0.30188460057218813
+        r_stat_multiplier: 3.02160304368485
+        slope: 1.9952087705468564
+        study_region_padding: 1250
+        study_region_size: 10000
+        spatial_hash_cell_size: 150
+        stop_condition:
+          name: n_craters
+          n_craters: 5000000
+        n_simulations: 1

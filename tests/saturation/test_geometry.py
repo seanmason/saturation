@@ -5,7 +5,7 @@ import pandas as pd
 from numpy.testing import assert_almost_equal
 
 from saturation.geometry import get_xy_intersection, get_intersection_arc, get_erased_rim_arcs, \
-    merge_arcs, calculate_rim_percentage_remaining, SortedArcList
+    calculate_rim_percentage_remaining, add_arc
 
 
 def assert_tuples_equal(t1: Tuple[float, float], t2: Tuple[float, float]):
@@ -163,47 +163,71 @@ def test_get_erased_rim_arcs_does_not_generate_arcs_for_small_craters():
     assert result.shape[0] == 1
 
 
-def test_merge_arcs_with_no_overlap():
+def test_add_arc_with_no_overlap():
     # Arrange
-    arcs = SortedArcList([
-        (1, 2),
-        (3, 4)
-    ])
+    arcs = [
+        (1, 2)
+    ]
 
     # Act
-    results = merge_arcs(arcs)
+    add_arc((3, 4), arcs)
 
     # Assert
-    assert results == [(1, 2), (3, 4)]
+    assert arcs == [(1, 2), (3, 4)]
 
 
-def test_merge_arcs_with_overlap():
+def test_add_arc_with_overlap():
     # Arrange
-    arcs = SortedArcList([
-        (1, 3),
-        (2, 4)
-    ])
+    arcs = [
+        (1, 3)
+    ]
 
     # Act
-    results = merge_arcs(arcs)
+    add_arc((2, 4), arcs)
 
     # Assert
-    assert results == [(1, 4)]
+    assert arcs == [(1, 4)]
 
 
-def test_merge_arcs_multiple_overlap():
+def test_add_arc_with_multiple_overlaps():
     # Arrange
-    arcs = SortedArcList([
-        (0, 4),
-        (1, 3),
-        (2, 3.5)
-    ])
+    arcs = []
 
     # Act
-    results = merge_arcs(arcs)
+    add_arc((0, 4), arcs)
+    add_arc((1, 3), arcs)
+    add_arc((2, 3.5), arcs)
 
     # Assert
-    assert results == [(0, 4)]
+    assert arcs == [(0, 4)]
+
+
+def test_add_arc_with_zero_crossed_overlaps():
+    # Arrange
+    arcs = []
+
+    # Act
+    add_arc((6, 3), arcs)
+    add_arc((0, 4), arcs)
+    add_arc((1, 3), arcs)
+    add_arc((2, 3.5), arcs)
+
+    # Assert
+    assert arcs == [(0, 4), (6, 2 * np.pi)]
+
+
+def test_add_arc_with_many_overlaps():
+    # Arrange
+    arcs = []
+
+    # Act
+    add_arc((0, 6), arcs)
+    add_arc((1, 2), arcs)
+    add_arc((2, 3.5), arcs)
+    add_arc((0, 6.2), arcs)
+
+    # Assert
+    assert arcs == [(0, 6.2)]
 
 
 def test_calculate_rim_percentage_remaining_single_arc():

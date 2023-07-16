@@ -3,7 +3,7 @@ from typing import Tuple, List, Optional
 import pandas as pd
 import numpy as np
 
-from saturation.datatypes import Location, Arc, SortedArcList
+from saturation.datatypes import Location, Arc
 
 
 def get_xy_intersection(center1: Location,
@@ -241,43 +241,41 @@ def get_erased_rim_arcs(craters: pd.DataFrame,
     return pd.DataFrame(erased_arcs)
 
 
-def normalize_arcs(arcs: List[Arc]) -> SortedArcList:
+def add_arc(new_arc: Arc, existing_arcs: List[Arc]) -> None:
     """
-    Splits arcs that cross zero into two arcs.
-    Assumes all arcs are in range [0, 2*pi]
+    Adds a new arc and merges as necessary, accounting for overlaps.
+    The result will contain no arcs that cross 0 or 2*pi.
+    existing_arcs is modified in-place.
     """
-    result = SortedArcList()
-    for arc in arcs:
-        if arc[0] > arc[1]:
-            result.add((arc[0], 2 * np.pi))
-            result.add((0, arc[1]))
+    # Normalize the new arc to not cross 0 or 2*pi
+    if new_arc[0] > new_arc[1]:
+        existing_arcs.append((new_arc[0], 2 * np.pi))
+        existing_arcs.append((0, new_arc[1]))
+    else:
+        existing_arcs.append(new_arc)
+
+    # Sort before merging
+    existing_arcs.sort(key=lambda x: x[0])
+
+    # Scan arcs and merge if there are overlaps
+    index = 0
+    while index < len(existing_arcs) - 1:
+        current_arc = existing_arcs[index]
+        next_arc = existing_arcs[index + 1]
+
+        if current_arc[1] >= next_arc[0]:
+            existing_arcs[index] = (current_arc[0], max(current_arc[1], next_arc[1]))
+            del existing_arcs[index + 1]
         else:
-            result.add(arc)
-
-    return result
-
-
-def merge_arcs(arcs: SortedArcList) -> SortedArcList:
-    """
-    Merges arcs, accounting for overlaps.
-    Assumes that arcs do not cross 0/2*pi
-    """
-    result = SortedArcList()
-    for arc in arcs:
-        if not result or result[-1][1] < arc[0]:
-            result.add(arc)
-        else:
-            last = result[-1]
-            del result[-1]
-            result.add((last[0], max(last[1], arc[1])))
-
-    return result
+            index += 1
 
 
 def calculate_rim_percentage_remaining(erased_arcs: List[Arc]) -> float:
     """
     Calculates the percentage of rim remaining, given a set of erased arcs.
     """
-    normalized_arcs = SortedArcList(normalize_arcs(erased_arcs))
-    merged_arcs = merge_arcs(normalized_arcs)
-    return 1 - sum([x[1] - x[0] for x in merged_arcs]) / (2 * np.pi)
+    arcs = []
+    for erased_arc in erased_arcs:
+        add_arc(erased_arc, arcs)
+
+    return 1 - sum([x[1] - x[0] for x in arcs]) / (2 * np.pi)
