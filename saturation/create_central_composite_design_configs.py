@@ -15,13 +15,12 @@ def get_random_normal(mean: float, stdev: float) -> float:
     return np.random.normal(loc=mean, scale=stdev)
 
 
-def create_central_composite_design_configs(config: Dict):
+def create_central_composite_design_configs(base_output_path: str, config: Dict):
     np.random.seed(config["random_seed"])
 
     run_configurations = []
     output_config = {
         "n_workers": config["n_workers"],
-        "output_path": config["run_output_path"],
         "write_statistics_cadence": config["write_statistics_cadence"],
         "write_craters_cadence": config["write_craters_cadence"],
         "write_crater_removals_cadence": config["write_crater_removals_cadence"],
@@ -72,7 +71,7 @@ def create_central_composite_design_configs(config: Dict):
 
             new_config_section = copy.deepcopy(config["base_config"])
             config_addition = {x[0]: x[1] for x in ccd_point_parameters}
-            config_addition["random_seed"] = np.random.randint(0, 2**32-1)
+            new_config_section["random_seed"] = np.random.randint(0, 10000000)
             new_config_section.update(config_addition)
 
             run_configurations.append({
@@ -80,18 +79,18 @@ def create_central_composite_design_configs(config: Dict):
             })
             id_counter += 1
 
-    output_path = f"{config['config_output_path']}/ccd.yaml"
+    output_path = f"{base_output_path}/ccd.yaml"
     with open(output_path, 'w') as output_file:
         yaml.dump(output_config, output_file)
 
 
-def main(config_filename: str):
+def main(base_output_path: str, config_filename: str):
     with open(config_filename) as config_file:
         config = yaml.safe_load(config_file)
 
-    create_central_composite_design_configs(config)
+    create_central_composite_design_configs(base_output_path, config)
 
 
 if __name__ == "__main__":
-    # Usage: python create_central_composite_design_configs.py <config filename>
-    main(sys.argv[1])
+    # Usage: python create_central_composite_design_configs.py <output path> <config filename>
+    main(sys.argv[1], sys.argv[2])

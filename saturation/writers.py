@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from pathlib import Path
 from typing import NamedTuple, List
 
 import pandas as pd
@@ -28,7 +29,7 @@ class StatisticsRow:
 
 
 class StatisticsWriter:
-    def __init__(self, simulation_id: int, output_path: str, output_cadence: int):
+    def __init__(self, simulation_id: int, output_path: Path, output_cadence: int):
         self._simulation_id = simulation_id
         self._output_path = output_path
         self._output_cadence = output_cadence
@@ -65,7 +66,7 @@ class StatisticsWriter:
 
 
 class StateSnapshotWriter:
-    def __init__(self, simulation_id: int, output_path: str):
+    def __init__(self, simulation_id: int, output_path: Path):
         self._simulation_id = simulation_id
         self._output_path = output_path
 
@@ -104,7 +105,7 @@ class CraterWriter:
     """
     Writes records of craters generated.
     """
-    def __init__(self, output_cadence: int, simulation_id: int, output_path: str):
+    def __init__(self, output_cadence: int, simulation_id: int, output_path: Path):
         self._output_cadence = output_cadence
         self._simulation_id = simulation_id
         self._output_path = output_path
@@ -148,7 +149,7 @@ class CraterRemovalWriter:
     """
     Writes records of craters removed.
     """
-    def __init__(self, output_cadence: int, simulation_id: int, output_path: str):
+    def __init__(self, output_cadence: int, simulation_id: int, output_path: Path):
         self._output_cadence = output_cadence
         self._simulation_id = simulation_id
         self._output_path = output_path

@@ -1,4 +1,5 @@
 import io
+from pathlib import Path
 
 import numpy as np
 import matplotlib
@@ -96,9 +97,9 @@ def convert_plot_to_array(fig, show_plot: bool = False) -> np.array:
     return np.where(squashed > 764, 0, 1)
 
 
-def save_study_region(calculator: ArealDensityCalculator, filename: str):
+def save_study_region(calculator: ArealDensityCalculator, path: Path):
     """
     Saves a grayscale image of the study region to disk.
     """
     data = np.where(calculator._study_region != 0, np.uint8(0), np.uint8(255))
-    Image.fromarray(data).save(filename)
+    Image.fromarray(data).save(path)
