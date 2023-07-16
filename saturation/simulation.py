@@ -26,7 +26,7 @@ LocationFunc = Callable[[], np.array]
 class SimulationConfig:
     simulation_id: int
     simulation_name: str
-    output_path: str
+    random_seed: int
     slope: float
     r_stat_multiplier: float
     min_rim_percentage: float
@@ -48,7 +48,7 @@ class SimulationConfig:
         return {
             "simulation_id": self.simulation_id,
             "simulation_name": self.simulation_name,
-            "output_path": self.output_path,
+            "random_seed": self.random_seed,
             "slope": self.slope,
             "r_stat_multiplier": self.r_stat_multiplier,
             "min_rim_percentage": self.min_rim_percentage,
@@ -94,7 +94,7 @@ def get_craters(size_distribution: ProbabilityDistribution,
         crater_id += 1
 
 
-def run_simulation(config: SimulationConfig):
+def run_simulation(base_output_path: str, config: SimulationConfig):
     """
     Runs a simulation.
     Writes several output files to the output directory:
@@ -105,8 +105,10 @@ def run_simulation(config: SimulationConfig):
     print(f'Starting simulation {config.simulation_name}')
     sys.stdout.flush()
 
+    output_path = Path(base_output_path) / config.simulation_name
+
     # Check if we should skip the run
-    if os.path.exists(f"{config.output_path}/completed.txt"):
+    if os.path.exists(output_path / "completed.txt"):
         print(f'Found completion file for {config.simulation_name}, skipping...')
         return
 
@@ -114,12 +116,7 @@ def run_simulation(config: SimulationConfig):
     stop_condition = get_stop_condition(config.stop_condition)
 
     try:
-        seed = hash((config.simulation_id,
-                     config.slope,
-                     config.r_stat_multiplier,
-                     config.effective_radius_multiplier,
-                     config.min_rim_percentage)) % 2 ** 32
-        np.random.seed(seed)
+        np.random.seed(config.random_seed)
 
         r_stat = config.min_crater_radius
 
@@ -131,21 +128,20 @@ def run_simulation(config: SimulationConfig):
 
         start_time = datetime.datetime.now()
 
-        path = Path(config.output_path)
-        path.mkdir(parents=True, exist_ok=True)
+        output_path.mkdir(parents=True, exist_ok=True)
 
         # Write out the config file
-        with open(f'{config.output_path}/config.yaml', 'w') as config_output:
+        with open(output_path / "config.yaml", 'w') as config_output:
             yaml.dump(config.to_dict(), config_output)
 
         statistics_writer = StatisticsWriter(config.simulation_id,
-                                             config.output_path,
+                                             output_path,
                                              config.write_statistics_cadence)
-        state_snapshot_writer = StateSnapshotWriter(config.simulation_id, config.output_path)
-        crater_writer = CraterWriter(config.write_craters_cadence, config.simulation_id, config.output_path)
+        state_snapshot_writer = StateSnapshotWriter(config.simulation_id, output_path)
+        crater_writer = CraterWriter(config.write_craters_cadence, config.simulation_id, output_path)
         crater_removals_writer = CraterRemovalWriter(config.write_crater_removals_cadence,
                                                      config.simulation_id,
-                                                     config.output_path)
+                                                     output_path)
 
         study_region_area = config.study_region_size ** 2
 
@@ -210,7 +206,7 @@ def run_simulation(config: SimulationConfig):
 
                 if n_craters_current in config.write_image_points \
                         or config.write_image_cadence != 0 and n_craters_current % config.write_image_cadence == 0:
-                    png_name = f'{config.output_path}/study_region_{n_craters_current}.png'
+                    png_name = output_path / f"study_region_{n_craters_current}.png"
                     save_study_region(areal_density_calculator, png_name)
 
                 if stop_condition.should_stop(statistics_row):
@@ -221,7 +217,7 @@ def run_simulation(config: SimulationConfig):
         crater_removals_writer.close()
 
         # Write out the completion file.
-        with open(f'{config.output_path}/completed.txt', 'w') as completed_file:
+        with open(output_path / "completed.txt", "w") as completed_file:
             completed_file.write(f'duration: {(datetime.datetime.now() - start_time).total_seconds():.2f}')
     except:
         traceback.print_exc()
