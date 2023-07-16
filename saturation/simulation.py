@@ -103,6 +103,7 @@ def run_simulation(config: SimulationConfig):
     - Sample output images of the study region, as PNGs.
     """
     print(f'Starting simulation {config.simulation_name}')
+    sys.stdout.flush()
 
     # Check if we should skip the run
     if os.path.exists(f"{config.output_path}/completed.txt"):
@@ -158,8 +159,8 @@ def run_simulation(config: SimulationConfig):
                                      config.study_region_padding,
                                      config.spatial_hash_cell_size)
 
-        areal_density_calculator = ArealDensityCalculator(config.study_region_size,
-                                                          config.study_region_padding,
+        areal_density_calculator = ArealDensityCalculator((config.study_region_size, config.study_region_size),
+                                                          (config.study_region_padding, config.study_region_padding),
                                                           r_stat)
 
         last_n_craters = 0

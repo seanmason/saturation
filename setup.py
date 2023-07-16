@@ -24,8 +24,8 @@ setup(name='saturation',
             'pyarrow',
             'pyyaml',
             'statsmodels',
-            'dask[distributed]',
             'pyspark',
-            'plotly'
+            'plotly',
+            'jupyterlab',
       ]
       )

@@ -63,6 +63,7 @@ def main(config_filename: str):
         with multiprocessing.Pool(processes=n_workers) as pool:
             for simulation_config in simulation_configs:
                 pool.apply_async(run_simulation, (simulation_config, ))
+                sys.stdout.flush()
 
             pool.close()
             pool.join()

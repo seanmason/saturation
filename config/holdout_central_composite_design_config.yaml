@@ -1,10 +1,10 @@
 random_seed: 123
 n_simulations_per_location: 3
-n_levels: 5
+n_levels: 4
 
-n_workers: 28
-config_output_path: /data/saturation/central_composite_design/ccd9/config
-run_output_path: /data/saturation/central_composite_design/ccd9
+n_workers: 24
+config_output_path: /data/saturation/central_composite_design/ccd9_holdout/config
+run_output_path: /data/saturation/central_composite_design/ccd9_holdout
 
 write_statistics_cadence: 100000
 write_craters_cadence: 100000
@@ -21,19 +21,19 @@ base_config:
   stop_condition:
     name: areal_density
     percentage_increase: .01
-    min_craters: 250000
+    min_craters: 500000
   spatial_hash_cell_size: 25
 
 parameters:
   - slope:
-      min: 1.0
-      max: 3.0
+      min: 1.2
+      max: 2.8
   - r_stat_multiplier:
-      min: 3.0
-      max: 9.0
+      min: 3.5
+      max: 8.5
   - min_rim_percentage:
-      min: 0.25
-      max: 0.75
+      min: 0.35
+      max: 0.65
   - effective_radius_multiplier:
-      min: 1.1
-      max: 1.9
+      min: 1.25
+      max: 1.75
