@@ -204,33 +204,3 @@ class SpatialHash:
                 break
 
         return nearest_neighbor, closest_distance
-
-    # def get_nearest_neighbor(self, crater: Crater) -> Tuple[Optional[Crater], float]:
-    #     search_multiplier = 1.5
-    #     search_distance = self._cell_size / 4
-    #     nearest_crater = None
-    #     closest_distance = self._max_search_distance
-    #
-    #     last_min_point = None
-    #     while True:
-    #         min_point, max_point = self._get_hash_min_and_max(crater.x, crater.y, search_distance)
-    #         if last_min_point != min_point:
-    #             for candidate, distance in self.get_craters_with_centers_within_radius(crater.x,
-    #                                                                                    crater.y,
-    #                                                                                    search_distance):
-    #                 if distance != 0 and distance < closest_distance:
-    #                     nearest_crater = candidate
-    #                     closest_distance = distance
-    #
-    #             if nearest_crater:
-    #                 return nearest_crater, closest_distance
-    #
-    #         if search_distance == self._max_search_distance:
-    #             break
-    #
-    #         last_min_point = min_point
-    #         search_distance *= search_multiplier
-    #         if search_distance > self._max_search_distance:
-    #             search_distance = self._max_search_distance
-    #
-    #     return None, self._max_search_distance
