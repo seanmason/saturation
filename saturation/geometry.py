@@ -2,10 +2,16 @@ from typing import Tuple, List, Optional
 
 import pandas as pd
 import numpy as np
+import numba as nb
+from numba import njit
 
 from saturation.datatypes import Location, Arc
 
 
+arc_type = nb.types.UniTuple(nb.float64, 2)
+
+
+@njit(fastmath=True)
 def get_xy_intersection(center1: Location,
                         center2: Location,
                         r1: float,
@@ -34,6 +40,7 @@ def get_xy_intersection(center1: Location,
     return (fx + gx, fy + gy), (fx - gx, fy - gy)
 
 
+@njit(fastmath=True)
 def get_intersection_arc(center1: Location,
                          r1: float,
                          center2: Location,
@@ -241,6 +248,7 @@ def get_erased_rim_arcs(craters: pd.DataFrame,
     return pd.DataFrame(erased_arcs)
 
 
+@njit(fastmath=True)
 def add_arc(new_arc: Arc, existing_arcs: List[Arc]) -> None:
     """
     Adds a new arc and merges as necessary, accounting for overlaps.
@@ -270,12 +278,13 @@ def add_arc(new_arc: Arc, existing_arcs: List[Arc]) -> None:
             index += 1
 
 
+@njit(fastmath=True)
 def calculate_rim_percentage_remaining(erased_arcs: List[Arc]) -> float:
     """
     Calculates the percentage of rim remaining, given a set of erased arcs.
     """
-    arcs = []
+    arcs = nb.typed.List.empty_list(arc_type)
     for erased_arc in erased_arcs:
         add_arc(erased_arc, arcs)
 
-    return 1 - sum([x[1] - x[0] for x in arcs]) / (2 * np.pi)
+    return 1.0 - sum([x[1] - x[0] for x in arcs]) / (2 * np.pi)

@@ -1,6 +1,4 @@
-from dataclasses import dataclass
-from typing import Tuple
-
+from typing import Tuple, NamedTuple
 
 # Type definitions
 # Arc in radians
@@ -10,8 +8,7 @@ Arc = Tuple[float, float]
 Location = Tuple[float, float]
 
 
-@dataclass(frozen=True, kw_only=True, slots=True)
-class Crater:
+class Crater(NamedTuple):
     id: int
     x: float
     y: float

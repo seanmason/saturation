@@ -6,6 +6,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Callable, Generator, Dict, List
 
+import numba as nb
 import numpy as np
 import yaml
 
@@ -117,6 +118,7 @@ def run_simulation(base_output_path: str, config: SimulationConfig):
 
     try:
         np.random.seed(config.random_seed)
+        output_path.mkdir(parents=True, exist_ok=True)
 
         r_stat = config.min_crater_radius
 
@@ -127,8 +129,6 @@ def run_simulation(base_output_path: str, config: SimulationConfig):
         crater_generator = get_craters(size_distribution, full_region_size)
 
         start_time = datetime.datetime.now()
-
-        output_path.mkdir(parents=True, exist_ok=True)
 
         # Write out the config file
         with open(output_path / "config.yaml", 'w') as config_output:

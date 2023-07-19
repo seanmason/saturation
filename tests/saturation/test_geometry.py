@@ -1,4 +1,5 @@
 import numpy as np
+import numba as nb
 from typing import Tuple
 
 import pandas as pd
@@ -166,75 +167,74 @@ def test_get_erased_rim_arcs_does_not_generate_arcs_for_small_craters():
 def test_add_arc_with_no_overlap():
     # Arrange
     arcs = [
-        (1, 2)
+        (1.0, 2.0)
     ]
 
     # Act
-    add_arc((3, 4), arcs)
+    add_arc((3.0, 4.0), arcs)
 
     # Assert
-    assert arcs == [(1, 2), (3, 4)]
+    assert arcs == [(1.0, 2.0), (3.0, 4.0)]
 
 
 def test_add_arc_with_overlap():
     # Arrange
     arcs = [
-        (1, 3)
+        (1.0, 3.0)
     ]
 
     # Act
-    add_arc((2, 4), arcs)
+    add_arc((2.0, 4.0), arcs)
 
     # Assert
-    assert arcs == [(1, 4)]
+    assert list(arcs) == [(1.0, 4.0)]
 
 
 def test_add_arc_with_multiple_overlaps():
     # Arrange
-    arcs = []
+    arcs = nb.typed.List.empty_list(nb.types.UniTuple(nb.float64, 2))
 
     # Act
-    add_arc((0, 4), arcs)
-    add_arc((1, 3), arcs)
-    add_arc((2, 3.5), arcs)
+    add_arc((0.0, 4.0), arcs)
+    add_arc((1.0, 3.0), arcs)
+    add_arc((2.0, 3.5), arcs)
 
     # Assert
-    assert arcs == [(0, 4)]
+    assert list(arcs) == [(0, 4)]
 
 
 def test_add_arc_with_zero_crossed_overlaps():
     # Arrange
-    arcs = []
+    arcs = nb.typed.List.empty_list(nb.types.UniTuple(nb.float64, 2))
 
     # Act
-    add_arc((6, 3), arcs)
-    add_arc((0, 4), arcs)
-    add_arc((1, 3), arcs)
-    add_arc((2, 3.5), arcs)
+    add_arc((6.0, 3.0), arcs)
+    add_arc((0.0, 4.0), arcs)
+    add_arc((1.0, 3.0), arcs)
+    add_arc((2.0, 3.5), arcs)
 
     # Assert
-    assert arcs == [(0, 4), (6, 2 * np.pi)]
+    assert list(arcs) == [(0, 4), (6, 2 * np.pi)]
 
 
 def test_add_arc_with_many_overlaps():
     # Arrange
-    arcs = []
+    arcs = nb.typed.List.empty_list(nb.types.UniTuple(nb.float64, 2))
 
     # Act
-    add_arc((0, 6), arcs)
-    add_arc((1, 2), arcs)
-    add_arc((2, 3.5), arcs)
-    add_arc((0, 6.2), arcs)
+    add_arc((0.0, 6.0), arcs)
+    add_arc((1.0, 2.0), arcs)
+    add_arc((2.0, 3.5), arcs)
+    add_arc((0.0, 6.2), arcs)
 
     # Assert
-    assert arcs == [(0, 6.2)]
+    assert list(arcs) == [(0, 6.2)]
 
 
 def test_calculate_rim_percentage_remaining_single_arc():
     # Arrange
-    arcs = [
-        (0, np.pi)
-    ]
+    arcs = nb.typed.List.empty_list(nb.types.UniTuple(nb.float64, 2))
+    arcs.append((0.0, np.pi))
 
     # Act
     result = calculate_rim_percentage_remaining(arcs)

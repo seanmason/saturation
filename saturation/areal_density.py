@@ -1,63 +1,23 @@
 from typing import Tuple, List
+from collections import OrderedDict
 
 import numpy as np
-from numba import njit
+import numba as nb
+from numba.experimental import jitclass
 
 from saturation.datatypes import Crater
 
-
-@njit()
-def _get_mins_and_maxes(x: float,
-                        y: float,
-                        radius: float,
-                        study_region_size: int,
-                        study_region_padding: Tuple[int, int]) -> Tuple[int, int, int, int]:
-    """
-    Calculates min and max x and y square bounding a circle within a region bounded by
-    [0, study_region_size] with a specified margin.
-    """
-    x_min = int(max(x - radius - 1, study_region_padding[0]))
-    x_max = int(min(x + radius + 1, study_region_size + study_region_padding[0] - 1))
-    y_min = int(max(y - radius - 1, study_region_padding[1]))
-    y_max = int(min(y + radius + 1, study_region_size + study_region_padding[1] - 1))
-
-    return x_min, x_max, y_min, y_max
+spec = OrderedDict({
+    "_study_region_size": nb.types.UniTuple(nb.types.int64, 2),
+    "_study_region_padding": nb.types.UniTuple(nb.types.int64, 2),
+    "_r_stat": nb.types.float32,
+    "_study_region": nb.types.uint8[:, :],
+    "_total_study_region_area": nb.types.int64,
+    "_cratered_area": nb.types.int64,
+})
 
 
-@njit()
-def _increment_study_region(x: float,
-                            y: float,
-                            radius: float,
-                            increment: int,
-                            study_region: np.array,
-                            study_region_padding: Tuple[int, int]):
-    """
-    Increments points in the study region for the placement of a specified circle.
-    """
-    x_min, x_max, y_min, y_max = _get_mins_and_maxes(x, y, radius, study_region.shape[0], study_region_padding)
-
-    limit = radius ** 2
-
-    for test_x in range(x_min, x_max + 1):
-        for test_y in range(y_min, y_max + 1):
-            if (test_x - x) ** 2 + (test_y - y) ** 2 <= limit:
-                study_region[test_x - study_region_padding[0], test_y - study_region_padding[1]] += increment
-
-
-@njit()
-def _get_cratered_area(x: float,
-                       y: float,
-                       radius: float,
-                       study_region: np.array,
-                       study_region_padding: Tuple[int, int]) -> int:
-    """
-    Gets the total cratered area of the bounding rectangle for a specified circle.
-    """
-    x_min, x_max, y_min, y_max = _get_mins_and_maxes(x, y, radius, study_region.shape[0], study_region_padding)
-    return np.count_nonzero(study_region[x_min - study_region_padding[0]:x_max - study_region_padding[0] + 1,
-                            y_min - study_region_padding[1]:y_max - study_region_padding[1] + 1])
-
-
+@jitclass(spec=spec)
 class ArealDensityCalculator(object):
     def __init__(self,
                  study_region_size: Tuple[int, int],
@@ -74,22 +34,14 @@ class ArealDensityCalculator(object):
 
     def add_crater(self, new_crater: Crater):
         if new_crater.radius >= self._r_stat \
-                and self._study_region_padding[0] <= new_crater.x <= self._study_region_size[0] + self._study_region_padding[0] \
-                and self._study_region_padding[1] <= new_crater.y <= self._study_region_size[1] + self._study_region_padding[1]:
+                and self._study_region_padding[0] <= new_crater.x <= self._study_region_size[0] + \
+                self._study_region_padding[0] \
+                and self._study_region_padding[1] <= new_crater.y <= self._study_region_size[1] + \
+                self._study_region_padding[1]:
             # Calculate the difference in the cratered area before and after crater addition.
-            before = _get_cratered_area(new_crater.x,
-                                        new_crater.y,
-                                        new_crater.radius,
-                                        self._study_region,
-                                        self._study_region_padding)
-            _increment_study_region(new_crater.x,
-                                    new_crater.y,
-                                    new_crater.radius,
-                                    1,
-                                    self._study_region,
-                                    self._study_region_padding)
-            after = _get_cratered_area(new_crater.x, new_crater.y, new_crater.radius, self._study_region,
-                                       self._study_region_padding)
+            before = self._get_cratered_area(new_crater)
+            self._increment_study_region(new_crater, 1)
+            after = self._get_cratered_area(new_crater)
 
             self._cratered_area += after - before
 
@@ -98,25 +50,14 @@ class ArealDensityCalculator(object):
 
         for erased in new_erased_craters:
             if erased.radius >= self._r_stat \
-                    and self._study_region_padding[0] <= erased.x <= self._study_region_size[0] + self._study_region_padding[0] \
-                    and self._study_region_padding[1] <= erased.y <= self._study_region_size[1] + self._study_region_padding[1]:
+                    and self._study_region_padding[0] <= erased.x <= self._study_region_size[0] + \
+                    self._study_region_padding[0] \
+                    and self._study_region_padding[1] <= erased.y <= self._study_region_size[1] + \
+                    self._study_region_padding[1]:
                 # Calculate the difference in the cratered area before and after crater removal.
-                before = _get_cratered_area(erased.x,
-                                            erased.y,
-                                            erased.radius,
-                                            self._study_region,
-                                            self._study_region_padding)
-                _increment_study_region(erased.x,
-                                        erased.y,
-                                        erased.radius,
-                                        -1,
-                                        self._study_region,
-                                        self._study_region_padding)
-                after = _get_cratered_area(erased.x,
-                                           erased.y,
-                                           erased.radius,
-                                           self._study_region,
-                                           self._study_region_padding)
+                before = self._get_cratered_area(erased)
+                self._increment_study_region(erased, -1)
+                after = self._get_cratered_area(erased)
                 difference += after - before
 
         self._cratered_area += difference
@@ -128,3 +69,40 @@ class ArealDensityCalculator(object):
     @property
     def area_covered(self) -> float:
         return self._cratered_area
+
+    def _get_mins_and_maxes(self, crater: Crater) -> Tuple[int, int, int, int]:
+        """
+        Calculates min and max x and y square bounding a circle within a region bounded by
+        [0, study_region_size] with a specified margin.
+        """
+        x_min = int(max(crater.x - crater.radius - 1, self._study_region_padding[0]))
+        x_max = int(min(crater.x + crater.radius + 1, self._study_region_size[0] + self._study_region_padding[0] - 1))
+        y_min = int(max(crater.y - crater.radius - 1, self._study_region_padding[1]))
+        y_max = int(min(crater.y + crater.radius + 1, self._study_region_size[1] + self._study_region_padding[1] - 1))
+
+        return x_min, x_max, y_min, y_max
+
+    def _increment_study_region(self, crater: Crater, increment: int):
+        """
+        Increments points in the study region for the placement of a specified circle.
+        """
+        x_min, x_max, y_min, y_max = self._get_mins_and_maxes(crater)
+
+        limit = crater.radius ** 2
+
+        for test_x in range(x_min, x_max + 1):
+            for test_y in range(y_min, y_max + 1):
+                if (test_x - crater.x) ** 2 + (test_y - crater.y) ** 2 <= limit:
+                    x = test_x - self._study_region_padding[0]
+                    y = test_y - self._study_region_padding[1]
+                    self._study_region[x, y] += increment
+
+    def _get_cratered_area(self, crater: Crater) -> int:
+        """
+        Gets the total cratered area of the bounding rectangle for a specified circle.
+        """
+        x_min, x_max, y_min, y_max = self._get_mins_and_maxes(crater)
+        return np.count_nonzero(self._study_region[x_min - self._study_region_padding[0]:
+                                                   x_max - self._study_region_padding[0] + 1,
+                                y_min - self._study_region_padding[1]:
+                                y_max - self._study_region_padding[1] + 1])

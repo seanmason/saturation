@@ -9,7 +9,7 @@ from saturation.distances import Distances
 def test_get_all_nearest_neighbor_distances_no_craters():
     # Arrange
     nn = Distances(cell_size=50,  boundary_min=0, boundary_max=500)
-    crater = Crater(id=1, x=10, y=10, radius=10)
+    crater = Crater(id=1, x=10.0, y=10.0, radius=10.0)
 
     # Act
     dist = nn.get_mean_nearest_neighbor_distance()
@@ -22,8 +22,8 @@ def test_get_mean_nearest_neighbor_distance_single_pair():
     # Arrange
     nn = Distances(cell_size=50,  boundary_min=0, boundary_max=500)
     craters = [
-        Crater(id=1, x=10, y=10, radius=10),
-        Crater(id=2, x=20, y=10, radius=10)
+        Crater(id=1, x=10.0, y=10.0, radius=10.0),
+        Crater(id=2, x=20.0, y=10.0, radius=10.0)
     ]
     for crater in craters:
         nn.add(crater, True)
@@ -39,7 +39,7 @@ def test_get_craters_with_overlapping_rims_no_overlaps():
     # Arrange
     nn = Distances(cell_size=50,  boundary_min=0, boundary_max=500)
     craters = [
-        Crater(id=1, x=100, y=100, radius=50)
+        Crater(id=1, x=100.0, y=100.0, radius=50.0)
     ]
     for crater in craters:
         nn.add(crater, True)
@@ -55,7 +55,7 @@ def test_get_craters_with_overlapping_rims_contained():
     # Arrange
     nn = Distances(cell_size=50,  boundary_min=0, boundary_max=500)
     craters = [
-        Crater(id=1, x=100, y=100, radius=50)
+        Crater(id=1, x=100.0, y=100.0, radius=50.0)
     ]
     for crater in craters:
         nn.add(crater, True)
@@ -71,7 +71,7 @@ def test_get_craters_with_overlapping_rims_simple_case():
     # Arrange
     nn = Distances(cell_size=50,  boundary_min=0, boundary_max=500)
     craters = [
-        Crater(id=1, x=100, y=100, radius=50)
+        Crater(id=1, x=100.0, y=100.0, radius=50.0)
     ]
     for crater in craters:
         nn.add(crater, True)
@@ -87,7 +87,7 @@ def test_get_craters_with_overlapping_rims_tiny_overlap():
     # Arrange
     nn = Distances(cell_size=50, boundary_min=0, boundary_max=500)
     craters = [
-        Crater(id=1, x=100, y=100, radius=50)
+        Crater(id=1, x=100.0, y=100.0, radius=50.0)
     ]
     for crater in craters:
         nn.add(crater, True)
@@ -108,7 +108,7 @@ def test_get_mean_nearest_neighbor_distance_random_adds_and_deletes():
     nn = Distances(cell_size=5, boundary_min=0, boundary_max=STUDY_REGION_SIZE)
     points = np.random.rand(N_POINTS, 2) * STUDY_REGION_SIZE
     craters = [
-        Crater(id=x, x=point[0], y=point[1], radius=10)
+        Crater(id=x, x=point[0], y=point[1], radius=10.0)
         for x, point in enumerate(points)
     ]
     for crater in craters:
