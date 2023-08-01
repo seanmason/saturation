@@ -145,7 +145,7 @@ class CraterRecord(object):
         return len(self._craters_in_study_region)
 
     def get_mean_nearest_neighbor_distance(self) -> float:
-        return self._distances.get_mean_nearest_neighbor_distance()
+        return self._distances.get_center_to_center_nearest_neighbor_distance_mean()
 
     def _update_rim_arcs(self, new_crater: Crater):
         new_x = new_crater.x

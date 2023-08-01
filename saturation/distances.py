@@ -2,6 +2,7 @@ from typing import Dict, Tuple, List, Set
 from collections import OrderedDict
 
 import numba as nb
+import numpy as np
 from numba.experimental import jitclass
 
 from data_structures.spatial_hash import SpatialHash
@@ -17,30 +18,47 @@ int_set_type = nb.types.DictType(
     keyty=nb.int64,
     valty=nb.boolean
 )
-
-spec = OrderedDict({
-    "_max_search_distance": nb.int64,
-    "_spatial_hash": SpatialHash.class_type.instance_type,
-    "_all_craters": nb.types.DictType(
-        keyty=nb.int64,
-        valty=crater_type
-    ),
-    "_nearest_neighbor_distances": nb.types.DictType(
-        keyty=nb.int64,
-        valty=nb.float64
-    ),
-    "_tracked_nearest_neighbors": crater_set_type,
-    "_total_tracked_nn_distances": nb.float64,
-    "_total_tracked_nn_count": nb.int64,
-    "_nearest_neighbors_reverse_lookup": nb.types.DictType(
-        keyty=nb.int64,
-        valty=int_set_type
-    ),
-    "_max_nn_distance": nb.float64,
-})
-
-
-@jitclass(spec=spec)
+#
+# spec = OrderedDict({
+#     "_max_search_distance": nb.int64,
+#     "_spatial_hash": SpatialHash.class_type.instance_type,
+#     "_all_craters": nb.types.DictType(
+#         keyty=nb.int64,
+#         valty=crater_type
+#     ),
+#     "_c2c_nn_distances": nb.types.DictType(
+#         keyty=nb.int64,
+#         valty=nb.float64
+#     ),
+#     "_r2r_nn_distances": nb.types.DictType(
+#         keyty=nb.int64,
+#         valty=nb.float64
+#     ),
+#     "_tracked_nns": crater_set_type,
+#     "_sum_tracked_c2c_nn_distances": nb.float64,
+#     "_sum_tracked_squared_c2c_nn_distances": nb.float64,
+#     "_sum_tracked_r2r_non_zero_nn_distances": nb.float64,
+#     "_sum_tracked_squared_r2r_non_zero_nn_distances": nb.float64,
+#     "_sum_tracked_r2r_nn_distances": nb.float64,
+#     "_sum_tracked_squared_r2r_nn_distances": nb.float64,
+#     "_tracked_nn_count": nb.int64,
+#     "_tracked_r2r_non_zero_count": nb.int64,
+#     "_c2c_nn_reverse_lookup": nb.types.DictType(
+#         keyty=nb.int64,
+#         valty=int_set_type
+#     ),
+#     "_r2r_nn_reverse_lookup": nb.types.DictType(
+#         keyty=nb.int64,
+#         valty=int_set_type
+#     ),
+#     "_min_c2c_nn_distance": nb.float64,
+#     "_max_c2c_nn_distance": nb.float64,
+#     "_min_r2r_non_zero_nn_distance": nb.float64,
+#     "_max_r2r_nn_distance": nb.float64,
+# })
+#
+#
+# @jitclass(spec=spec)
 class Distances:
     def __init__(self, cell_size: int, boundary_min: int, boundary_max: int):
         self._max_search_distance = int(1.5 * (boundary_max - boundary_min))
@@ -51,30 +69,63 @@ class Distances:
             value_type=crater_type
         )
 
-        # Mapping from crater ids to nearest distance
-        self._nearest_neighbor_distances: Dict[int, float] = nb.typed.Dict.empty(
+        # Mapping from crater ids to nearest center-to-center distance
+        self._c2c_nn_distances: Dict[int, float] = nb.typed.Dict.empty(
             key_type=nb.int64,
             value_type=nb.float64
         )
 
-        self._tracked_nearest_neighbors: Dict[Crater, bool] = nb.typed.Dict.empty(
+        # Mapping from crater ids to nearest edge-to-edge distance
+        self._r2r_nn_distances: Dict[int, float] = nb.typed.Dict.empty(
+            key_type=nb.int64,
+            value_type=nb.float64
+        )
+
+        self._tracked_nns: Dict[Crater, bool] = nb.typed.Dict.empty(
             key_type=crater_type,
             value_type=nb.boolean
         )
-        self._total_tracked_nn_distances: float = 0.0
-        self._total_tracked_nn_count: int = 0
+        self._sum_tracked_c2c_nn_distances: float = 0.0
+        self._sum_tracked_squared_c2c_nn_distances: float = 0.0
 
-        # Reverse lookup for nearest neighbors
-        self._nearest_neighbors_reverse_lookup: Dict[int, Dict[int, bool]] = nb.typed.Dict.empty(
+        self._sum_tracked_r2r_nn_distances: float = 0.0
+        self._sum_tracked_squared_r2r_nn_distances: float = 0.0
+
+        self._sum_tracked_r2r_non_zero_nn_distances: float = 0.0
+        self._sum_tracked_squared_r2r_non_zero_nn_distances: float = 0.0
+
+        self._tracked_nn_count: int = 0
+        self._tracked_r2r_non_zero_count: int = 0
+
+        # Reverse lookup for center-to-center nearest neighbors
+        self._c2c_nn_reverse_lookup: Dict[int, Dict[int, bool]] = nb.typed.Dict.empty(
             key_type=nb.int64,
             value_type=int_set_type
         )
 
-        self._max_nn_distance: float = 0.0
+        # Reverse lookup for rim-to-rim nearest neighbors
+        self._r2r_nn_reverse_lookup: Dict[int, Dict[int, bool]] = nb.typed.Dict.empty(
+            key_type=nb.int64,
+            value_type=int_set_type
+        )
 
-    def _add_crater_to_reverse_lookup(self, from_crater: Crater, to_crater: Crater):
-        values = self._nearest_neighbors_reverse_lookup.setdefault(from_crater.id,
-                                                                   nb.typed.Dict.empty(
+        self._min_c2c_nn_distance: float = self._max_search_distance
+        self._max_c2c_nn_distance: float = 0.0
+
+        self._min_r2r_non_zero_nn_distance: float = self._max_search_distance
+        self._max_r2r_nn_distance: float = 0.0
+
+    def _add_crater_to_c2c_reverse_lookup(self, from_crater: Crater, to_crater: Crater):
+        values = self._c2c_nn_reverse_lookup.setdefault(from_crater.id,
+                                                        nb.typed.Dict.empty(
+                                                                       key_type=nb.int64,
+                                                                       value_type=nb.boolean
+                                                                   ))
+        values[to_crater.id] = True
+
+    def _add_crater_to_r2r_reverse_lookup(self, from_crater: Crater, to_crater: Crater):
+        values = self._r2r_nn_reverse_lookup.setdefault(from_crater.id,
+                                                        nb.typed.Dict.empty(
                                                                        key_type=nb.int64,
                                                                        value_type=nb.boolean
                                                                    ))
@@ -85,85 +136,212 @@ class Distances:
         self._spatial_hash.add(crater)
 
         if tracked:
-            self._tracked_nearest_neighbors[crater] = True
+            self._tracked_nns[crater] = True
 
-        nearest_neighbor, nearest_neighbor_dist = self._spatial_hash.get_nearest_neighbor(crater)
+        self._update_c2c_distances(crater, tracked)
+        self._update_r2r_distances(crater, tracked)
 
+    def _update_c2c_distances(self, crater: Crater, tracked: bool):
+        nearest_neighbor, nearest_neighbor_dist = self._spatial_hash.get_nearest_neighbor_center_to_center(crater)
         if nearest_neighbor.id >= 0:
-            self._nearest_neighbor_distances[crater.id] = nearest_neighbor_dist
-            self._add_crater_to_reverse_lookup(nearest_neighbor, crater)
+            self._c2c_nn_distances[crater.id] = nearest_neighbor_dist
+            self._add_crater_to_c2c_reverse_lookup(nearest_neighbor, crater)
             if tracked:
-                self._total_tracked_nn_distances += nearest_neighbor_dist
-                self._total_tracked_nn_count += 1
+                self._sum_tracked_c2c_nn_distances += nearest_neighbor_dist
+                self._sum_tracked_squared_c2c_nn_distances += nearest_neighbor_dist ** 2
+                self._tracked_nn_count += 1
 
-        max_distance = self._max_nn_distance if self._max_nn_distance > 0.0 else self._max_search_distance
+        max_distance = self._max_c2c_nn_distance if self._max_c2c_nn_distance > 0.0 else self._max_search_distance
         candidates_and_distances = self._spatial_hash.get_craters_with_centers_within_radius(crater.x,
                                                                                              crater.y,
                                                                                              max_distance)
-
+        recalculate_max_c2c_distance = False
         for existing_crater, new_distance in candidates_and_distances.items():
             if existing_crater == crater:
                 continue
 
-            old_distance = self._nearest_neighbor_distances.get(existing_crater.id, self._max_search_distance)
+            old_distance = self._c2c_nn_distances.get(existing_crater.id, self._max_search_distance)
             if new_distance < old_distance:
-                self._nearest_neighbor_distances[existing_crater.id] = new_distance
+                self._c2c_nn_distances[existing_crater.id] = new_distance
 
-                if self._max_nn_distance == old_distance:
-                    self._max_nn_distance = max(self._nearest_neighbor_distances.values())
-                elif new_distance > self._max_nn_distance:
-                    self._max_nn_distance = new_distance
+                if self._max_c2c_nn_distance == old_distance:
+                    recalculate_max_c2c_distance = True
+                elif new_distance > self._max_c2c_nn_distance:
+                    self._max_c2c_nn_distance = new_distance
 
-                self._add_crater_to_reverse_lookup(crater, existing_crater)
-                if existing_crater in self._tracked_nearest_neighbors:
+                if new_distance < self._min_c2c_nn_distance:
+                    self._min_c2c_nn_distance = new_distance
+
+                self._add_crater_to_c2c_reverse_lookup(crater, existing_crater)
+                if existing_crater in self._tracked_nns:
                     if old_distance != self._max_search_distance:
-                        self._total_tracked_nn_distances -= old_distance
+                        self._sum_tracked_c2c_nn_distances -= old_distance
+                        self._sum_tracked_squared_c2c_nn_distances -= old_distance ** 2
                     else:
-                        self._total_tracked_nn_count += 1
-                    self._total_tracked_nn_distances += new_distance
+                        self._tracked_nn_count += 1
+                    self._sum_tracked_c2c_nn_distances += new_distance
+                    self._sum_tracked_squared_c2c_nn_distances += new_distance ** 2
+
+        if recalculate_max_c2c_distance:
+            self._max_c2c_nn_distance = max(self._c2c_nn_distances.values())
+
+    def _update_r2r_distances(self, crater: Crater, tracked: bool):
+        nearest_neighbor, nearest_neighbor_dist = self._spatial_hash.get_nearest_neighbor_rim_to_rim(crater)
+        if nearest_neighbor.id >= 0:
+            self._r2r_nn_distances[crater.id] = nearest_neighbor_dist
+            self._add_crater_to_r2r_reverse_lookup(nearest_neighbor, crater)
+            if tracked:
+                self._sum_tracked_r2r_nn_distances += nearest_neighbor_dist
+                self._sum_tracked_squared_r2r_nn_distances += nearest_neighbor_dist ** 2
+
+                if nearest_neighbor_dist > 0.0:
+                    self._sum_tracked_r2r_non_zero_nn_distances += nearest_neighbor_dist
+                    self._sum_tracked_squared_r2r_non_zero_nn_distances += nearest_neighbor_dist ** 2
+                    self._tracked_r2r_non_zero_count += 1
+
+        max_distance = self._max_r2r_nn_distance if self._max_r2r_nn_distance > 0.0 else self._max_search_distance
+        candidates_and_distances = self._spatial_hash.get_craters_with_rims_within_radius(crater, max_distance)
+        recalculate_max_r2r_distance = False
+        for existing_crater, new_distance in candidates_and_distances.items():
+            if existing_crater == crater:
+                continue
+
+            old_distance = self._r2r_nn_distances.get(existing_crater.id, self._max_search_distance)
+            if new_distance < old_distance:
+                self._r2r_nn_distances[existing_crater.id] = new_distance
+
+                if self._max_r2r_nn_distance == old_distance:
+                    recalculate_max_r2r_distance = True
+                elif new_distance > self._max_r2r_nn_distance:
+                    self._max_r2r_nn_distance = new_distance
+
+                if 0.0 < new_distance < self._min_r2r_non_zero_nn_distance:
+                    self._min_r2r_non_zero_nn_distance = new_distance
+
+                self._add_crater_to_r2r_reverse_lookup(crater, existing_crater)
+                if existing_crater in self._tracked_nns:
+                    if old_distance != self._max_search_distance:
+                        self._sum_tracked_r2r_nn_distances -= old_distance
+                        self._sum_tracked_squared_r2r_nn_distances -= old_distance ** 2
+
+                        self._sum_tracked_r2r_non_zero_nn_distances -= old_distance
+                        self._sum_tracked_squared_r2r_non_zero_nn_distances -= old_distance ** 2
+
+                    if new_distance == 0.0 and old_distance > 0.0:
+                        self._tracked_r2r_non_zero_count -= 1
+
+                    self._sum_tracked_r2r_nn_distances += new_distance
+                    self._sum_tracked_squared_r2r_nn_distances += new_distance ** 2
+
+                    if new_distance > 0.0:
+                        self._sum_tracked_r2r_non_zero_nn_distances += new_distance
+                        self._sum_tracked_squared_r2r_non_zero_nn_distances += new_distance ** 2
+
+        if recalculate_max_r2r_distance:
+            self._max_r2r_nn_distance = max(self._r2r_nn_distances.values())
 
     def remove(self, craters: List[Crater]):
-        recalculate_max_nn_distance = False
+        recalculate_min_c2c_nn_distance = False
+        recalculate_min_r2r_non_zero_nn_distance = False
+        recalculate_max_c2c_nn_distance = False
+        recalculate_max_r2r_nn_distance = False
 
         for crater in craters:
-            if crater in self._tracked_nearest_neighbors:
-                self._total_tracked_nn_distances -= self._nearest_neighbor_distances[crater.id]
-                self._total_tracked_nn_count -= 1
-                del self._tracked_nearest_neighbors[crater]
+            if crater in self._tracked_nns:
+                c2c_dist = self._c2c_nn_distances[crater.id]
+                self._sum_tracked_c2c_nn_distances -= c2c_dist
+                self._sum_tracked_squared_c2c_nn_distances -= c2c_dist ** 2
+
+                r2r_dist = self._r2r_nn_distances[crater.id]
+                self._sum_tracked_r2r_nn_distances -= r2r_dist
+                self._sum_tracked_squared_r2r_nn_distances -= r2r_dist ** 2
+                self._sum_tracked_r2r_non_zero_nn_distances -= r2r_dist
+                self._sum_tracked_squared_r2r_non_zero_nn_distances -= r2r_dist ** 2
+
+                self._tracked_nn_count -= 1
+                del self._tracked_nns[crater]
+
+                if r2r_dist > 0.0:
+                    self._tracked_r2r_non_zero_count -= 1
 
             self._spatial_hash.remove(crater)
-            if crater.id in self._nearest_neighbor_distances:
-                distance = self._nearest_neighbor_distances[crater.id]
-                if self._max_nn_distance == distance:
-                    recalculate_max_nn_distance = True
-                del self._nearest_neighbor_distances[crater.id]
 
-            del self._all_craters[crater.id]
+            if crater.id in self._c2c_nn_distances:
+                c2c_distance = self._c2c_nn_distances[crater.id]
+                if self._max_c2c_nn_distance == c2c_distance:
+                    recalculate_max_c2c_nn_distance = True
+                elif self._min_c2c_nn_distance == c2c_distance:
+                    recalculate_min_c2c_nn_distance = True
+
+                r2r_distance = self._r2r_nn_distances[crater.id]
+                if self._max_r2r_nn_distance == r2r_distance:
+                    recalculate_max_r2r_nn_distance = True
+                elif 0.0 < r2r_distance == self._min_r2r_non_zero_nn_distance:
+                    recalculate_min_r2r_non_zero_nn_distance = True
 
         # Fix up affected neighbors' nearest neighbors
         for removed_crater in craters:
-            if removed_crater.id not in self._nearest_neighbors_reverse_lookup:
-                continue
+            if removed_crater.id in self._c2c_nn_reverse_lookup:
+                for neighbor_id in self._c2c_nn_reverse_lookup[removed_crater.id]:
+                    if neighbor_id in self._all_craters:
+                        neighbor = self._all_craters[neighbor_id]
+                        old_distance = self._c2c_nn_distances[neighbor_id]
+                        node, c2c_distance = self._spatial_hash.get_nearest_neighbor_center_to_center(neighbor)
 
-            for neighbor_id in self._nearest_neighbors_reverse_lookup[removed_crater.id]:
-                if neighbor_id in self._all_craters:
-                    neighbor = self._all_craters[neighbor_id]
-                    old_distance = self._nearest_neighbor_distances[neighbor_id]
-                    node, distance = self._spatial_hash.get_nearest_neighbor(neighbor)
+                        if self._max_c2c_nn_distance == old_distance:
+                            recalculate_max_c2c_nn_distance = True
 
-                    if self._max_nn_distance == old_distance:
-                        recalculate_max_nn_distance = True
+                        self._c2c_nn_distances[neighbor_id] = c2c_distance
 
-                    self._nearest_neighbor_distances[neighbor_id] = distance
+                        if neighbor in self._tracked_nns:
+                            self._sum_tracked_c2c_nn_distances += c2c_distance - old_distance
+                            self._sum_tracked_squared_c2c_nn_distances += c2c_distance ** 2 - old_distance ** 2
+                    else:
+                        print(removed_crater.id)
+                del self._c2c_nn_reverse_lookup[removed_crater.id]
+            else:
+                print(removed_crater.id)
 
-                    if neighbor in self._tracked_nearest_neighbors:
-                        self._total_tracked_nn_distances -= old_distance
-                        self._total_tracked_nn_distances += distance
+            if removed_crater.id in self._r2r_nn_reverse_lookup:
+                for neighbor_id in self._r2r_nn_reverse_lookup[removed_crater.id]:
+                    if neighbor_id in self._all_craters:
+                        neighbor = self._all_craters[neighbor_id]
+                        old_distance = self._r2r_nn_distances[neighbor_id]
+                        node, r2r_distance = self._spatial_hash.get_nearest_neighbor_rim_to_rim(neighbor)
 
-            del self._nearest_neighbors_reverse_lookup[removed_crater.id]
+                        if self._max_r2r_nn_distance == old_distance:
+                            recalculate_max_r2r_nn_distance = True
 
-        if recalculate_max_nn_distance:
-            self._max_nn_distance = max(self._nearest_neighbor_distances.values())
+                        self._r2r_nn_distances[neighbor_id] = r2r_distance
+
+                        if neighbor in self._tracked_nns:
+                            self._sum_tracked_r2r_nn_distances += r2r_distance - old_distance
+                            self._sum_tracked_squared_r2r_nn_distances += r2r_distance ** 2 - old_distance ** 2
+                            self._sum_tracked_r2r_non_zero_nn_distances += r2r_distance - old_distance
+                            self._sum_tracked_squared_r2r_non_zero_nn_distances += r2r_distance ** 2 - old_distance ** 2
+
+                        if old_distance == 0.0 and r2r_distance > 0.0:
+                            self._tracked_r2r_non_zero_count += 1
+
+                del self._r2r_nn_reverse_lookup[removed_crater.id]
+
+        for crater in craters:
+            del self._all_craters[crater.id]
+            del self._c2c_nn_distances[crater.id]
+            del self._r2r_nn_distances[crater.id]
+
+        if recalculate_min_c2c_nn_distance:
+            self._min_c2c_nn_distance = min(self._c2c_nn_distances.values())
+
+        if recalculate_min_r2r_non_zero_nn_distance:
+            self._min_r2r_non_zero_nn_distance = min([x for x in self._r2r_nn_distances.values() if x > 0.0])
+
+        if recalculate_max_c2c_nn_distance:
+            self._max_c2c_nn_distance = max(self._c2c_nn_distances.values())
+
+        if recalculate_max_r2r_nn_distance:
+            self._max_r2r_nn_distance = max(self._r2r_nn_distances.values())
+
 
     def get_craters_with_overlapping_rims(self,
                                           x: float,
@@ -171,11 +349,69 @@ class Distances:
                                           radius: float) -> Set[Crater]:
         return self._spatial_hash.get_craters_with_intersecting_rims(x, y, radius)
 
-    def get_nearest_neighbor(self, crater: Crater) -> Tuple[Crater, float]:
-        return self._spatial_hash.get_nearest_neighbor(crater)
+    def get_center_to_center_nearest_neighbor(self, crater: Crater) -> Tuple[Crater, float]:
+        return self._spatial_hash.get_nearest_neighbor_center_to_center(crater)
 
-    def get_mean_nearest_neighbor_distance(self) -> float:
-        if not self._nearest_neighbor_distances:
+    def get_rim_to_rim_nearest_neighbor(self, crater: Crater) -> Tuple[Crater, float]:
+        return self._spatial_hash.get_nearest_neighbor_rim_to_rim(crater)
+
+    def get_center_to_center_nearest_neighbor_distance_mean(self) -> float:
+        if not self._c2c_nn_distances:
             return 0.0
 
-        return self._total_tracked_nn_distances / self._total_tracked_nn_count
+        return self._sum_tracked_c2c_nn_distances / self._tracked_nn_count
+
+    def get_center_to_center_nearest_neighbor_distance_min(self) -> float:
+        return self._min_c2c_nn_distance
+
+    def get_center_to_center_nearest_neighbor_distance_max(self) -> float:
+        return self._max_c2c_nn_distance
+
+    def get_center_to_center_nearest_neighbor_distance_stdev(self) -> float:
+        if not self._c2c_nn_distances:
+            return 0.0
+
+        n = self._tracked_nn_count
+        sq_dists = self._sum_tracked_squared_c2c_nn_distances
+        dists = self._sum_tracked_c2c_nn_distances
+        return np.sqrt((n * sq_dists - dists ** 2) / (n * (n - 1)))
+
+    def get_rim_to_rim_nearest_neighbor_distance_mean(self) -> float:
+        if not self._r2r_nn_distances:
+            return 0.0
+
+        return self._sum_tracked_r2r_nn_distances / self._tracked_nn_count
+
+    def get_rim_to_rim_nearest_neighbor_distance_max(self) -> float:
+        return self._max_r2r_nn_distance
+
+    def get_rim_to_rim_nearest_neighbor_distance_stdev(self) -> float:
+        if not self._r2r_nn_distances:
+            return 0.0
+
+        n = self._tracked_nn_count
+        sq_dists = self._sum_tracked_squared_r2r_nn_distances
+        dists = self._sum_tracked_r2r_nn_distances
+        return np.sqrt((n * sq_dists - dists ** 2) / (n * (n - 1)))
+
+    def get_rim_to_rim_non_zero_nearest_neighbor_distance_mean(self) -> float:
+        if not self._r2r_nn_distances:
+            return 0.0
+
+        return self._sum_tracked_r2r_non_zero_nn_distances / self._tracked_r2r_non_zero_count
+
+    def get_rim_to_rim_non_zero_nearest_neighbor_distance_min(self) -> float:
+        return self._min_r2r_non_zero_nn_distance
+
+    def get_rim_to_rim_non_zero_nearest_neighbor_distance_count(self) -> int:
+        return self._tracked_r2r_non_zero_count
+
+    def get_rim_to_rim_non_zero_nearest_neighbor_distance_stdev(self) -> float:
+        if not self._r2r_nn_distances:
+            return 0.0
+
+        n = self._tracked_r2r_non_zero_count
+        sq_dists = self._sum_tracked_squared_r2r_non_zero_nn_distances
+        dists = self._sum_tracked_r2r_non_zero_nn_distances
+        return np.sqrt((n * sq_dists - dists ** 2) / (n * (n - 1)))
+
