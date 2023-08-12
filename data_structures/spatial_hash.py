@@ -43,7 +43,7 @@ spatial_hash_spec = OrderedDict({
 })
 
 
-@nb.njit(fastmath=True)
+@nb.njit()
 def _get_distance(x1: float, y1: float, x2: float, y2: float) -> float:
     x_diff = x1 - x2
     y_diff = y1 - y2
@@ -217,7 +217,7 @@ class SpatialHash:
                         continue
 
                     distance = _get_distance(crater.x, crater.y, x, y)
-                    if distance < crater.radius + radius:
+                    if distance <= crater.radius + radius:
                         results[crater] = distance
 
         return results
@@ -241,7 +241,7 @@ class SpatialHash:
                         continue
 
                     distance = _get_distance(candidate.x, candidate.y, crater.x, crater.y) - candidate.radius
-                    if distance < radius:
+                    if distance <= radius:
                         results[candidate] = self._get_rim_to_rim_distance(candidate, crater.x, crater.y, crater.radius)
 
         return results
@@ -304,7 +304,7 @@ class SpatialHash:
             # Once we find a neighbor, we need to keep scanning out another factor of sqrt(2)
             # In the worst case, the first neighbor found could be at a 45 degree angle, while the true closest may
             # be located at a multiple of 90 degrees.
-            if nearest_neighbor != null_crater and nearest_neighbor_found_radius * 1.5 < radius:
+            if nearest_neighbor != null_crater and (nearest_neighbor_found_radius + 1) * 1.5 < radius:
                 break
 
         return nearest_neighbor, closest_distance
@@ -338,7 +338,7 @@ class SpatialHash:
             # Once we find a neighbor, we need to keep scanning out another factor of sqrt(2)
             # In the worst case, the first neighbor found could be at a 45 degree angle, while the true closest may
             # be located at a multiple of 90 degrees.
-            if nearest_neighbor != null_crater and nearest_neighbor_found_radius * 1.5 < radius:
+            if nearest_neighbor != null_crater and (nearest_neighbor_found_radius + 1) * 1.5 < radius:
                 break
 
         return nearest_neighbor, closest_distance
