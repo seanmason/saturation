@@ -144,8 +144,29 @@ class CraterRecord(object):
     def n_craters_in_study_region(self) -> int:
         return len(self._craters_in_study_region)
 
-    def get_mean_nearest_neighbor_distance(self) -> float:
+    def get_center_to_center_nearest_neighbor_distance_mean(self) -> float:
         return self._distances.get_center_to_center_nearest_neighbor_distance_mean()
+
+    def get_center_to_center_nearest_neighbor_distance_stdev(self) -> float:
+        return self._distances.get_center_to_center_nearest_neighbor_distance_stdev()
+
+    def get_center_to_center_nearest_neighbor_distance_min(self) -> float:
+        return self._distances.get_center_to_center_nearest_neighbor_distance_min()
+
+    def get_center_to_center_nearest_neighbor_distance_max(self) -> float:
+        return self._distances.get_center_to_center_nearest_neighbor_distance_max()
+
+    def get_rim_to_rim_nearest_neighbor_distance_mean(self) -> float:
+        return self._distances.get_rim_to_rim_nearest_neighbor_distance_mean()
+
+    def get_rim_to_rim_nearest_neighbor_distance_stdev(self) -> float:
+        return self._distances.get_rim_to_rim_nearest_neighbor_distance_stdev()
+
+    def get_rim_to_rim_nearest_neighbor_distance_max(self) -> float:
+        return self._distances.get_rim_to_rim_nearest_neighbor_distance_max()
+
+    def get_n_non_zero_rim_to_rim_nearest_neighbor_distances(self) -> int:
+        return self._distances.get_n_non_zero_rim_to_rim_nearest_neighbor_distances()
 
     def _update_rim_arcs(self, new_crater: Crater):
         new_x = new_crater.x

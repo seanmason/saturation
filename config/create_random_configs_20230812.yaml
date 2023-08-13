@@ -1,5 +1,5 @@
 random_seed: 123
-n_workers: 24
+n_workers: 28
 n_simulations: 2500
 n_simulations_per_config: 500
 
@@ -11,13 +11,13 @@ write_image_cadence: 0
 write_image_points: []
 
 base_config:
-  study_region_size: 5000
-  study_region_padding: 625
+  study_region_size: 4000
+  study_region_padding: 500
   min_crater_radius: 5
-  max_crater_radius: 1250
+  max_crater_radius: 1000
   stop_condition:
     name: information_remaining
-    information_remaining_threshold: .01
+    information_remaining_threshold: .05
   spatial_hash_cell_size: 10
 
 parameters:

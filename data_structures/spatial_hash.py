@@ -43,7 +43,7 @@ spatial_hash_spec = OrderedDict({
 })
 
 
-@nb.njit()
+@nb.njit(fastmath=True)
 def _get_distance(x1: float, y1: float, x2: float, y2: float) -> float:
     x_diff = x1 - x2
     y_diff = y1 - y2

@@ -13,7 +13,7 @@ spec = OrderedDict({
     "_r_stat": nb.types.float32,
     "_study_region": nb.types.uint8[:, :],
     "_total_study_region_area": nb.types.int64,
-    "_cratered_area": nb.types.int64,
+    "_cratered_area": nb.types.int64[:],
 })
 
 
@@ -30,7 +30,7 @@ class ArealDensityCalculator(object):
         self._study_region = np.zeros((self._study_region_size[0], self._study_region_size[1]), dtype='uint8')
 
         self._total_study_region_area = self._study_region_size[0] * self._study_region_size[1]
-        self._cratered_area = 0
+        self._cratered_area = np.zeros(3, dtype="int64")
 
     def add_crater(self, new_crater: Crater):
         if new_crater.radius >= self._r_stat \
@@ -46,7 +46,7 @@ class ArealDensityCalculator(object):
             self._cratered_area += after - before
 
     def remove_craters(self, new_erased_craters: List[Crater]):
-        difference = 0
+        difference = np.zeros(3, dtype="int64")
 
         for erased in new_erased_craters:
             if erased.radius >= self._r_stat \
@@ -64,11 +64,19 @@ class ArealDensityCalculator(object):
 
     @property
     def areal_density(self) -> float:
-        return self._cratered_area / self._total_study_region_area
+        return self._cratered_area[0] / self._total_study_region_area
+
+    @property
+    def areal_density_overlap_2(self) -> float:
+        return self._cratered_area[1] / self._total_study_region_area
+
+    @property
+    def areal_density_overlap_3(self) -> float:
+        return self._cratered_area[2] / self._total_study_region_area
 
     @property
     def area_covered(self) -> float:
-        return self._cratered_area
+        return self._cratered_area[0]
 
     def _get_mins_and_maxes(self, crater: Crater) -> Tuple[int, int, int, int]:
         """
@@ -97,12 +105,18 @@ class ArealDensityCalculator(object):
                     y = test_y - self._study_region_padding[1]
                     self._study_region[x, y] += increment
 
-    def _get_cratered_area(self, crater: Crater) -> int:
+    def _get_cratered_area(self, crater: Crater) -> np.array:
         """
         Gets the total cratered area of the bounding rectangle for a specified circle.
+        Returns an array with three entries for the areas covered by 0, 1, and 2 overlapping craters.
         """
+        result = np.zeros(3, dtype="int64")
+
         x_min, x_max, y_min, y_max = self._get_mins_and_maxes(crater)
-        return np.count_nonzero(self._study_region[x_min - self._study_region_padding[0]:
-                                                   x_max - self._study_region_padding[0] + 1,
-                                y_min - self._study_region_padding[1]:
-                                y_max - self._study_region_padding[1] + 1])
+        for x in range(x_min - self._study_region_padding[0], x_max - self._study_region_padding[0] + 1):
+            for y in range(y_min - self._study_region_padding[1], y_max - self._study_region_padding[1] + 1):
+                cell = min(self._study_region[x, y], 3)
+                for c in range(1, cell + 1):
+                    result[c - 1] += 1
+
+        return result

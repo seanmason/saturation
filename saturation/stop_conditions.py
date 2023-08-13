@@ -13,6 +13,8 @@ def get_stop_condition(stop_condition_config: Dict):
                                          stop_condition_config["min_craters"])
     elif name == "n_craters":
         return NCratersStopCondition(stop_condition_config["n_craters"])
+    elif name == "information_remaining":
+        return CraterRecordInformationRemainingStopCondition(stop_condition_config["information_remaining_threshold"])
 
 
 class StopCondition(ABC):
@@ -104,3 +106,16 @@ class ArealDensityStopCondition(StopCondition):
 
         return (max_areal_density_after_checkpoint - max_areal_density_before_checkpoint) \
             / max_areal_density_after_checkpoint < self._percentage_increase
+
+
+class CraterRecordInformationRemainingStopCondition(StopCondition):
+    """
+    Stops the simulation when crater record's information remaining, calculated as n_craters_current / n_craters_total,
+    reaches a given threshold.
+    """
+    def __init__(self, information_remaining_threshold: float):
+        self._information_remaining_threshold = information_remaining_threshold
+
+    def should_stop(self, statistics_row: StatisticsRow) -> bool:
+        information_remaining = statistics_row.n_craters_in_study_region / statistics_row.n_craters_added_in_study_region
+        return information_remaining < self._information_remaining_threshold

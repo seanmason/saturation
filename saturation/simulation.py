@@ -177,9 +177,11 @@ def run_simulation(base_output_path: str, config: SimulationConfig):
                 last_n_craters = n_craters_current
 
                 areal_density = areal_density_calculator.areal_density
+                areal_density_overlap_2 = areal_density_calculator.areal_density_overlap_2
+                areal_density_overlap_3 = areal_density_calculator.areal_density_overlap_3
 
                 if crater_record.n_craters_in_study_region > 1:
-                    mean_nn_distance = crater_record.get_mean_nearest_neighbor_distance()
+                    mean_nn_distance = crater_record.get_center_to_center_nearest_neighbor_distance_mean()
                     z = calculate_z_statistic(mean_nn_distance, crater_record.n_craters_in_study_region,
                                               study_region_area)
                     za = calculate_za_statistic(mean_nn_distance,
@@ -196,6 +198,16 @@ def run_simulation(base_output_path: str, config: SimulationConfig):
                     n_craters_added_in_study_region=n_craters_current,
                     n_craters_in_study_region=crater_record.n_craters_in_study_region,
                     areal_density=areal_density,
+                    areal_density_overlap_2=areal_density_overlap_2,
+                    areal_density_overlap_3=areal_density_overlap_3,
+                    center_to_center_nearest_neighbor_distance_mean=crater_record.get_center_to_center_nearest_neighbor_distance_mean(),
+                    center_to_center_nearest_neighbor_distance_stdev=crater_record.get_center_to_center_nearest_neighbor_distance_stdev(),
+                    center_to_center_nearest_neighbor_distance_min=crater_record.get_center_to_center_nearest_neighbor_distance_min(),
+                    center_to_center_nearest_neighbor_distance_max=crater_record.get_center_to_center_nearest_neighbor_distance_max(),
+                    rim_to_rim_nearest_neighbor_distance_mean=crater_record.get_rim_to_rim_nearest_neighbor_distance_mean(),
+                    rim_to_rim_nearest_neighbor_distance_stdev=crater_record.get_rim_to_rim_nearest_neighbor_distance_stdev(),
+                    rim_to_rim_nearest_neighbor_distance_max=crater_record.get_rim_to_rim_nearest_neighbor_distance_max(),
+                    n_non_zero_rim_to_rim_nearest_neighbor_distances=crater_record.get_n_non_zero_rim_to_rim_nearest_neighbor_distances(),
                     z=z,
                     za=za
                 )

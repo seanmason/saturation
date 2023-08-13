@@ -204,7 +204,7 @@ def test_get_mean_nearest_neighbor_distance_random_adds_and_deletes():
         r2r_max = nn.get_rim_to_rim_nearest_neighbor_distance_max()
         r2r_stdev = nn.get_rim_to_rim_nearest_neighbor_distance_stdev()
 
-        r2r_non_zero_count = nn.get_rim_to_rim_non_zero_nearest_neighbor_distance_count()
+        r2r_non_zero_count = nn.get_n_non_zero_rim_to_rim_nearest_neighbor_distances()
 
         # Assert
         # Manually calculate the c2c distances

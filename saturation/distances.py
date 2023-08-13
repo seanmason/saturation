@@ -300,7 +300,6 @@ class Distances:
                 self._sum_tracked_squared_r2r_nn_distances -= r2r_dist ** 2
 
                 self._tracked_nn_count -= 1
-                del self._tracked_nns[crater.id]
 
                 if r2r_dist > 0.0:
                     self._tracked_r2r_non_zero_count -= 1
@@ -350,10 +349,21 @@ class Distances:
 
         for crater in craters:
             del self._all_craters[crater.id]
-            del self._c2c_nn_distances[crater.id]
+
+            nn_id = self._c2c_nns.get(crater.id, 0)
+            if nn_id != 0 and nn_id in self._c2c_nn_reverse_lookup and crater.id in self._c2c_nn_reverse_lookup[nn_id]:
+                del self._c2c_nn_reverse_lookup[nn_id][crater.id]
             del self._c2c_nns[crater.id]
-            del self._r2r_nn_distances[crater.id]
+            del self._c2c_nn_distances[crater.id]
+
+            nn_id = self._r2r_nns.get(crater.id, 0)
+            if nn_id != 0 and nn_id in self._r2r_nn_reverse_lookup and crater.id in self._r2r_nn_reverse_lookup[nn_id]:
+                del self._r2r_nn_reverse_lookup[nn_id][crater.id]
             del self._r2r_nns[crater.id]
+            del self._r2r_nn_distances[crater.id]
+
+            if crater.id in self._tracked_nns:
+                del self._tracked_nns[crater.id]
 
         if self._recalculate_min_c2c_nn_distance:
             self._min_c2c_nn_distance = min([x[1] for x in self._c2c_nn_distances.items() if x[0] in self._tracked_nns])
@@ -387,13 +397,15 @@ class Distances:
         return self._max_c2c_nn_distance
 
     def get_center_to_center_nearest_neighbor_distance_stdev(self) -> float:
-        if not self._c2c_nn_distances:
-            return 0.0
-
         n = self._tracked_nn_count
+
         sq_dists = self._sum_tracked_squared_c2c_nn_distances
         dists = self._sum_tracked_c2c_nn_distances
-        return np.sqrt((n * sq_dists - dists ** 2) / (n * (n - 1)))
+        numerator = n * sq_dists - dists ** 2
+        if n < 2 or numerator < 0.0:
+            return 0.0
+
+        return np.sqrt(numerator / (n * (n - 1)))
 
     def get_rim_to_rim_nearest_neighbor_distance_mean(self) -> float:
         if not self._r2r_nn_distances:
@@ -405,13 +417,15 @@ class Distances:
         return self._max_r2r_nn_distance
 
     def get_rim_to_rim_nearest_neighbor_distance_stdev(self) -> float:
-        if not self._r2r_nn_distances:
-            return 0.0
-
         n = self._tracked_nn_count
+
         sq_dists = self._sum_tracked_squared_r2r_nn_distances
         dists = self._sum_tracked_r2r_nn_distances
-        return np.sqrt((n * sq_dists - dists ** 2) / (n * (n - 1)))
+        numerator = n * sq_dists - dists ** 2
+        if n < 2 or numerator < 0.0:
+            return 0.0
 
-    def get_rim_to_rim_non_zero_nearest_neighbor_distance_count(self) -> int:
+        return np.sqrt(numerator / (n * (n - 1)))
+
+    def get_n_non_zero_rim_to_rim_nearest_neighbor_distances(self) -> int:
         return self._tracked_r2r_non_zero_count

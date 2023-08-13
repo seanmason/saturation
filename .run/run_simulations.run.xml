@@ -13,7 +13,7 @@
     <option name="ADD_SOURCE_ROOTS" value="true" />
     <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
     <option name="SCRIPT_NAME" value="$PROJECT_DIR$/saturation/run_simulations.py" />
-    <option name="PARAMETERS" value="/data/saturation/central_composite_design/ccd5/config/ccd.yaml" />
+    <option name="PARAMETERS" value="/data/saturation/timing_tests/python_311_full_numba_more_metrics/ /data/saturation/timing_tests/python_311_full_numba_more_metrics/config/config.yaml" />
     <option name="SHOW_COMMAND_LINE" value="false" />
     <option name="EMULATE_TERMINAL" value="false" />
     <option name="MODULE_MODE" value="false" />

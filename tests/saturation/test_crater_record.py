@@ -178,7 +178,7 @@ def test_get_mean_nearest_neighbor_distance_empty_from():
 
     # Act
     record.add(crater1)
-    result = record.get_mean_nearest_neighbor_distance()
+    result = record.get_center_to_center_nearest_neighbor_distance_mean()
 
     # Assert
     assert result == 0
@@ -201,7 +201,7 @@ def test_nearest_neighbor_single_from_and_to():
     # Act
     record.add(crater1)
     record.add(crater2)
-    result = record.get_mean_nearest_neighbor_distance()
+    result = record.get_center_to_center_nearest_neighbor_distance_mean()
 
     # Assert
     assert result == 100
@@ -228,7 +228,7 @@ def test_nearest_neighbor_gets_shortest_distance_from_to_craters():
     record.add(crater2)
     record.add(crater3)
     record.add(crater4)
-    result = record.get_mean_nearest_neighbor_distance()
+    result = record.get_center_to_center_nearest_neighbor_distance_mean()
 
     # Assert
     assert result == 1
@@ -253,7 +253,7 @@ def test_get_mean_nearest_neighbor_distance_is_shortest_distance_for_all_from_cr
     record.add(crater1)
     record.add(crater2)
     record.add(crater3)
-    result = record.get_mean_nearest_neighbor_distance()
+    result = record.get_center_to_center_nearest_neighbor_distance_mean()
 
     # Assert
     assert result == np.mean([10, 20, 10])
@@ -278,7 +278,7 @@ def test_get_mean_nearest_neighbor_distance_ignores_smaller_than_r_stat():
     record.add(crater1)
     record.add(crater2)
     record.add(crater3)
-    result = record.get_mean_nearest_neighbor_distance()
+    result = record.get_center_to_center_nearest_neighbor_distance_mean()
 
     # Assert
     assert result == np.mean([20, 20])
@@ -303,7 +303,7 @@ def test_get_mean_nearest_neighbor_distance_ignores_removed_craters():
     record.add(crater1)
     record.add(crater2)
     record.add(crater3)
-    result = record.get_mean_nearest_neighbor_distance()
+    result = record.get_center_to_center_nearest_neighbor_distance_mean()
 
     # Assert
     assert result == np.mean([60, 60])

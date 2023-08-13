@@ -24,6 +24,16 @@ class StatisticsRow:
     n_craters_added_in_study_region: int
     n_craters_in_study_region: int
     areal_density: float
+    areal_density_overlap_2: float
+    areal_density_overlap_3: float
+    center_to_center_nearest_neighbor_distance_mean: float
+    center_to_center_nearest_neighbor_distance_stdev: float
+    center_to_center_nearest_neighbor_distance_min: float
+    center_to_center_nearest_neighbor_distance_max: float
+    rim_to_rim_nearest_neighbor_distance_mean: float
+    rim_to_rim_nearest_neighbor_distance_stdev: float
+    rim_to_rim_nearest_neighbor_distance_max: float
+    n_non_zero_rim_to_rim_nearest_neighbor_distances: int
     z: float
     za: float
 
@@ -45,6 +55,16 @@ class StatisticsWriter:
             out_df.n_craters_added_in_study_region = out_df.n_craters_added_in_study_region.astype('uint32')
             out_df.n_craters_in_study_region = out_df.n_craters_in_study_region.astype('uint32')
             out_df.areal_density = out_df.areal_density.astype('float32')
+            out_df.areal_density_overlap_2 = out_df.areal_density_overlap_2.astype('float32')
+            out_df.areal_density_overlap_3 = out_df.areal_density_overlap_3.astype('float32')
+            out_df.center_to_center_nearest_neighbor_distance_mean = out_df.center_to_center_nearest_neighbor_distance_mean.astype('float32')
+            out_df.center_to_center_nearest_neighbor_distance_stdev = out_df.center_to_center_nearest_neighbor_distance_stdev.astype('float32')
+            out_df.center_to_center_nearest_neighbor_distance_min = out_df.center_to_center_nearest_neighbor_distance_min.astype('float32')
+            out_df.center_to_center_nearest_neighbor_distance_max = out_df.center_to_center_nearest_neighbor_distance_max.astype('float32')
+            out_df.rim_to_rim_nearest_neighbor_distance_mean = out_df.rim_to_rim_nearest_neighbor_distance_mean.astype('float32')
+            out_df.rim_to_rim_nearest_neighbor_distance_stdev = out_df.rim_to_rim_nearest_neighbor_distance_stdev.astype('float32')
+            out_df.rim_to_rim_nearest_neighbor_distance_max = out_df.rim_to_rim_nearest_neighbor_distance_max.astype('float32')
+            out_df.n_non_zero_rim_to_rim_nearest_neighbor_distances = out_df.n_non_zero_rim_to_rim_nearest_neighbor_distances.astype('uint32')
             out_df.z = out_df.z.astype('float32')
             out_df.za = out_df.za.astype('float32')
 
