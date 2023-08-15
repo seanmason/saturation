@@ -6,7 +6,6 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Callable, Generator, Dict, List
 
-import numba as nb
 import numpy as np
 import yaml
 
@@ -69,28 +68,30 @@ class SimulationConfig:
         }
 
 
-def get_crater_location() -> np.array:
-    """
-    Returns an (x, y) crater location, uniformly distributed on [0, 1]
-    """
-    return np.random.rand(2)
-
-
 def get_craters(size_distribution: ProbabilityDistribution,
-                full_region_size: float,
-                location_func: LocationFunc = get_crater_location) -> Generator[Crater, None, None]:
+                full_region_size: float) -> Generator[Crater, None, None]:
     """
     Infinite generator for craters. full_region_size determines the size of the study region being impacted,
     including padding.
     """
+    CHUNK_SIZE = 100000
+
+    full_region_size = np.float32(full_region_size)
+    chunk = None
+
     crater_id = 1
     while True:
-        locations = location_func()
+        index = (crater_id - 1) % CHUNK_SIZE
+        if index == 0:
+            chunk = np.random.rand(CHUNK_SIZE, 3).astype("float32")
+            chunk[:, 0:2] *= full_region_size
+            chunk[:, 2] = size_distribution.pullback(chunk[:, 2].astype("float64"))
+
         yield Crater(
             id=crater_id,
-            x=locations[0] * full_region_size,
-            y=locations[1] * full_region_size,
-            radius=size_distribution.pullback(np.random.rand(1)[0])
+            x=chunk[index, 0],
+            y=chunk[index, 1],
+            radius=chunk[index, 2]
         )
         crater_id += 1
 

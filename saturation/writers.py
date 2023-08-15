@@ -135,7 +135,7 @@ class CraterWriter:
 
     def _flush(self) -> None:
         if self._craters:
-            out_df = pd.DataFrame(self._craters)
+            out_df = pd.DataFrame([x.to_dict() for x in self._craters])
             out_df["simulation_id"] = self._simulation_id
             out_df.id = out_df.id.astype('uint32')
             out_df.x = out_df.x.astype('float32')

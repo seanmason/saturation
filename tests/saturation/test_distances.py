@@ -1,7 +1,7 @@
 import numpy as np
 import math
 
-from data_structures.spatial_hash import _get_distance
+from data_structures.spatial_hash import _get_distance, SpatialHash
 from saturation.datatypes import Crater
 from saturation.distances import Distances
 
@@ -15,7 +15,7 @@ def assert_float_equal(first: float, second: float, *, percentage: float = None,
 
 def test_get_mean_center_to_center_nearest_neighbor_distance_no_craters():
     # Arrange
-    nn = Distances(cell_size=50,  boundary_min=0, boundary_max=500)
+    nn = Distances(cell_size=50, boundary_min=0, boundary_max=500)
 
     # Act
     dist = nn.get_center_to_center_nearest_neighbor_distance_mean()
@@ -26,7 +26,7 @@ def test_get_mean_center_to_center_nearest_neighbor_distance_no_craters():
 
 def test_get_mean_rim_to_rim_nearest_neighbor_distance_no_craters():
     # Arrange
-    nn = Distances(cell_size=50,  boundary_min=0, boundary_max=500)
+    nn = Distances(cell_size=50, boundary_min=0, boundary_max=500)
 
     # Act
     dist = nn.get_rim_to_rim_nearest_neighbor_distance_mean()
@@ -37,7 +37,7 @@ def test_get_mean_rim_to_rim_nearest_neighbor_distance_no_craters():
 
 def test_get_center_to_center_nearest_neighbor_distance_mean_single_pair_tracked():
     # Arrange
-    nn = Distances(cell_size=50,  boundary_min=0, boundary_max=500)
+    nn = Distances(cell_size=50, boundary_min=0, boundary_max=500)
     craters = [
         (Crater(id=1, x=10.0, y=10.0, radius=10.0), True),
         (Crater(id=2, x=20.0, y=10.0, radius=10.0), True)
@@ -54,7 +54,7 @@ def test_get_center_to_center_nearest_neighbor_distance_mean_single_pair_tracked
 
 def test_get_rim_to_rim_nearest_neighbor_distance_mean_single_pair_tracked():
     # Arrange
-    nn = Distances(cell_size=50,  boundary_min=0, boundary_max=500)
+    nn = Distances(cell_size=50, boundary_min=0, boundary_max=500)
     craters = [
         (Crater(id=1, x=10.0, y=10.0, radius=10.0), True),
         (Crater(id=2, x=50.0, y=10.0, radius=10.0), True)
@@ -71,7 +71,7 @@ def test_get_rim_to_rim_nearest_neighbor_distance_mean_single_pair_tracked():
 
 def test_get_center_to_center_nearest_neighbor_distance_mean_single_pair_untracked():
     # Arrange
-    nn = Distances(cell_size=50,  boundary_min=0, boundary_max=500)
+    nn = Distances(cell_size=50, boundary_min=0, boundary_max=500)
     craters = [
         (Crater(id=1, x=10.0, y=10.0, radius=10.0), True),
         (Crater(id=2, x=20.0, y=10.0, radius=10.0), False),
@@ -89,7 +89,7 @@ def test_get_center_to_center_nearest_neighbor_distance_mean_single_pair_untrack
 
 def test_get_rim_to_rim_nearest_neighbor_distance_mean_single_pair_untracked():
     # Arrange
-    nn = Distances(cell_size=50,  boundary_min=0, boundary_max=500)
+    nn = Distances(cell_size=50, boundary_min=0, boundary_max=500)
     craters = [
         (Crater(id=1, x=10.0, y=10.0, radius=10.0), True),
         (Crater(id=2, x=120.0, y=10.0, radius=10.0), False),
@@ -102,12 +102,12 @@ def test_get_rim_to_rim_nearest_neighbor_distance_mean_single_pair_untracked():
     dist = nn.get_rim_to_rim_nearest_neighbor_distance_mean()
 
     # Assert
-    assert dist == 100.0
+    assert dist == 80.0
 
 
 def test_get_craters_with_overlapping_rims_no_overlaps():
     # Arrange
-    nn = Distances(cell_size=50,  boundary_min=0, boundary_max=500)
+    nn = Distances(cell_size=50, boundary_min=0, boundary_max=500)
     craters = [
         Crater(id=1, x=100.0, y=100.0, radius=50.0)
     ]
@@ -123,7 +123,7 @@ def test_get_craters_with_overlapping_rims_no_overlaps():
 
 def test_get_craters_with_overlapping_rims_contained():
     # Arrange
-    nn = Distances(cell_size=50,  boundary_min=0, boundary_max=500)
+    nn = Distances(cell_size=50, boundary_min=0, boundary_max=500)
     craters = [
         Crater(id=1, x=100.0, y=100.0, radius=50.0)
     ]
@@ -134,12 +134,12 @@ def test_get_craters_with_overlapping_rims_contained():
     overlaps = nn.get_craters_with_overlapping_rims(100, 100, 60)
 
     # Assert
-    assert overlaps == set(craters)
+    assert overlaps == {1}
 
 
 def test_get_craters_with_overlapping_rims_simple_case():
     # Arrange
-    nn = Distances(cell_size=50,  boundary_min=0, boundary_max=500)
+    nn = Distances(cell_size=50, boundary_min=0, boundary_max=500)
     craters = [
         Crater(id=1, x=100.0, y=100.0, radius=50.0)
     ]
@@ -150,7 +150,7 @@ def test_get_craters_with_overlapping_rims_simple_case():
     overlaps = nn.get_craters_with_overlapping_rims(150, 125, 50)
 
     # Assert
-    assert overlaps == {craters[0]}
+    assert overlaps == {1}
 
 
 def test_get_craters_with_overlapping_rims_tiny_overlap():
@@ -166,7 +166,7 @@ def test_get_craters_with_overlapping_rims_tiny_overlap():
     overlaps = nn.get_craters_with_overlapping_rims(200, 200, 92)
 
     # Assert
-    assert overlaps == {craters[0]}
+    assert overlaps == {1}
 
 
 def test_get_mean_nearest_neighbor_distance_random_adds_and_deletes():

@@ -179,9 +179,11 @@ class CraterRecord(object):
         craters_in_range = self._distances.get_craters_with_overlapping_rims(new_x,
                                                                              new_y,
                                                                              effective_radius)
-        for old_crater in craters_in_range:
-            if old_crater == new_crater:
+        for old_crater_id in craters_in_range:
+            if old_crater_id == new_crater.id:
                 continue
+
+            old_crater = self._all_craters_in_record[old_crater_id]
 
             # For a new crater to affect an old crater, (new crater radius) > (old crater radius) / r_stat_multiplier
             if new_crater.radius >= self._r_stat:

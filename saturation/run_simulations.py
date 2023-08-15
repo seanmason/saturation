@@ -58,7 +58,7 @@ def main(base_output_path: str, config_filename: str):
     simulation_configs = get_simulation_configs(config)
 
     if n_workers > 1:
-        with multiprocessing.Pool(processes=n_workers) as pool:
+        with multiprocessing.Pool(processes=n_workers, maxtasksperchild=1) as pool:
             for simulation_config in simulation_configs:
                 pool.apply_async(run_simulation, (base_output_path, simulation_config))
                 sys.stdout.flush()
