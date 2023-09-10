@@ -205,9 +205,8 @@ def run_simulation(base_output_path: str, config: SimulationConfig):
                     center_to_center_nearest_neighbor_distance_stdev=crater_record.get_center_to_center_nearest_neighbor_distance_stdev(),
                     center_to_center_nearest_neighbor_distance_min=crater_record.get_center_to_center_nearest_neighbor_distance_min(),
                     center_to_center_nearest_neighbor_distance_max=crater_record.get_center_to_center_nearest_neighbor_distance_max(),
-                    rim_to_rim_nearest_neighbor_distance_mean=crater_record.get_rim_to_rim_nearest_neighbor_distance_mean(),
-                    rim_to_rim_nearest_neighbor_distance_stdev=crater_record.get_rim_to_rim_nearest_neighbor_distance_stdev(),
-                    rim_to_rim_nearest_neighbor_distance_max=crater_record.get_rim_to_rim_nearest_neighbor_distance_max(),
+                    radius_mean=crater_record.get_mean_radius(),
+                    radius_stdev=crater_record.get_radius_stdev(),
                     z=z,
                     za=za
                 )

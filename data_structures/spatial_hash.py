@@ -151,25 +151,6 @@ class SpatialHash:
         bucket[crater.id] = True
         self._buckets_for_crater_centers[crater.id] = bucket
 
-    @staticmethod
-    def _get_rim_to_rim_distance(crater: Crater, x: float, y: float, radius: float) -> float:
-        c2c_dist = _get_distance(crater.x, crater.y, x, y)
-
-        # Rims intersect, or one crater is completely inside the other
-        if c2c_dist < crater.radius + radius:
-            smaller_radius, larger_radius = ((radius, crater.radius)
-                                             if crater.radius > radius
-                                             else (crater.radius, radius))
-
-            # The smaller crater is completely inside the larger
-            candidate_r2r = larger_radius - c2c_dist - smaller_radius
-            if candidate_r2r > 0:
-                return candidate_r2r
-            else:
-                return 0.0
-        else:
-            return c2c_dist - crater.radius - radius
-
     def add(self, crater: Crater):
         """
         Insert a crater.
@@ -250,31 +231,6 @@ class SpatialHash:
 
         return results
 
-    def get_craters_with_rims_within_radius(self,
-                                            crater: Crater,
-                                            radius: float) -> Dict[int, float]:
-        min_point, max_point = self._get_hash_min_and_max(crater.x, crater.y, radius)
-
-        results: Dict[int, float] = {}
-
-        # iterate over the rectangular region
-        for i in range(min_point[0], max_point[0] + 1):
-            for j in range(min_point[1], max_point[1] + 1):
-                if (i, j) not in self._rim_contents:
-                    continue
-
-                candidates = self._rim_contents[(i, j)]
-                for candidate_id in candidates.keys():
-                    if candidate_id in results:
-                        continue
-
-                    candidate = self._crater_lookup[candidate_id]
-                    distance = _get_distance(candidate.x, candidate.y, crater.x, crater.y) - candidate.radius
-                    if distance <= radius:
-                        results[candidate_id] = self._get_rim_to_rim_distance(candidate, crater.x, crater.y, crater.radius)
-
-        return results
-
     def _get_perimeter_cells(self, center_x: float, center_y: float, radius_cells: int) -> Iterable[Tuple[int, int]]:
         point = self._hash(center_x, center_y)
 
@@ -330,35 +286,6 @@ class SpatialHash:
                         candidate = self._crater_lookup[candidate_id]
                         distance = _get_distance(candidate.x, candidate.y, crater.x, crater.y)
                         if distance != 0 and distance < closest_distance:
-                            nearest_neighbor_found_radius = radius
-                            nearest_neighbor = candidate_id
-                            closest_distance = distance
-
-            # Once we find a neighbor, we need to keep scanning out another factor of sqrt(2)
-            # In the worst case, the first neighbor found could be at a 45 degree angle, while the true closest may
-            # be located at a multiple of 90 degrees.
-            if nearest_neighbor != 0 and (nearest_neighbor_found_radius + 1) * 1.5 < radius:
-                break
-
-        return nearest_neighbor, closest_distance
-
-    def get_nearest_neighbor_rim_to_rim(self, crater: Crater) -> Tuple[int, float]:
-        """
-        Finds the nearest neighbor (rim to rim) using an expanding radial search.
-        """
-        nearest_neighbor_found_radius = self._max_search_radius_cells + 1
-        nearest_neighbor = 0
-        closest_distance = self._max_search_distance
-        for radius in range(0, self._max_search_radius_cells + 1):
-            for x, y in self._get_perimeter_cells(crater.x, crater.y, radius):
-                if (x, y) in self._rim_contents:
-                    for candidate_id in self._rim_contents[(x, y)]:
-                        if candidate_id == crater.id:
-                            continue
-
-                        candidate = self._crater_lookup[candidate_id]
-                        distance = self._get_rim_to_rim_distance(candidate, crater.x, crater.y, crater.radius)
-                        if distance < closest_distance:
                             nearest_neighbor_found_radius = radius
                             nearest_neighbor = candidate_id
                             closest_distance = distance

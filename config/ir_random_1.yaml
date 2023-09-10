@@ -1,7 +1,7 @@
 random_seed: 123
 n_workers: 20
 n_simulations: 2500
-n_simulations_per_config: 500
+n_simulations_per_config: 250
 
 write_statistics_cadence: 100000
 write_craters_cadence: 100000
@@ -18,7 +18,7 @@ base_config:
   stop_condition:
     name: information_remaining
     information_remaining_threshold: .05
-  spatial_hash_cell_size: 5
+  spatial_hash_cell_size: 15
 
 parameters:
   - slope:

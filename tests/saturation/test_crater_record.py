@@ -4,9 +4,13 @@ from saturation.crater_record import CraterRecord
 from saturation.datatypes import Crater
 
 
+def _create_crater(id: int, x: float, y: float, radius: float) -> Crater:
+    return Crater(id=id, x=np.float32(x), y=np.float32(y), radius=np.float32(radius))
+
+
 def test_add_in_study_region():
     # Arrange
-    crater = Crater(id=1, x=100.0, y=100.0, radius=100.0)
+    crater = _create_crater(id=1, x=100.0, y=100.0, radius=100.0)
     record = CraterRecord(
         r_stat=10.0,
         r_stat_multiplier=3.0,
@@ -32,7 +36,7 @@ def test_add_in_study_region():
 
 def test_add_outside_study_region():
     # Arrange
-    crater = Crater(id=1, x=100.0, y=100.0, radius=100.0)
+    crater = _create_crater(id=1, x=100.0, y=100.0, radius=100.0)
     record = CraterRecord(
         r_stat=10,
         r_stat_multiplier=3,
@@ -57,7 +61,7 @@ def test_add_outside_study_region():
 
 def test_add_does_not_add_small_craters():
     # Arrange
-    crater = Crater(id=1, x=100.0, y=100.0, radius=9.0)
+    crater = _create_crater(id=1, x=100.0, y=100.0, radius=9.0)
     record = CraterRecord(
         r_stat=10,
         r_stat_multiplier=3,
@@ -81,8 +85,8 @@ def test_add_does_not_add_small_craters():
 def test_add_removes_obliterated_craters():
     # Arrange
     # Second crater completely obliterates the first.
-    crater1 = Crater(id=1, x=100.0, y=100.0, radius=10.0)
-    crater2 = Crater(id=2, x=110.0, y=110.0, radius=50.0)
+    crater1 = _create_crater(id=1, x=100.0, y=100.0, radius=10.0)
+    crater2 = _create_crater(id=2, x=110.0, y=110.0, radius=50.0)
     record = CraterRecord(
         r_stat=10,
         r_stat_multiplier=3,
@@ -108,8 +112,8 @@ def test_add_removes_obliterated_craters():
 def test_add_leaves_partially_removed_craters():
     # Arrange
     # Second crater partially destroys the first's rim.
-    crater1 = Crater(id=1, x=100.0, y=100.0, radius=10.0)
-    crater2 = Crater(id=2, x=110.0, y=110.0, radius=10.0)
+    crater1 = _create_crater(id=1, x=100.0, y=100.0, radius=10.0)
+    crater2 = _create_crater(id=2, x=110.0, y=110.0, radius=10.0)
     record = CraterRecord(
         r_stat=10,
         r_stat_multiplier=3,
@@ -136,11 +140,11 @@ def test_crater_radius_ratio_respected():
     # Arrange
     # For a new crater to affect an old crater, (new crater radius) > (old crater radius) / r_stat_multiplier
     # Here we pepper crater1 with a bunch of craters below this ratio. crater1 should not be removed.
-    crater1 = Crater(id=1, x=100.0, y=100.0, radius=10.0)
-    crater2 = Crater(id=2, x=100.0, y=110.0, radius=4.0)
-    crater3 = Crater(id=3, x=90.0, y=100.0, radius=4.0)
-    crater4 = Crater(id=4, x=100.0, y=110.0, radius=4.0)
-    crater5 = Crater(id=5, x=100.0, y=90.0, radius=4.0)
+    crater1 = _create_crater(id=1, x=100.0, y=100.0, radius=10.0)
+    crater2 = _create_crater(id=2, x=100.0, y=110.0, radius=4.0)
+    crater3 = _create_crater(id=3, x=90.0, y=100.0, radius=4.0)
+    crater4 = _create_crater(id=4, x=100.0, y=110.0, radius=4.0)
+    crater5 = _create_crater(id=5, x=100.0, y=90.0, radius=4.0)
     record = CraterRecord(
         r_stat=10,
         r_stat_multiplier=2,
@@ -165,7 +169,7 @@ def test_crater_radius_ratio_respected():
 
 def test_get_mean_nearest_neighbor_distance_empty_from():
     # Arrange
-    crater1 = Crater(id=1, x=200.0, y=200.0, radius=10.0)
+    crater1 = _create_crater(id=1, x=200.0, y=200.0, radius=10.0)
     record = CraterRecord(
         r_stat=10,
         r_stat_multiplier=3,
@@ -186,8 +190,8 @@ def test_get_mean_nearest_neighbor_distance_empty_from():
 
 def test_nearest_neighbor_single_from_and_to():
     # Arrange
-    crater1 = Crater(id=1, x=50.0, y=150.0, radius=10.0)
-    crater2 = Crater(id=2, x=150.0, y=150.0, radius=10.0)
+    crater1 = _create_crater(id=1, x=50.0, y=150.0, radius=10.0)
+    crater2 = _create_crater(id=2, x=150.0, y=150.0, radius=10.0)
     record = CraterRecord(
         r_stat=10,
         r_stat_multiplier=3,
@@ -209,10 +213,10 @@ def test_nearest_neighbor_single_from_and_to():
 
 def test_nearest_neighbor_gets_shortest_distance_from_to_craters():
     # Arrange
-    crater1 = Crater(id=1, x=100.0, y=100.0, radius=10.0)
-    crater2 = Crater(id=2, x=100.0, y=210.0, radius=10.0)
-    crater3 = Crater(id=3, x=100.0, y=230.0, radius=10.0)
-    crater4 = Crater(id=4, x=99.0, y=100.0, radius=10.0)
+    crater1 = _create_crater(id=1, x=100.0, y=100.0, radius=10.0)
+    crater2 = _create_crater(id=2, x=100.0, y=210.0, radius=10.0)
+    crater3 = _create_crater(id=3, x=100.0, y=230.0, radius=10.0)
+    crater4 = _create_crater(id=4, x=99.0, y=100.0, radius=10.0)
     record = CraterRecord(
         r_stat=10,
         r_stat_multiplier=3,
@@ -236,9 +240,9 @@ def test_nearest_neighbor_gets_shortest_distance_from_to_craters():
 
 def test_get_mean_nearest_neighbor_distance_is_shortest_distance_for_all_from_craters():
     # Arrange
-    crater1 = Crater(id=1, x=100.0, y=100.0, radius=10.0)
-    crater2 = Crater(id=2, x=100.0, y=120.0, radius=10.0)
-    crater3 = Crater(id=3, x=110.0, y=100.0, radius=10.0)
+    crater1 = _create_crater(id=1, x=100.0, y=100.0, radius=10.0)
+    crater2 = _create_crater(id=2, x=100.0, y=120.0, radius=10.0)
+    crater3 = _create_crater(id=3, x=110.0, y=100.0, radius=10.0)
     record = CraterRecord(
         r_stat=10,
         r_stat_multiplier=3,
@@ -261,9 +265,9 @@ def test_get_mean_nearest_neighbor_distance_is_shortest_distance_for_all_from_cr
 
 def test_get_mean_nearest_neighbor_distance_ignores_smaller_than_r_stat():
     # Arrange
-    crater1 = Crater(id=1, x=100.0, y=100.0, radius=10.0)
-    crater2 = Crater(id=2, x=100.0, y=120.0, radius=10.0)
-    crater3 = Crater(id=3, x=110.0, y=100.0, radius=5.0)
+    crater1 = _create_crater(id=1, x=100.0, y=100.0, radius=10.0)
+    crater2 = _create_crater(id=2, x=100.0, y=120.0, radius=10.0)
+    crater3 = _create_crater(id=3, x=110.0, y=100.0, radius=5.0)
     record = CraterRecord(
         r_stat=10,
         r_stat_multiplier=3,
@@ -286,9 +290,9 @@ def test_get_mean_nearest_neighbor_distance_ignores_smaller_than_r_stat():
 
 def test_get_mean_nearest_neighbor_distance_ignores_removed_craters():
     # Arrange
-    crater1 = Crater(id=1, x=100.0, y=100.0, radius=10.0)
-    crater2 = Crater(id=2, x=100.0, y=150.0, radius=10.0)
-    crater3 = Crater(id=3, x=100.0, y=160.0, radius=50.0)
+    crater1 = _create_crater(id=1, x=100.0, y=100.0, radius=10.0)
+    crater2 = _create_crater(id=2, x=100.0, y=150.0, radius=10.0)
+    crater3 = _create_crater(id=3, x=100.0, y=160.0, radius=50.0)
     record = CraterRecord(
         r_stat=10,
         r_stat_multiplier=3,
