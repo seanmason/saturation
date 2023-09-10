@@ -1,4 +1,4 @@
-from typing import Tuple, Dict
+from typing import Tuple, Dict, NamedTuple
 from collections import OrderedDict
 
 import numba as nb
@@ -19,18 +19,11 @@ spec = OrderedDict({
 })
 
 
-@jitclass(spec=spec)
-class Crater(object):
+class Crater(NamedTuple):
     id: int
     x: float
     y: float
     radius: float
-
-    def __init__(self, id: int, x: float, y: float, radius: float):
-        self.id = id
-        self.x = x
-        self.y = y
-        self.radius = radius
 
     def __hash__(self) -> int:
         return self.id

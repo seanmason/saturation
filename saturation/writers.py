@@ -33,7 +33,6 @@ class StatisticsRow:
     rim_to_rim_nearest_neighbor_distance_mean: float
     rim_to_rim_nearest_neighbor_distance_stdev: float
     rim_to_rim_nearest_neighbor_distance_max: float
-    n_non_zero_rim_to_rim_nearest_neighbor_distances: int
     z: float
     za: float
 
@@ -64,7 +63,6 @@ class StatisticsWriter:
             out_df.rim_to_rim_nearest_neighbor_distance_mean = out_df.rim_to_rim_nearest_neighbor_distance_mean.astype('float32')
             out_df.rim_to_rim_nearest_neighbor_distance_stdev = out_df.rim_to_rim_nearest_neighbor_distance_stdev.astype('float32')
             out_df.rim_to_rim_nearest_neighbor_distance_max = out_df.rim_to_rim_nearest_neighbor_distance_max.astype('float32')
-            out_df.n_non_zero_rim_to_rim_nearest_neighbor_distances = out_df.n_non_zero_rim_to_rim_nearest_neighbor_distances.astype('uint32')
             out_df.z = out_df.z.astype('float32')
             out_df.za = out_df.za.astype('float32')
 

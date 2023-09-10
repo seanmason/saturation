@@ -91,7 +91,7 @@ def get_craters(size_distribution: ProbabilityDistribution,
             id=crater_id,
             x=chunk[index, 0],
             y=chunk[index, 1],
-            radius=chunk[index, 2]
+            radius=np.float32(chunk[index, 2])
         )
         crater_id += 1
 
@@ -208,7 +208,6 @@ def run_simulation(base_output_path: str, config: SimulationConfig):
                     rim_to_rim_nearest_neighbor_distance_mean=crater_record.get_rim_to_rim_nearest_neighbor_distance_mean(),
                     rim_to_rim_nearest_neighbor_distance_stdev=crater_record.get_rim_to_rim_nearest_neighbor_distance_stdev(),
                     rim_to_rim_nearest_neighbor_distance_max=crater_record.get_rim_to_rim_nearest_neighbor_distance_max(),
-                    n_non_zero_rim_to_rim_nearest_neighbor_distances=crater_record.get_n_non_zero_rim_to_rim_nearest_neighbor_distances(),
                     z=z,
                     za=za
                 )

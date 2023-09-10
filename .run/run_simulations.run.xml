@@ -5,6 +5,8 @@
     <option name="PARENT_ENVS" value="true" />
     <envs>
       <env name="PYTHONUNBUFFERED" value="1" />
+      <env name="NUMBA_NRT_STATS" value="1" />
+      <env name="NUMBA_DEBUG" value="1" />
     </envs>
     <option name="SDK_HOME" value="" />
     <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/saturation" />
@@ -13,7 +15,7 @@
     <option name="ADD_SOURCE_ROOTS" value="true" />
     <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
     <option name="SCRIPT_NAME" value="$PROJECT_DIR$/saturation/run_simulations.py" />
-    <option name="PARAMETERS" value="/data/saturation/timing_tests/python_311_full_numba_more_metrics/ /data/saturation/timing_tests/python_311_full_numba_more_metrics/config/config.yaml" />
+    <option name="PARAMETERS" value="/data/saturation/ir_random_1 /data/saturation/ir_random_1/config/config_0000500.yaml" />
     <option name="SHOW_COMMAND_LINE" value="false" />
     <option name="EMULATE_TERMINAL" value="false" />
     <option name="MODULE_MODE" value="false" />

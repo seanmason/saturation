@@ -9,7 +9,7 @@ from saturation.datatypes import Crater
 
 
 tuple_type = nb.types.UniTuple(nb.types.int64, 2)
-crater_type = Crater.class_type.instance_type
+crater_type = nb.typeof(Crater(np.int64(1), np.float32(1.0), np.float32(1.0), np.float32(1.0)))
 crater_set_type = nb.types.DictType(
     keyty=nb.int64,
     valty=nb.types.boolean
@@ -153,8 +153,22 @@ class SpatialHash:
 
     @staticmethod
     def _get_rim_to_rim_distance(crater: Crater, x: float, y: float, radius: float) -> float:
-        r2r_dist = _get_distance(crater.x, crater.y, x, y) - crater.radius - radius
-        return r2r_dist if r2r_dist > 0.0 else 0.0
+        c2c_dist = _get_distance(crater.x, crater.y, x, y)
+
+        # Rims intersect, or one crater is completely inside the other
+        if c2c_dist < crater.radius + radius:
+            smaller_radius, larger_radius = ((radius, crater.radius)
+                                             if crater.radius > radius
+                                             else (crater.radius, radius))
+
+            # The smaller crater is completely inside the larger
+            candidate_r2r = larger_radius - c2c_dist - smaller_radius
+            if candidate_r2r > 0:
+                return candidate_r2r
+            else:
+                return 0.0
+        else:
+            return c2c_dist - crater.radius - radius
 
     def add(self, crater: Crater):
         """
@@ -264,8 +278,9 @@ class SpatialHash:
     def _get_perimeter_cells(self, center_x: float, center_y: float, radius_cells: int) -> Iterable[Tuple[int, int]]:
         point = self._hash(center_x, center_y)
 
+        results = []
         if radius_cells == 0:
-            yield point
+            results.append(point)
         else:
             # Top side
             y = point[1] + radius_cells
@@ -273,7 +288,7 @@ class SpatialHash:
                 min_x = max(self._boundary_min_cell, point[0] - radius_cells)
                 max_x = min(self._boundary_max_cell, point[0] + radius_cells)
                 for x in range(min_x, max_x + 1):
-                    yield x, y
+                    results.append((x, y))
 
             # Left side
             x = point[0] - radius_cells
@@ -281,7 +296,7 @@ class SpatialHash:
                 min_y = max(self._boundary_min_cell, point[1] - radius_cells + 1)
                 max_y = min(self._boundary_max_cell, point[1] + radius_cells)
                 for y in range(min_y, max_y):
-                    yield x, y
+                    results.append((x, y))
 
             # Right side
             x = point[0] + radius_cells
@@ -289,7 +304,7 @@ class SpatialHash:
                 min_y = max(self._boundary_min_cell, point[1] - radius_cells + 1)
                 max_y = min(self._boundary_max_cell, point[1] + radius_cells)
                 for y in range(min_y, max_y):
-                    yield x, y
+                    results.append((x, y))
 
             # Bottom
             y = point[1] - radius_cells
@@ -297,14 +312,16 @@ class SpatialHash:
                 min_x = max(self._boundary_min_cell, point[0] - radius_cells)
                 max_x = min(self._boundary_max_cell, point[0] + radius_cells)
                 for x in range(min_x, max_x + 1):
-                    yield x, y
+                    results.append((x, y))
 
-    def get_nearest_neighbor_center_to_center(self, crater: Crater) -> Tuple[Optional[int], float]:
+        return results
+
+    def get_nearest_neighbor_center_to_center(self, crater: Crater) -> Tuple[int, float]:
         """
         Finds the nearest neighbor (center-to-center) using an expanding radial search.
         """
         nearest_neighbor_found_radius = self._max_search_radius_cells + 1
-        nearest_neighbor = None
+        nearest_neighbor = 0
         closest_distance = self._max_search_distance
         for radius in range(0, self._max_search_radius_cells + 1):
             for x, y in self._get_perimeter_cells(crater.x, crater.y, radius):
@@ -320,26 +337,20 @@ class SpatialHash:
             # Once we find a neighbor, we need to keep scanning out another factor of sqrt(2)
             # In the worst case, the first neighbor found could be at a 45 degree angle, while the true closest may
             # be located at a multiple of 90 degrees.
-            if nearest_neighbor is not None and (nearest_neighbor_found_radius + 1) * 1.5 < radius:
+            if nearest_neighbor != 0 and (nearest_neighbor_found_radius + 1) * 1.5 < radius:
                 break
 
         return nearest_neighbor, closest_distance
 
-    def get_nearest_neighbor_rim_to_rim(self, crater: Crater) -> Tuple[Optional[int], float]:
+    def get_nearest_neighbor_rim_to_rim(self, crater: Crater) -> Tuple[int, float]:
         """
         Finds the nearest neighbor (rim to rim) using an expanding radial search.
         """
         nearest_neighbor_found_radius = self._max_search_radius_cells + 1
-        nearest_neighbor = None
+        nearest_neighbor = 0
         closest_distance = self._max_search_distance
         for radius in range(0, self._max_search_radius_cells + 1):
-            if closest_distance == 0.0:
-                break
-
             for x, y in self._get_perimeter_cells(crater.x, crater.y, radius):
-                if closest_distance == 0.0:
-                    break
-
                 if (x, y) in self._rim_contents:
                     for candidate_id in self._rim_contents[(x, y)]:
                         if candidate_id == crater.id:
@@ -355,7 +366,7 @@ class SpatialHash:
             # Once we find a neighbor, we need to keep scanning out another factor of sqrt(2)
             # In the worst case, the first neighbor found could be at a 45 degree angle, while the true closest may
             # be located at a multiple of 90 degrees.
-            if nearest_neighbor is not None and (nearest_neighbor_found_radius + 1) * 1.5 < radius:
+            if nearest_neighbor != 0 and (nearest_neighbor_found_radius + 1) * 1.5 < radius:
                 break
 
         return nearest_neighbor, closest_distance

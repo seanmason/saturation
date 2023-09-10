@@ -1,4 +1,5 @@
 import sys
+from pathlib import Path
 from typing import Dict
 import copy
 
@@ -30,7 +31,8 @@ def create_random_configs(base_output_path: str, config: Dict):
     id_counter = 1
     for simulation_number in range(config["n_simulations"]):
         if simulation_number != 0 and simulation_number % config["n_simulations_per_config"] == 0:
-            output_path = f"{base_output_path}/config_{simulation_number:07d}.yaml"
+            output_path = Path(f"{base_output_path}/config_{simulation_number:07d}.yaml")
+            output_path.parent.mkdir(parents=True, exist_ok=True)
             with open(output_path, 'w') as output_file:
                 yaml.dump(output_config, output_file)
 

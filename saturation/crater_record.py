@@ -9,8 +9,7 @@ from saturation.datatypes import Crater, Arc
 from saturation.distances import Distances
 
 
-null_crater = Crater(-1, 0.0, 0.0, 0.0)
-crater_type = nb.typeof(null_crater)
+crater_type = nb.typeof(Crater(np.int64(1), np.float32(1.0), np.float32(1.0), np.float32(1.0)))
 int_to_crater_dict_type = nb.types.DictType(
     keyty=nb.types.int64,
     valty=crater_type
@@ -50,7 +49,6 @@ class CraterDictionary(object):
 
     def __len__(self):
         return len(self._craters)
-
 
 arc_type = nb.types.UniTuple(nb.float64, 2)
 erased_arcs_type = nb.types.DictType(
@@ -164,9 +162,6 @@ class CraterRecord(object):
 
     def get_rim_to_rim_nearest_neighbor_distance_max(self) -> float:
         return self._distances.get_rim_to_rim_nearest_neighbor_distance_max()
-
-    def get_n_non_zero_rim_to_rim_nearest_neighbor_distances(self) -> int:
-        return self._distances.get_n_non_zero_rim_to_rim_nearest_neighbor_distances()
 
     def _update_rim_arcs(self, new_crater: Crater):
         new_x = new_crater.x

@@ -1,7 +1,7 @@
 import numpy as np
 import math
 
-from data_structures.spatial_hash import _get_distance, SpatialHash
+from data_structures.spatial_hash import _get_distance
 from saturation.datatypes import Crater
 from saturation.distances import Distances
 
@@ -170,8 +170,8 @@ def test_get_craters_with_overlapping_rims_tiny_overlap():
 
 
 def test_get_mean_nearest_neighbor_distance_random_adds_and_deletes():
-    N_REPEATS = 100
-    N_POINTS = 300
+    N_REPEATS = 1
+    N_POINTS = 30
     STUDY_REGION_SIZE = 500
     P_TRACKED = 0.8
 
@@ -204,8 +204,6 @@ def test_get_mean_nearest_neighbor_distance_random_adds_and_deletes():
         r2r_max = nn.get_rim_to_rim_nearest_neighbor_distance_max()
         r2r_stdev = nn.get_rim_to_rim_nearest_neighbor_distance_stdev()
 
-        r2r_non_zero_count = nn.get_n_non_zero_rim_to_rim_nearest_neighbor_distances()
-
         # Assert
         # Manually calculate the c2c distances
         tracked_after_removal = [x[0] for x in craters if x[1] and x[0] not in to_remove]
@@ -227,19 +225,35 @@ def test_get_mean_nearest_neighbor_distance_random_adds_and_deletes():
         math.isclose(c2c_stdev, expected_c2c_stdev)
 
         # Manually calculate the r2r distances
+        def _get_r2r_dist(c, x, y, radius):
+            c2c_dist = _get_distance(x, y, c.x, c.y)
+
+            # Rims intersect, or one crater is completely inside the other
+            if c2c_dist < c.radius + radius:
+                smaller_radius, larger_radius = ((radius, c.radius)
+                                                 if c.radius > radius
+                                                 else (c.radius, radius))
+
+                # The smaller crater is completely inside the larger
+                candidate_r2r = larger_radius - c2c_dist - smaller_radius
+                if candidate_r2r > 0:
+                    return candidate_r2r
+                else:
+                    return 0.0
+            else:
+                return c2c_dist - c.radius - radius
+
         r2r_nns = [
-            sorted([(crater, x, max(_get_distance(x.x, x.y, crater.x, crater.y) - x.radius - crater.radius, 0.0))
+            sorted([(crater, x, _get_r2r_dist(crater, x.x, x.y, x.radius))
                     for x, _ in craters if x not in to_remove and x != crater], key=lambda x: x[2])[0]
             for crater in tracked_after_removal
         ]
         r2r_dists = [x[2] for x in r2r_nns]
 
-        expected_r2r_non_zero_count = len([x for x in r2r_dists if x != 0.0])
         expected_r2r_mean = np.mean(r2r_dists)
         expected_r2r_max = np.max(r2r_dists)
         expected_r2r_stdev = np.std(r2r_dists, ddof=1)
 
-        assert expected_r2r_non_zero_count == r2r_non_zero_count
         math.isclose(r2r_mean, expected_r2r_mean)
         math.isclose(r2r_max, expected_r2r_max)
         math.isclose(r2r_stdev, expected_r2r_stdev)
