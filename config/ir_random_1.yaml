@@ -1,5 +1,5 @@
 random_seed: 123
-n_workers: 20
+n_workers: 26
 n_simulations: 2500
 n_simulations_per_config: 250
 
@@ -23,7 +23,7 @@ base_config:
 parameters:
   - slope:
       min: 1.0
-      max: 5.0
+      max: 4.0
   - r_stat_multiplier:
       min: 3.0
       max: 9.0

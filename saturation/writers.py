@@ -49,20 +49,6 @@ class StatisticsWriter:
         if self._statistics_rows:
             out_df = pd.DataFrame(self._statistics_rows)
             out_df["simulation_id"] = self._simulation_id
-            out_df.crater_id = out_df.crater_id.astype('uint32')
-            out_df.n_craters_added_in_study_region = out_df.n_craters_added_in_study_region.astype('uint32')
-            out_df.n_craters_in_study_region = out_df.n_craters_in_study_region.astype('uint32')
-            out_df.areal_density = out_df.areal_density.astype('float32')
-            out_df.areal_density_overlap_2 = out_df.areal_density_overlap_2.astype('float32')
-            out_df.areal_density_overlap_3 = out_df.areal_density_overlap_3.astype('float32')
-            out_df.center_to_center_nearest_neighbor_distance_mean = out_df.center_to_center_nearest_neighbor_distance_mean.astype('float32')
-            out_df.center_to_center_nearest_neighbor_distance_stdev = out_df.center_to_center_nearest_neighbor_distance_stdev.astype('float32')
-            out_df.center_to_center_nearest_neighbor_distance_min = out_df.center_to_center_nearest_neighbor_distance_min.astype('float32')
-            out_df.center_to_center_nearest_neighbor_distance_max = out_df.center_to_center_nearest_neighbor_distance_max.astype('float32')
-            out_df.radius_mean = out_df.radius_mean.astype('float32')
-            out_df.radius_stdev = out_df.radius_stdev.astype('float32')
-            out_df.z = out_df.z.astype('float32')
-            out_df.za = out_df.za.astype('float32')
 
             output_filename = f"{self._output_path}/statistics_{self._total_statistics_rows}.parquet"
             out_df.to_parquet(output_filename)
@@ -105,15 +91,6 @@ class StateSnapshotWriter:
         state_filename = f'{self._output_path}/state_{n_craters_current}.parquet'
         state_df = pd.DataFrame(state_rows)
         state_df["simulation_id"] = self._simulation_id
-        state_df = state_df.astype({
-            "last_crater_id": "uint32",
-            "n_craters_added_in_study_region": "uint32",
-            "crater_id": "uint32",
-            "x": "uint32",
-            "y": "uint32",
-            "radius": "float32",
-            "rim_percent_remaining": "float32",
-        })
         state_df.to_parquet(state_filename, index=False)
 
 
@@ -133,11 +110,6 @@ class CraterWriter:
         if self._craters:
             out_df = pd.DataFrame([x.to_dict() for x in self._craters])
             out_df["simulation_id"] = self._simulation_id
-            out_df.id = out_df.id.astype('uint32')
-            out_df.x = out_df.x.astype('float32')
-            out_df.y = out_df.y.astype('float32')
-            out_df.radius = out_df.radius.astype('float32')
-
             output_filename = f"{self._output_path}/craters_{self._total_craters}.parquet"
             out_df.to_parquet(output_filename)
 
@@ -177,9 +149,6 @@ class CraterRemovalWriter:
         if self._removals:
             out_df = pd.DataFrame(self._removals)
             out_df["simulation_id"] = self._simulation_id
-            out_df.removed_crater_id = out_df.removed_crater_id.astype('uint32')
-            out_df.removed_by_crater_id = out_df.removed_by_crater_id.astype('uint32')
-
             output_filename = f"{self._output_path}/crater_removals_{self._total_removals}.parquet"
             out_df.to_parquet(output_filename)
 

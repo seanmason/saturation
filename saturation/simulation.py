@@ -83,15 +83,14 @@ def get_craters(size_distribution: ProbabilityDistribution,
     while True:
         index = (crater_id - 1) % CHUNK_SIZE
         if index == 0:
-            chunk = np.random.rand(CHUNK_SIZE, 3).astype("float32")
-            chunk[:, 0:2] *= full_region_size
-            chunk[:, 2] = size_distribution.pullback(chunk[:, 2].astype("float64"))
+            xy = np.random.rand(CHUNK_SIZE, 2).astype("float32") * full_region_size
+            radii = size_distribution.pullback(np.random.rand(CHUNK_SIZE)).astype("float32")
 
         yield Crater(
             id=crater_id,
-            x=chunk[index, 0],
-            y=chunk[index, 1],
-            radius=np.float32(chunk[index, 2])
+            x=xy[index, 0],
+            y=xy[index, 1],
+            radius=radii[index]
         )
         crater_id += 1
 
