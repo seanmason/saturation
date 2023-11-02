@@ -77,7 +77,6 @@ def get_craters(size_distribution: ProbabilityDistribution,
     CHUNK_SIZE = 100000
 
     full_region_size = np.float32(full_region_size)
-    chunk = None
 
     crater_id = 1
     while True:
