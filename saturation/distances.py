@@ -152,11 +152,14 @@ class Distances:
 
     def _recalculate_max_c2c_distance_if_necessary(self):
         if self._recalculate_max_c2c_nn_distance:
-            self._max_c2c_nn_distance = (
-                max([x[1] for x in self._c2c_nn_distances.items() if x[0] in self._tracked_nns])
-                if len(self._c2c_nn_distances) > 0
-                else 0.0
-            )
+            if not self._tracked_nns:
+                self._max_c2c_nn_distance = 0.0
+            else:
+                self._max_c2c_nn_distance = (
+                    max([x[1] for x in self._c2c_nn_distances.items() if x[0] in self._tracked_nns])
+                    if len(self._c2c_nn_distances) > 0
+                    else 0.0
+                )
             self._max_c2c_search_distance = (
                 max(self._c2c_nn_distances.values())
                 if len(self._c2c_nn_distances) > 0
@@ -226,8 +229,10 @@ class Distances:
             nn_id = self._c2c_nns.get(crater.id, 0)
             if nn_id != 0 and nn_id in self._c2c_nn_reverse_lookup and crater.id in self._c2c_nn_reverse_lookup[nn_id]:
                 del self._c2c_nn_reverse_lookup[nn_id][crater.id]
-            del self._c2c_nns[crater.id]
-            del self._c2c_nn_distances[crater.id]
+
+            if crater.id in self._c2c_nns:
+                del self._c2c_nns[crater.id]
+                del self._c2c_nn_distances[crater.id]
 
             if crater.id in self._tracked_nns:
                 del self._tracked_nns[crater.id]

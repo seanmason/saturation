@@ -5,7 +5,7 @@ from saturation.datatypes import Crater
 
 
 def _create_crater(id: int, x: float, y: float, radius: float) -> Crater:
-    return Crater(id=id, x=np.float32(x), y=np.float32(y), radius=np.float32(radius))
+    return Crater(id=np.int64(id), x=np.float32(x), y=np.float32(y), radius=np.float32(radius))
 
 
 def test_add_in_study_region():
@@ -312,3 +312,74 @@ def test_get_mean_nearest_neighbor_distance_ignores_removed_craters():
     # Assert
     assert result == np.mean([60, 60])
 
+
+def test_removal_percentage_too_low():
+    # Arrange
+    center = 500.0
+    large_radius = 100.0
+    percent_each_crater = 0.05
+    n_craters = 9
+
+    record = CraterRecord(
+        r_stat=10,
+        r_stat_multiplier=10,
+        min_rim_percentage=0.51,
+        effective_radius_multiplier=1.0,
+        study_region_size=500,
+        study_region_padding=0,
+        cell_size=5
+    )
+
+    # Act
+    crater1 = _create_crater(id=1, x=center, y=center, radius=large_radius)
+    record.add(crater1)
+
+    small_theta = 2 * np.pi * percent_each_crater / 2
+    small_radius = np.sqrt(
+        (large_radius * np.sin(small_theta))**2
+        + (large_radius - large_radius * np.cos(small_theta))**2
+    )
+    theta_delta = 2 * np.pi / n_craters
+    for offset in range(n_craters):
+        x = center + large_radius * np.cos(theta_delta * offset)
+        y = center + large_radius * np.sin(theta_delta * offset)
+        crater = _create_crater(id=offset + 2, x=x, y=y, radius=small_radius)
+        removed = record.add(crater)
+
+    assert crater1 in record.all_craters_in_record
+
+
+def test_removal_percentage_high_enough():
+    # Arrange
+    center = 500.0
+    large_radius = 100.0
+    percent_each_crater = 0.05
+    n_craters = 10
+
+    record = CraterRecord(
+        r_stat=10,
+        r_stat_multiplier=10,
+        min_rim_percentage=0.51,
+        effective_radius_multiplier=1.0,
+        study_region_size=500,
+        study_region_padding=0,
+        cell_size=5
+    )
+
+    # Act
+    crater1 = _create_crater(id=1, x=center, y=center, radius=large_radius)
+    record.add(crater1)
+
+    small_theta = 2 * np.pi * percent_each_crater / 2
+    small_radius = np.sqrt(
+        (large_radius * np.sin(small_theta))**2
+        + (large_radius - large_radius * np.cos(small_theta))**2
+    )
+    theta_delta = 2 * np.pi / n_craters
+    for offset in range(n_craters):
+        x = center + large_radius * np.cos(theta_delta * offset)
+        y = center + large_radius * np.sin(theta_delta * offset)
+        crater = _create_crater(id=offset + 2, x=x, y=y, radius=small_radius)
+        removed = record.add(crater)
+
+    assert crater1 not in record.all_craters_in_record

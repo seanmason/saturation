@@ -26,7 +26,7 @@ class Crater(NamedTuple):
     radius: float
 
     def __hash__(self) -> int:
-        return self.id
+        return int(self.id)
 
     def __eq__(self, other) -> bool:
         return other.id == self.id

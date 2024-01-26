@@ -178,7 +178,7 @@ class CraterRecord(object):
             old_crater = self._all_craters_in_record[old_crater_id]
 
             # For a new crater to affect an old crater, (new crater radius) > (old crater radius) / r_stat_multiplier
-            if new_crater.radius >= self._r_stat:
+            if new_crater.radius >= old_crater.radius / self._r_stat_multiplier:
                 arc = get_intersection_arc((old_crater.x, old_crater.y),
                                            old_crater.radius,
                                            (new_x, new_y),
