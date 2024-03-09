@@ -115,11 +115,11 @@ def add_post_saturation_percentiles(data: DataFrame, column: str):
 
 def main(base_path: str, n_simulations: int, n_cores: int):
     n_samples_per_simulation = [
-        # 100,
-        # 250,
+        100,
+        250,
         # 500,
-        5000,
-        10000
+        # 5000,
+        # 10000
     ]
 
     spark = (SparkSession.builder
