@@ -170,8 +170,8 @@ def plot_sfds(data: pd.DataFrame, slope: float, intercept: float = 1):
     max_radius = radii.max()
 
     plt.plot(radii, range(len(radii) + 1, 1, -1), label="Observed")
-    plt.xlabel("Crater Radius")
-    plt.ylabel("N(>=R)")
+    plt.xlabel("$R$")
+    plt.ylabel("$N(\geq R)$")
 
     expected = intercept * radii ** -slope
     plt.plot(radii, expected, label="Estimated", ls="--")
