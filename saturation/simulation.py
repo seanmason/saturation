@@ -68,28 +68,28 @@ class SimulationConfig:
         }
 
 
-def get_crater_location() -> np.array:
-    """
-    Returns an (x, y) crater location, uniformly distributed on [0, 1]
-    """
-    return np.random.rand(2)
-
-
 def get_craters(size_distribution: ProbabilityDistribution,
-                full_region_size: float,
-                location_func: LocationFunc = get_crater_location) -> Generator[Crater, None, None]:
+                full_region_size: float) -> Generator[Crater, None, None]:
     """
     Infinite generator for craters. full_region_size determines the size of the study region being impacted,
     including padding.
     """
+    CHUNK_SIZE = 100000
+
+    full_region_size = np.float32(full_region_size)
+
     crater_id = 1
     while True:
-        locations = location_func()
+        index = (crater_id - 1) % CHUNK_SIZE
+        if index == 0:
+            xy = np.random.rand(CHUNK_SIZE, 2).astype("float32") * full_region_size
+            radii = size_distribution.pullback(np.random.rand(CHUNK_SIZE)).astype("float32")
+
         yield Crater(
             id=crater_id,
-            x=locations[0] * full_region_size,
-            y=locations[1] * full_region_size,
-            radius=size_distribution.pullback(np.random.rand(1)[0])
+            x=xy[index, 0],
+            y=xy[index, 1],
+            radius=radii[index]
         )
         crater_id += 1
 
@@ -117,6 +117,7 @@ def run_simulation(base_output_path: str, config: SimulationConfig):
 
     try:
         np.random.seed(config.random_seed)
+        output_path.mkdir(parents=True, exist_ok=True)
 
         r_stat = config.min_crater_radius
 
@@ -127,8 +128,6 @@ def run_simulation(base_output_path: str, config: SimulationConfig):
         crater_generator = get_craters(size_distribution, full_region_size)
 
         start_time = datetime.datetime.now()
-
-        output_path.mkdir(parents=True, exist_ok=True)
 
         # Write out the config file
         with open(output_path / "config.yaml", 'w') as config_output:
@@ -163,7 +162,7 @@ def run_simulation(base_output_path: str, config: SimulationConfig):
         for crater in crater_generator:
             removed_craters = crater_record.add(crater)
 
-            areal_density_calculator.add_crater(crater)
+            # areal_density_calculator.add_crater(crater)
             if removed_craters:
                 areal_density_calculator.remove_craters(removed_craters)
                 crater_removals_writer.write(removed_craters, crater)
@@ -177,9 +176,11 @@ def run_simulation(base_output_path: str, config: SimulationConfig):
                 last_n_craters = n_craters_current
 
                 areal_density = areal_density_calculator.areal_density
+                areal_density_overlap_2 = areal_density_calculator.areal_density_overlap_2
+                areal_density_overlap_3 = areal_density_calculator.areal_density_overlap_3
 
                 if crater_record.n_craters_in_study_region > 1:
-                    mean_nn_distance = crater_record.get_mean_nearest_neighbor_distance()
+                    mean_nn_distance = crater_record.get_center_to_center_nearest_neighbor_distance_mean()
                     z = calculate_z_statistic(mean_nn_distance, crater_record.n_craters_in_study_region,
                                               study_region_area)
                     za = calculate_za_statistic(mean_nn_distance,
@@ -196,6 +197,14 @@ def run_simulation(base_output_path: str, config: SimulationConfig):
                     n_craters_added_in_study_region=n_craters_current,
                     n_craters_in_study_region=crater_record.n_craters_in_study_region,
                     areal_density=areal_density,
+                    areal_density_overlap_2=areal_density_overlap_2,
+                    areal_density_overlap_3=areal_density_overlap_3,
+                    center_to_center_nearest_neighbor_distance_mean=crater_record.get_center_to_center_nearest_neighbor_distance_mean(),
+                    center_to_center_nearest_neighbor_distance_stdev=crater_record.get_center_to_center_nearest_neighbor_distance_stdev(),
+                    center_to_center_nearest_neighbor_distance_min=crater_record.get_center_to_center_nearest_neighbor_distance_min(),
+                    center_to_center_nearest_neighbor_distance_max=crater_record.get_center_to_center_nearest_neighbor_distance_max(),
+                    radius_mean=crater_record.get_mean_radius(),
+                    radius_stdev=crater_record.get_radius_stdev(),
                     z=z,
                     za=za
                 )

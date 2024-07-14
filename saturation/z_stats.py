@@ -35,7 +35,10 @@ def calculate_za_statistic(mean_nearest_neighbor_distance: float,
     if n_craters == 0:
         return np.nan
 
-    sigma = 0.26136 / np.sqrt(n_craters**2 / (area - area_covered))
-    nn_exp = 0.5 / np.sqrt(n_craters / (area - area_covered))
+    try:
+        sigma = 0.26136 / np.sqrt(n_craters**2 / (area - area_covered))
+        nn_exp = 0.5 / np.sqrt(n_craters / (area - area_covered))
 
-    return (mean_nearest_neighbor_distance - nn_exp) / sigma
+        return (mean_nearest_neighbor_distance - nn_exp) / sigma
+    except:
+        return np.nan

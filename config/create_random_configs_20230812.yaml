@@ -1,0 +1,35 @@
+random_seed: 123
+n_workers: 28
+n_simulations: 2500
+n_simulations_per_config: 500
+
+write_statistics_cadence: 100000
+write_craters_cadence: 100000
+write_crater_removals_cadence: 100000
+write_state_cadence: 0
+write_image_cadence: 0
+write_image_points: []
+
+base_config:
+  study_region_size: 4000
+  study_region_padding: 500
+  min_crater_radius: 5
+  max_crater_radius: 1000
+  stop_condition:
+    name: information_remaining
+    information_remaining_threshold: .05
+  spatial_hash_cell_size: 10
+
+parameters:
+  - slope:
+      min: 1.0
+      max: 3.0
+  - r_stat_multiplier:
+      min: 3.0
+      max: 9.0
+  - min_rim_percentage:
+      min: 0.25
+      max: 0.75
+  - effective_radius_multiplier:
+      min: 1.1
+      max: 1.9
