@@ -268,7 +268,7 @@ class CraterRecord(object):
         if not n:
             return 0.0
 
-        return self._sum_tracked_squared_radii / n
+        return self._sum_tracked_radii / n
 
     def get_radius_stdev(self) -> float:
         n = self.n_craters_in_study_region

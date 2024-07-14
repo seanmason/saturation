@@ -162,7 +162,7 @@ def run_simulation(base_output_path: str, config: SimulationConfig):
         for crater in crater_generator:
             removed_craters = crater_record.add(crater)
 
-            areal_density_calculator.add_crater(crater)
+            # areal_density_calculator.add_crater(crater)
             if removed_craters:
                 areal_density_calculator.remove_craters(removed_craters)
                 crater_removals_writer.write(removed_craters, crater)

@@ -162,13 +162,9 @@ def calculate_areal_density(craters: pd.DataFrame,
     return ad_calculator.areal_density
     
 
-def plot_sfds(data: pd.DataFrame, slope: float, intercept: float = 1):
+def plot_csfd_with_slope(data: pd.DataFrame, slope: float, intercept: float = 1):
     radii = data.radius.sort_values()
     
-    # Track min and max radii
-    min_radius = radii.min()
-    max_radius = radii.max()
-
     plt.plot(radii, range(len(radii) + 1, 1, -1), label="Observed")
     plt.xlabel("$R$")
     plt.ylabel("$N(\geq R)$")
@@ -184,6 +180,43 @@ def plot_sfds(data: pd.DataFrame, slope: float, intercept: float = 1):
     plt.yscale('log')
     plt.show()
 
+
+def plot_csfds_for_multiple_n_tot(
+        states: dict[int, pd.DataFrame],
+        reference_slope: float = None,
+        reference_intercept: float = None
+):
+    """
+    Plots CSFDs for multiple values of N_tot
+    """
+    colors = [
+        "blue",
+        "red",
+        "lightgreen",
+        "orange",
+        "black"
+    ]
+
+    fig = plt.figure(figsize=(9, 4))
+    ax = fig.add_subplot(111)
+
+    for idx, (ntot, data) in enumerate(states.items()):
+        radii = data.radius.sort_values()
+        ax.plot(radii, range(len(radii) + 1, 1, -1), label="$N_{tot}" + f"={ntot}$", c=colors[idx % len(colors)])
+
+    if reference_slope:
+        expected = reference_intercept * radii ** -reference_slope
+        plt.plot(radii, expected, ls="--", c="black")
+
+    ax.set_xlabel("$R$", fontsize=14)
+    ax.set_ylabel("$N(\geq R)$", fontsize=14)
+    fig.subplots_adjust(right=0.7)
+
+    ax.legend()
+    ax.set_xscale('log')
+    ax.set_yscale('log')
+
+    return fig
 
 def plot_circle(center: Tuple[float, float],
                 radius: float,
