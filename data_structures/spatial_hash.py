@@ -276,8 +276,8 @@ class SpatialHash:
         """
         Finds the nearest neighbor using an expanding radial search.
         """
-        nearest_neighbor_found_radius = self._max_search_radius_cells + 1
-        nearest_neighbor = 0
+        nn_found_radius = self._max_search_radius_cells + 1
+        nn_id = 0
         closest_distance = self._max_search_distance
         for radius in range(0, self._max_search_radius_cells + 1):
             for x, y in self._get_perimeter_cells(crater.x, crater.y, radius):
@@ -286,14 +286,14 @@ class SpatialHash:
                         candidate = self._crater_lookup[candidate_id]
                         distance = _get_distance(candidate.x, candidate.y, crater.x, crater.y)
                         if distance != 0 and distance < closest_distance:
-                            nearest_neighbor_found_radius = radius
-                            nearest_neighbor = candidate_id
+                            nn_found_radius = radius
+                            nn_id = candidate_id
                             closest_distance = distance
 
             # Once we find a neighbor, we need to keep scanning out another factor of sqrt(2)
             # In the worst case, the first neighbor found could be at a 45 degree angle, while the true closest may
             # be located at a multiple of 90 degrees.
-            if nearest_neighbor != 0 and (nearest_neighbor_found_radius + 1) * 1.5 < radius:
+            if nn_id != 0 and (nn_found_radius + 1) * 1.5 < radius:
                 break
 
-        return nearest_neighbor, closest_distance
+        return nn_id, closest_distance
