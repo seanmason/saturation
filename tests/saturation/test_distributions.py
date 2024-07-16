@@ -7,7 +7,7 @@ from saturation.distributions import ParetoProbabilityDistribution
 
 def test_pareto_distribution_uniform_to_density_max_value_respected():
     # Arrange
-    distribution = ParetoProbabilityDistribution(cdf_slope=2.8, x_min=1, x_max=25)
+    distribution = ParetoProbabilityDistribution(alpha=2.8, x_min=1, x_max=25)
 
     # Act
     result = distribution.pullback(1)
@@ -21,7 +21,7 @@ def test_pareto_distribution_slope():
     The slope in log-log space should equal the CDF's slope.
     """
     # Arrange
-    distribution = ParetoProbabilityDistribution(cdf_slope=2.8, x_min=1, x_max=25)
+    distribution = ParetoProbabilityDistribution(alpha=2.8, x_min=1, x_max=25)
 
     # Act
     n_samples = 500000
@@ -45,7 +45,7 @@ def test_pareto_distribution_pdf_sums_to_1():
     min_value = 5
     max_value = 100
     steps = 100000
-    distribution = ParetoProbabilityDistribution(cdf_slope=2.8, x_min=min_value, x_max=max_value)
+    distribution = ParetoProbabilityDistribution(alpha=2.8, x_min=min_value, x_max=max_value)
 
     # Act
     # Analytical integral via right-handed Riemann sum

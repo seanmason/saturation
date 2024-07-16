@@ -1,4 +1,4 @@
-from typing import Set, Tuple, Dict, List, Optional, Iterable
+from typing import *
 from collections import OrderedDict
 
 import numpy as np
@@ -272,9 +272,9 @@ class SpatialHash:
 
         return results
 
-    def get_nearest_neighbor_center_to_center(self, crater: Crater) -> Tuple[int, float]:
+    def get_nnd(self, crater: Crater) -> Tuple[int, float]:
         """
-        Finds the nearest neighbor (center-to-center) using an expanding radial search.
+        Finds the nearest neighbor using an expanding radial search.
         """
         nearest_neighbor_found_radius = self._max_search_radius_cells + 1
         nearest_neighbor = 0

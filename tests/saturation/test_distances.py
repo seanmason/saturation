@@ -17,18 +17,18 @@ def assert_float_equal(first: float, second: float, *, percentage: float = None,
         assert abs(first - second) < absolute
 
 
-def test_get_mean_center_to_center_nearest_neighbor_distance_no_craters():
+def test_get_mean_nnd_no_craters():
     # Arrange
     nn = Distances(cell_size=50, boundary_min=0, boundary_max=500)
 
     # Act
-    dist = nn.get_center_to_center_nearest_neighbor_distance_mean()
+    dist = nn.get_nnd_mean()
 
     # Assert
     assert dist == 0.0
 
 
-def test_get_center_to_center_nearest_neighbor_distance_mean_single_pair_tracked():
+def test_get_nnd_mean_single_pair_tracked():
     # Arrange
     nn = Distances(cell_size=50, boundary_min=0, boundary_max=500)
     craters = [
@@ -39,13 +39,13 @@ def test_get_center_to_center_nearest_neighbor_distance_mean_single_pair_tracked
         nn.add(crater, tracked)
 
     # Act
-    dist = nn.get_center_to_center_nearest_neighbor_distance_mean()
+    dist = nn.get_nnd_mean()
 
     # Assert
     assert dist == 10.0
 
 
-def test_get_center_to_center_nearest_neighbor_distance_mean_single_pair_untracked():
+def test_get_nnd_mean_single_pair_untracked():
     # Arrange
     nn = Distances(cell_size=50, boundary_min=0, boundary_max=500)
     craters = [
@@ -57,7 +57,7 @@ def test_get_center_to_center_nearest_neighbor_distance_mean_single_pair_untrack
         nn.add(crater, tracked)
 
     # Act
-    dist = nn.get_center_to_center_nearest_neighbor_distance_mean()
+    dist = nn.get_nnd_mean()
 
     # Assert
     assert dist == 1.0
@@ -127,7 +127,7 @@ def test_get_craters_with_overlapping_rims_tiny_overlap():
     assert overlaps == {1}
 
 
-def test_get_mean_nearest_neighbor_distance_random_adds_and_deletes():
+def test_get_mean_nnd_random_adds_and_deletes():
     N_REPEATS = 10
     N_POINTS = 300
     STUDY_REGION_SIZE = 500
@@ -142,7 +142,9 @@ def test_get_mean_nearest_neighbor_distance_random_adds_and_deletes():
         nn = Distances(cell_size=5, boundary_min=0, boundary_max=STUDY_REGION_SIZE)
         points = np.random.rand(N_POINTS, 2) * STUDY_REGION_SIZE
         craters = [
-            (_create_crater(id=x + 1, x=point[0], y=point[1], radius=np.random.rand() * 25 + 1), np.random.rand() < P_TRACKED)
+            (
+                _create_crater(id=x + 1, x=point[0], y=point[1], radius=np.random.rand() * 25 + 1),
+                np.random.rand() < P_TRACKED)
             for x, point in enumerate(points)
         ]
         for crater, tracked in craters:
@@ -153,10 +155,10 @@ def test_get_mean_nearest_neighbor_distance_random_adds_and_deletes():
         nn.remove(to_remove)
 
         # Act
-        c2c_mean = nn.get_center_to_center_nearest_neighbor_distance_mean()
-        c2c_min = nn.get_center_to_center_nearest_neighbor_distance_min()
-        c2c_max = nn.get_center_to_center_nearest_neighbor_distance_max()
-        c2c_stdev = nn.get_center_to_center_nearest_neighbor_distance_stdev()
+        nnd_mean = nn.get_nnd_mean()
+        nnd_min = nn.get_min_nnd()
+        nnd_max = nn.get_max_nnd()
+        nnd_stdev = nn.get_nnd_stdev()
 
         # Assert
         # Manually calculate the c2c distances
@@ -166,14 +168,14 @@ def test_get_mean_nearest_neighbor_distance_random_adds_and_deletes():
                     for x, _ in craters if x not in to_remove and x != crater), key=lambda x: x[2])[0]
             for crater in tracked_after_removal
         ]
-        c2c_dists = [x[2] for x in c2c_nns]
+        nnds = [x[2] for x in c2c_nns]
 
-        expected_c2c_mean = np.mean(c2c_dists)
-        expected_c2c_min = np.min(c2c_dists)
-        expected_c2c_max = np.max(c2c_dists)
-        expected_c2c_stdev = np.std(c2c_dists, ddof=1)
+        expected_nnd_mean = np.mean(nnds)
+        expected_nnd_min = np.min(nnds)
+        expected_nnd_max = np.max(nnds)
+        expected_nnd_stdev = np.std(nnds, ddof=1)
 
-        math.isclose(c2c_mean, expected_c2c_mean)
-        math.isclose(c2c_min, expected_c2c_min)
-        math.isclose(c2c_max, expected_c2c_max)
-        math.isclose(c2c_stdev, expected_c2c_stdev)
+        math.isclose(nnd_mean, expected_nnd_mean)
+        math.isclose(nnd_min, expected_nnd_min)
+        math.isclose(nnd_max, expected_nnd_max)
+        math.isclose(nnd_stdev, expected_nnd_stdev)

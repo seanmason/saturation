@@ -65,9 +65,9 @@ crater_list_type = nb.types.ListType(crater_type)
 
 crater_record_spec = OrderedDict({
     "_r_stat": nb.float64,
-    "_r_stat_multiplier": nb.float64,
-    "_min_rim_percentage": nb.float64,
-    "_effective_radius_multiplier": nb.float64,
+    "_erat": nb.float64,
+    "_mrp": nb.float64,
+    "_rmult": nb.float64,
     "_study_region_size": nb.int64,
     "_study_region_padding": nb.int64,
     "_min_x": nb.int64,
@@ -77,7 +77,7 @@ crater_record_spec = OrderedDict({
     "_distances": Distances.class_type.instance_type,
     "_all_craters_in_record": CraterDictionary.class_type.instance_type,
     "_craters_in_study_region": CraterDictionary.class_type.instance_type,
-    "_n_craters_added_in_study_region": nb.int64,
+    "_ntot": nb.int64,
     "_erased_arcs": erased_arcs_type,
     "_remaining_rim_percentages": remaining_rim_percentages_type,
     "_craters_to_remove": crater_list_type,
@@ -93,16 +93,16 @@ class CraterRecord(object):
     """
     def __init__(self,
                  r_stat: float,
-                 r_stat_multiplier: float,
-                 min_rim_percentage: float,
-                 effective_radius_multiplier: float,
+                 erat: float,
+                 mrp: float,
+                 rmult: float,
                  study_region_size: int,
                  study_region_padding: int,
                  cell_size: int):
         self._r_stat = r_stat
-        self._r_stat_multiplier = r_stat_multiplier
-        self._min_rim_percentage = min_rim_percentage
-        self._effective_radius_multiplier = effective_radius_multiplier
+        self._erat = erat
+        self._mrp = mrp
+        self._rmult = rmult
         self._study_region_size = study_region_size
         self._study_region_padding = study_region_padding
 
@@ -123,8 +123,7 @@ class CraterRecord(object):
         # Contains all craters with r > r_stat within the study region
         self._craters_in_study_region = CraterDictionary()
 
-        # Contains all craters, even those below r_stat and those outside the study region
-        self._n_craters_added_in_study_region = 0
+        self._ntot = 0
 
         self._erased_arcs: Dict[int, List[Arc]] = nb.typed.Dict.empty(
             key_type=nb.int64,
@@ -141,29 +140,29 @@ class CraterRecord(object):
         self._sum_tracked_squared_radii: float = 0.0
 
     @property
-    def n_craters_added_in_study_region(self) -> int:
-        return self._n_craters_added_in_study_region
+    def ntot(self) -> int:
+        return self._ntot
 
     @property
-    def n_craters_in_study_region(self) -> int:
+    def nobs(self) -> int:
         return len(self._craters_in_study_region)
 
-    def get_center_to_center_nearest_neighbor_distance_mean(self) -> float:
-        return self._distances.get_center_to_center_nearest_neighbor_distance_mean()
+    def get_nnd_mean(self) -> float:
+        return self._distances.get_nnd_mean()
 
-    def get_center_to_center_nearest_neighbor_distance_stdev(self) -> float:
-        return self._distances.get_center_to_center_nearest_neighbor_distance_stdev()
+    def get_nnd_stdev(self) -> float:
+        return self._distances.get_nnd_stdev()
 
-    def get_center_to_center_nearest_neighbor_distance_min(self) -> float:
-        return self._distances.get_center_to_center_nearest_neighbor_distance_min()
+    def get_nnd_min(self) -> float:
+        return self._distances.get_min_nnd()
 
-    def get_center_to_center_nearest_neighbor_distance_max(self) -> float:
-        return self._distances.get_center_to_center_nearest_neighbor_distance_max()
+    def get_nnd_max(self) -> float:
+        return self._distances.get_max_nnd()
 
     def _update_rim_arcs(self, new_crater: Crater):
         new_x = new_crater.x
         new_y = new_crater.y
-        effective_radius = new_crater.radius * self._effective_radius_multiplier
+        effective_radius = new_crater.radius * self._rmult
 
         if new_crater.radius >= self._r_stat:
             self._remaining_rim_percentages[new_crater.id] = 1.
@@ -177,8 +176,8 @@ class CraterRecord(object):
 
             old_crater = self._all_craters_in_record[old_crater_id]
 
-            # For a new crater to affect an old crater, (new crater radius) > (old crater radius) / r_stat_multiplier
-            if new_crater.radius >= old_crater.radius / self._r_stat_multiplier:
+            # For a new crater to affect an old crater, (new crater radius) > (old crater radius) / erat
+            if new_crater.radius >= old_crater.radius / self._erat:
                 arc = get_intersection_arc((old_crater.x, old_crater.y),
                                            old_crater.radius,
                                            (new_x, new_y),
@@ -190,7 +189,7 @@ class CraterRecord(object):
                 remaining_rim_percentage = 1.0 - sum([x[1] - x[0] for x in erased_arcs]) / (2 * np.pi)
                 self._remaining_rim_percentages[old_crater.id] = remaining_rim_percentage
 
-                if remaining_rim_percentage < self._min_rim_percentage:
+                if remaining_rim_percentage < self._mrp:
                     self._craters_to_remove.append(old_crater)
 
     def _remove_craters_with_destroyed_rims(self) -> List[Crater]:
@@ -224,7 +223,7 @@ class CraterRecord(object):
 
             if in_study_region:
                 self._craters_in_study_region.add(crater)
-                self._n_craters_added_in_study_region += 1
+                self._ntot += 1
                 self._sum_tracked_radii += crater.radius
                 self._sum_tracked_squared_radii += crater.radius ** 2
 
@@ -264,14 +263,14 @@ class CraterRecord(object):
         return self._remaining_rim_percentages.get(crater_id, 1.0)
 
     def get_mean_radius(self) -> float:
-        n = self.n_craters_in_study_region
+        n = self.nobs
         if not n:
             return 0.0
 
         return self._sum_tracked_radii / n
 
     def get_radius_stdev(self) -> float:
-        n = self.n_craters_in_study_region
+        n = self.nobs
 
         sqr = self._sum_tracked_squared_radii
         r = self._sum_tracked_radii

@@ -59,7 +59,7 @@ class NCratersMaxStopCondition(StopCondition):
 
         self._n_craters_high_points[self._counter] = max(
             self._n_craters_high_points[self._counter - 1],
-            statistics_row.n_craters_in_study_region
+            statistics_row.nobs
         )
 
         if self._counter < self._min_craters:
@@ -94,7 +94,7 @@ class CraterCountAndArealDensityStopCondition(StopCondition):
         )
         self._craters_in_study_region_high_points[self._counter] = max(
             self._craters_in_study_region_high_points[self._counter - 1],
-            statistics_row.n_craters_in_study_region
+            statistics_row.nobs
         )
 
         if self._counter < self.MIN_CRATERS:
@@ -150,5 +150,5 @@ class CraterRecordInformationRemainingStopCondition(StopCondition):
         self._information_remaining_threshold = information_remaining_threshold
 
     def should_stop(self, statistics_row: StatisticsRow) -> bool:
-        information_remaining = statistics_row.n_craters_in_study_region / statistics_row.n_craters_added_in_study_region
+        information_remaining = statistics_row.nobs / statistics_row.ntot
         return information_remaining < self._information_remaining_threshold

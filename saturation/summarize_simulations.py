@@ -27,9 +27,9 @@ def create_configs_df(configs: pyspark.RDD) -> DataFrame:
     config_columns = [
         "simulation_id",
         "slope",
-        "r_stat_multiplier",
-        "effective_radius_multiplier",
-        "min_rim_percentage"
+        "erat",
+        "rmult",
+        "mrp"
     ]
     return configs.map(lambda x: {k: v for k, v in x.items() if k in config_columns}).toDF()
 

@@ -10,7 +10,7 @@ from saturation.datatypes import Crater
 
 class StateRow(NamedTuple):
     last_crater_id: int
-    n_craters_added_in_study_region: int
+    ntot: int
     crater_id: int
     x: float
     y: float
@@ -21,15 +21,13 @@ class StateRow(NamedTuple):
 @dataclass(frozen=True, kw_only=True, slots=True)
 class StatisticsRow:
     crater_id: int
-    n_craters_added_in_study_region: int
-    n_craters_in_study_region: int
+    ntot: int
+    nobs: int
     areal_density: float
-    areal_density_overlap_2: float
-    areal_density_overlap_3: float
-    center_to_center_nearest_neighbor_distance_mean: float
-    center_to_center_nearest_neighbor_distance_stdev: float
-    center_to_center_nearest_neighbor_distance_min: float
-    center_to_center_nearest_neighbor_distance_max: float
+    nnd_mean: float
+    nnd_stdev: float
+    nnd_min: float
+    nnd_max: float
     radius_mean: float
     radius_stdev: float
     z: float
