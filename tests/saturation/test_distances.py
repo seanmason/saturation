@@ -1,7 +1,7 @@
 import numpy as np
 import math
 
-from data_structures.spatial_hash import _get_distance
+from saturation.data_structures import _get_distance
 from saturation.datatypes import Crater
 from saturation.distances import Distances
 

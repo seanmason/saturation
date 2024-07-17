@@ -20,7 +20,9 @@ def get_simulation_configs(config: Dict) -> List[SimulationConfig]:
     write_image_points = config['write_image_points']
 
     result = []
-    run_configurations = sorted(config['run_configurations'], key=lambda x: x[list(x.keys())[0]]["slope"], reverse=True)
+    run_configurations = sorted(config['run_configurations'],
+                                key=lambda x: x[list(x.keys())[0]]["slope"],
+                                reverse=False)
     for sim_group_config in run_configurations:
         simulation_id, values = list(sim_group_config.items())[0]
         simulation_name = values["simulation_name"]

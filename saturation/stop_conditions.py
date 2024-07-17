@@ -148,9 +148,13 @@ class CraterRecordInformationRemainingStopCondition(StopCondition):
     Stops the simulation when crater record's information remaining, calculated as nobs / ntot,
     reaches a given threshold.
     """
+    MIN_NTOT = 1000
     def __init__(self, information_remaining_threshold: float):
         self._information_remaining_threshold = information_remaining_threshold
 
     def should_stop(self, statistics_row: StatisticsRow) -> bool:
+        if statistics_row.ntot < CraterRecordInformationRemainingStopCondition.MIN_NTOT:
+            return False
+
         information_remaining = statistics_row.nobs / statistics_row.ntot
         return information_remaining < self._information_remaining_threshold

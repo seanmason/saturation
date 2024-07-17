@@ -5,7 +5,7 @@ import numba as nb
 import numpy as np
 from numba.experimental import jitclass
 
-from data_structures.spatial_hash import SpatialHash
+from saturation.data_structures.spatial_hash import SpatialHash
 from saturation.datatypes import Crater
 
 crater_type = nb.typeof(Crater(np.int64(1), np.float32(1.0), np.float32(1.0), np.float32(1.0)))
