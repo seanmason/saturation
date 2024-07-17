@@ -13,7 +13,7 @@ def test_crater_record_integration():
     # Arrange
     np.random.seed(123)
 
-    n_craters = 500
+    ntot = 500
     study_region_size = 1000
     study_region_padding = 125
     r_stat = 15
@@ -45,12 +45,11 @@ def test_crater_record_integration():
             areal_density_calculator.remove_craters(removed_craters)
 
         counter += 1
-        if counter == n_craters:
+        if counter == ntot:
             break
 
     # Assert
     print(f"{removed_counter}, {record.nobs}, {areal_density_calculator.areal_density}")
-    # assert removed_counter == 19
-    # assert record.nobs == 55
-    # assert areal_density_calculator.areal_density == 0.066236
-    #PASSED               [100%]30, 55, 0.189706
+    assert removed_counter == 19
+    assert record.nobs == 49
+    assert areal_density_calculator.areal_density == 0.23791

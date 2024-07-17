@@ -158,7 +158,7 @@ def run_simulation(base_output_path: str, config: SimulationConfig):
                                                           (config.study_region_padding, config.study_region_padding),
                                                           r_stat)
 
-        last_n_craters = 0
+        last_ntot = 0
         for crater in crater_generator:
             removed_craters = crater_record.add(crater)
 
@@ -171,13 +171,11 @@ def run_simulation(base_output_path: str, config: SimulationConfig):
                 crater_writer.write(crater)
 
             # Only perform updates if the study region crater count ticked up
-            n_craters_current = crater_record.ntot
-            if last_n_craters != n_craters_current:
-                last_n_craters = n_craters_current
+            ntot_current = crater_record.ntot
+            if last_ntot != ntot_current:
+                last_ntot = ntot_current
 
                 areal_density = areal_density_calculator.areal_density
-                areal_density_overlap_2 = areal_density_calculator.areal_density_overlap_2
-                areal_density_overlap_3 = areal_density_calculator.areal_density_overlap_3
 
                 if crater_record.nobs > 1:
                     mean_nn_distance = crater_record.get_nnd_mean()
@@ -194,11 +192,9 @@ def run_simulation(base_output_path: str, config: SimulationConfig):
                 # Save stats
                 statistics_row = StatisticsRow(
                     crater_id=crater.id,
-                    ntot=n_craters_current,
+                    ntot=ntot_current,
                     nobs=crater_record.nobs,
                     areal_density=areal_density,
-                    areal_density_overlap_2=areal_density_overlap_2,
-                    areal_density_overlap_3=areal_density_overlap_3,
                     nnd_mean=crater_record.get_nnd_mean(),
                     nnd_stdev=crater_record.get_nnd_stdev(),
                     nnd_min=crater_record.get_nnd_min(),
@@ -210,12 +206,12 @@ def run_simulation(base_output_path: str, config: SimulationConfig):
                 )
                 statistics_writer.write(statistics_row)
 
-                if config.write_state_cadence != 0 and n_craters_current % config.write_state_cadence == 0:
-                    state_snapshot_writer.write_state_snapshot(crater_record, crater, n_craters_current)
+                if config.write_state_cadence != 0 and ntot_current % config.write_state_cadence == 0:
+                    state_snapshot_writer.write_state_snapshot(crater_record, crater, ntot_current)
 
-                if n_craters_current in config.write_image_points \
-                        or config.write_image_cadence != 0 and n_craters_current % config.write_image_cadence == 0:
-                    png_name = output_path / f"study_region_{n_craters_current}.png"
+                if ntot_current in config.write_image_points \
+                        or config.write_image_cadence != 0 and ntot_current % config.write_image_cadence == 0:
+                    png_name = output_path / f"study_region_{ntot_current}.png"
                     save_study_region(areal_density_calculator, png_name)
 
                 if stop_condition.should_stop(statistics_row):

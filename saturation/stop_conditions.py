@@ -10,12 +10,12 @@ def get_stop_condition(stop_condition_config: Dict):
         return CraterCountAndArealDensityStopCondition()
     elif name == "areal_density":
         return ArealDensityStopCondition(stop_condition_config["percentage_increase"],
-                                         stop_condition_config["min_craters"])
-    elif name == "n_craters_max":
+                                         stop_condition_config["min_ntot"])
+    elif name == "ntot_max":
         return NCratersMaxStopCondition(stop_condition_config["percentage_increase"],
-                                        stop_condition_config["min_craters"])
-    elif name == "n_craters":
-        return NCratersStopCondition(stop_condition_config["n_craters"])
+                                        stop_condition_config["min_ntot"])
+    elif name == "ntot":
+        return NTotStopCondition(stop_condition_config["ntot"])
     elif name == "information_remaining":
         return CraterRecordInformationRemainingStopCondition(stop_condition_config["information_remaining_threshold"])
 
@@ -29,45 +29,45 @@ class StopCondition(ABC):
         pass
 
 
-class NCratersStopCondition(StopCondition):
+class NTotStopCondition(StopCondition):
     """
     Stops the simulation when a specified number of craters have been added to the study region.
     """
 
-    def __init__(self, n_craters: int):
-        self._n_craters = n_craters
+    def __init__(self, ntot: int):
+        self._ntot = ntot
         self._counter = 0
 
     def should_stop(self, statistics_row: StatisticsRow) -> bool:
         self._counter += 1
-        return self._counter == self._n_craters
+        return self._counter == self._ntot
 
 
 class NCratersMaxStopCondition(StopCondition):
     """
     Stops the simulation when no new maximum crater count has been reached in one third of the simulation iterations.
     """
-    def __init__(self, percentage_increase: float, min_craters: int):
+    def __init__(self, percentage_increase: float, min_ntot: int):
         self._percentage_increase = percentage_increase
-        self._min_craters = min_craters
+        self._min_ntot = min_ntot
 
-        self._n_craters_high_points: Dict[int, float] = {0: 0.0}
+        self._nobs_high_points: Dict[int, float] = {0: 0.0}
         self._counter = 0
 
     def should_stop(self, statistics_row: StatisticsRow) -> bool:
         self._counter += 1
 
-        self._n_craters_high_points[self._counter] = max(
-            self._n_craters_high_points[self._counter - 1],
+        self._nobs_high_points[self._counter] = max(
+            self._nobs_high_points[self._counter - 1],
             statistics_row.nobs
         )
 
-        if self._counter < self._min_craters:
+        if self._counter < self._min_ntot:
             return False
 
         checkpoint = self._counter // 3 * 2
-        max_n_before_checkpoint = self._n_craters_high_points[checkpoint]
-        max_n_after_checkpoint = self._n_craters_high_points[self._counter]
+        max_n_before_checkpoint = self._nobs_high_points[checkpoint]
+        max_n_after_checkpoint = self._nobs_high_points[self._counter]
 
         return (max_n_after_checkpoint - max_n_before_checkpoint) \
             / max_n_after_checkpoint < self._percentage_increase
@@ -78,11 +78,11 @@ class CraterCountAndArealDensityStopCondition(StopCondition):
     Stops the simulation when no new maximum crater count and areal density have been reached in one third of
     the simulation iterations.
     """
-    MIN_CRATERS = 250000
+    MIN_NTOT = 250000
 
     def __init__(self):
         self._areal_density_high_points: Dict[int, float] = {0: 0.0}
-        self._craters_in_study_region_high_points: Dict[int, int] = {0: 0}
+        self._nobs_high_points: Dict[int, int] = {0: 0}
         self._counter = 0
 
     def should_stop(self, statistics_row: StatisticsRow) -> bool:
@@ -92,22 +92,24 @@ class CraterCountAndArealDensityStopCondition(StopCondition):
             self._areal_density_high_points[self._counter - 1],
             statistics_row.areal_density
         )
-        self._craters_in_study_region_high_points[self._counter] = max(
-            self._craters_in_study_region_high_points[self._counter - 1],
+        self._nobs_high_points[self._counter] = max(
+            self._nobs_high_points[self._counter - 1],
             statistics_row.nobs
         )
 
-        if self._counter < self.MIN_CRATERS:
+        if self._counter < self.MIN_NTOT:
             return False
 
         checkpoint = self._counter // 2
         max_areal_density_before_checkpoint = self._areal_density_high_points[checkpoint]
         max_areal_density_after_checkpoint = self._areal_density_high_points[self._counter]
-        max_n_craters_before_checkpoint = self._craters_in_study_region_high_points[checkpoint]
-        max_n_craters_after_checkpoint = self._craters_in_study_region_high_points[self._counter]
+        max_nobs_before_checkpoint = self._nobs_high_points[checkpoint]
+        max_nobs_after_checkpoint = self._nobs_high_points[self._counter]
 
-        return max_areal_density_before_checkpoint >= max_areal_density_after_checkpoint \
-               and max_n_craters_before_checkpoint >= max_n_craters_after_checkpoint
+        return (
+            max_areal_density_before_checkpoint >= max_areal_density_after_checkpoint
+            and max_nobs_before_checkpoint >= max_nobs_after_checkpoint
+        )
 
 
 class ArealDensityStopCondition(StopCondition):
@@ -115,9 +117,9 @@ class ArealDensityStopCondition(StopCondition):
     Stops the simulation when the maximum areal density has not increased by more than a given percentage in half the
     total simulation time
     """
-    def __init__(self, percentage_increase: float, min_craters: int):
+    def __init__(self, percentage_increase: float, min_ntot: int):
         self._percentage_increase = percentage_increase
-        self._min_craters = min_craters
+        self._min_ntot = min_ntot
 
         self._areal_density_high_points: Dict[int, float] = {0: 0.0}
         self._counter = 0
@@ -130,7 +132,7 @@ class ArealDensityStopCondition(StopCondition):
             statistics_row.areal_density
         )
 
-        if self._counter < self._min_craters:
+        if self._counter < self._min_ntot:
             return False
 
         checkpoint = self._counter // 3 * 2
@@ -143,7 +145,7 @@ class ArealDensityStopCondition(StopCondition):
 
 class CraterRecordInformationRemainingStopCondition(StopCondition):
     """
-    Stops the simulation when crater record's information remaining, calculated as n_craters_current / n_craters_total,
+    Stops the simulation when crater record's information remaining, calculated as nobs / ntot,
     reaches a given threshold.
     """
     def __init__(self, information_remaining_threshold: float):

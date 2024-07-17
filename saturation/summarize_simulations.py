@@ -60,7 +60,7 @@ def add_post_saturation_percentiles(data: DataFrame, column: str):
     col_dtype = dict(data.dtypes)[column]
 
     # Select all points post-saturation - last 1/3 of each simulation
-    window = Window.partitionBy("simulation_id").orderBy(F.col("n_craters_added_in_study_region"))
+    window = Window.partitionBy("simulation_id").orderBy(F.col("ntot"))
     with_row_number = data.withColumn("row_number", F.row_number().over(window))
 
     saturation_points = with_row_number.groupby("simulation_id").agg(F.max("row_number").alias("n_rows"))
@@ -139,10 +139,9 @@ def main(base_path: str, n_simulations: int, n_cores: int):
 
     data = spark.read.parquet(f"{base_path}/*/statistics_*.parquet")
     data = data.filter(data.simulation_id.isin(simulation_ids))
-    data = data.withColumn("information_remaining",
-                           F.col("n_craters_in_study_region") / F.col("n_craters_added_in_study_region"))
+    data = data.withColumn("information_remaining", F.col("ntot") / F.col("nobs"))
 
-    data = add_post_saturation_percentiles(data, "n_craters_in_study_region")
+    data = add_post_saturation_percentiles(data, "nobs")
     data = add_post_saturation_percentiles(data, "areal_density")
     data = data.join(F.broadcast(configs_df), on="simulation_id")
 

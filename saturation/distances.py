@@ -168,9 +168,9 @@ class Distances:
             self._recalculate_max_nnd = False
 
     def _update_nnds(self, crater: Crater, tracked: bool):
-        nn_id, nearest_neighbor_dist = self._spatial_hash.get_nnd(crater)
+        nn_id, nnd = self._spatial_hash.get_nnd(crater)
         if nn_id != 0:
-            self._update_nn(crater.id, nn_id, nearest_neighbor_dist, force=False, tracked=tracked)
+            self._update_nn(crater.id, nn_id, nnd, force=False, tracked=tracked)
 
         max_distance = (self._max_current_search_distance
                         if self._max_current_search_distance > 0.0

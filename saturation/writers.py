@@ -73,12 +73,12 @@ class StateSnapshotWriter:
     def write_state_snapshot(self,
                              crater_record: CraterRecord,
                              last_crater: Crater,
-                             n_craters_current: int) -> None:
+                             ntot: int) -> None:
         state_rows = []
         for report_crater in crater_record.all_craters_in_record:
             state_rows.append(StateRow(
                 last_crater_id=last_crater.id,
-                n_craters_added_in_study_region=n_craters_current,
+                ntot=ntot,
                 crater_id=report_crater.id,
                 x=report_crater.x,
                 y=report_crater.y,
@@ -86,7 +86,7 @@ class StateSnapshotWriter:
                 rim_percent_remaining=crater_record.get_remaining_rim_percent(report_crater.id)
             ))
 
-        state_filename = f'{self._output_path}/state_{n_craters_current}.parquet'
+        state_filename = f'{self._output_path}/state_{ntot}.parquet'
         state_df = pd.DataFrame(state_rows)
         state_df["simulation_id"] = self._simulation_id
         state_df.to_parquet(state_filename, index=False)

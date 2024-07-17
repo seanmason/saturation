@@ -161,14 +161,14 @@ def test_get_mean_nnd_random_adds_and_deletes():
         nnd_stdev = nn.get_nnd_stdev()
 
         # Assert
-        # Manually calculate the c2c distances
+        # Manually calculate the nnds
         tracked_after_removal = [x[0] for x in craters if x[1] and x[0] not in to_remove]
-        c2c_nns = [
+        nns = [
             sorted(((crater, x, _get_distance(x.x, x.y, crater.x, crater.y))
                     for x, _ in craters if x not in to_remove and x != crater), key=lambda x: x[2])[0]
             for crater in tracked_after_removal
         ]
-        nnds = [x[2] for x in c2c_nns]
+        nnds = [x[2] for x in nns]
 
         expected_nnd_mean = np.mean(nnds)
         expected_nnd_min = np.min(nnds)

@@ -62,13 +62,13 @@ def get_state_at_time(stats_df: DataFrame,
                       craters_df: DataFrame,
                       removals_df: DataFrame,
                       simulation_id: int,
-                      target_n_craters_added_in_study_region: int,
+                      target_ntot: int,
                       study_region_size: int,
                       study_region_padding: int,
                       spark: SparkSession) -> pd.DataFrame:
     max_crater_id = stats_df.where(
         (F.col("simulation_id") == F.lit(simulation_id))
-        & (F.col("n_craters_added_in_study_region") <= F.lit(target_n_craters_added_in_study_region))
+        & (F.col("ntot") <= F.lit(target_ntot))
     ).select(F.max("crater_id")).collect()[0][0]
     
     stats_df.createOrReplaceTempView("stats")
@@ -95,30 +95,33 @@ def get_state_at_time(stats_df: DataFrame,
     return spark.sql(query).toPandas()
 
 
-def estimate_cumulative_slope(diameters: List[float],
-                              min_diameter: float,
-                              max_diameter: float,
-                              min_search_slope: float = 0.0,
-                              max_search_slope: float = 10.0) -> float:
+def estimate_cumulative_slope(radii: List[float],
+                              min_radius: float,
+                              max_radius: float,
+                              min_search_slope: float = -10.0,
+                              max_search_slope: float = 0.0) -> Tuple[float, float]:
+    """
+    Returns a tuple of the estimated slope and sigma.
+    """
     N_GUESSES = 100000
 
     # Filter craters to only those between min and max
-    diameters = np.array([x for x in diameters if min_diameter <= x <= max_diameter])
+    radii = np.array([x for x in radii if min_radius <= x <= max_radius])
 
-    summation = np.sum(np.log(diameters / min_diameter))
-    n_craters = diameters.shape[0]
+    summation = np.sum(np.log(radii / min_radius))
+    nobs = radii.shape[0]
 
     guesses = min_search_slope + np.array([x * (max_search_slope - min_search_slope) / N_GUESSES for x in range(1, N_GUESSES + 1)])
 
-    min_max_ratio = min_diameter / max_diameter
-    guesses = n_craters / guesses + n_craters * min_max_ratio**guesses * np.log(min_max_ratio) / (1 - min_max_ratio**guesses) - summation
+    min_max_ratio = min_radius / max_radius
+    guesses = nobs / guesses + nobs * min_max_ratio**guesses * np.log(min_max_ratio) / (1 - min_max_ratio**guesses) - summation
     
     min_index = np.argmin(np.abs(guesses))
     alpha = min_search_slope + min_index * (max_search_slope - min_search_slope) / N_GUESSES
     cumulative_slope = -alpha
     
     sigma = min_max_ratio**alpha * np.log(min_max_ratio)**2 / (1 - min_max_ratio**alpha)**2
-    sigma = np.sqrt(1 / (1 / alpha**2 - sigma) / n_craters)
+    sigma = np.sqrt(1 / (1 / alpha**2 - sigma) / nobs)
     
     return cumulative_slope, sigma
 
@@ -139,8 +142,8 @@ def estimate_intercept(radii: pd.Series, slope: float) -> float:
 
 
 def calculate_areal_density(craters: pd.DataFrame,
-                            study_region_size: float,
-                            study_region_padding: float,
+                            study_region_size: int,
+                            study_region_padding: int,
                             r_stat: float) -> float:
     from saturation.areal_density import ArealDensityCalculator
     from saturation.datatypes import Crater
@@ -181,13 +184,13 @@ def plot_csfd_with_slope(data: pd.DataFrame, slope: float, intercept: float = 1)
     plt.show()
 
 
-def plot_csfds_for_multiple_n_tot(
+def plot_csfds_for_multiple_ntot(
         states: dict[int, pd.DataFrame],
         reference_slope: float = None,
         reference_intercept: float = None
 ):
     """
-    Plots CSFDs for multiple values of N_tot
+    Plots CSFDs for multiple values of ntot
     """
     colors = [
         "blue",

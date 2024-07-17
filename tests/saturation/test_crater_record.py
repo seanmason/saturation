@@ -25,13 +25,13 @@ def test_add_in_study_region():
     removed = record.add(crater)
     all_craters = record.all_craters_in_record
     craters_in_study_region = record.craters_in_study_region
-    n_craters_added = record.ntot
+    ntot = record.ntot
 
     # Assert
     assert not removed
     assert [crater] == list(all_craters)
     assert [crater] == list(craters_in_study_region)
-    assert n_craters_added == 1
+    assert ntot == 1
 
 
 def test_add_outside_study_region():
@@ -51,12 +51,12 @@ def test_add_outside_study_region():
     record.add(crater)
     all_craters = record.all_craters_in_record
     craters_in_study_region = record.craters_in_study_region
-    n_craters_added = record.ntot
+    ntot = record.ntot
 
     # Assert
     assert [crater] == list(all_craters)
     assert not craters_in_study_region
-    assert n_craters_added == 0
+    assert ntot == 0
 
 
 def test_add_does_not_add_small_craters():
@@ -75,11 +75,11 @@ def test_add_does_not_add_small_craters():
     # Act
     record.add(crater)
     all_craters = record.all_craters_in_record
-    n_craters_added = record.ntot
+    ntot = record.ntot
 
     # Assert
     assert not all_craters
-    assert n_craters_added == 0
+    assert ntot == 0
 
 
 def test_add_removes_obliterated_craters():
@@ -101,12 +101,12 @@ def test_add_removes_obliterated_craters():
     record.add(crater1)
     removed = record.add(crater2)
     all_craters = record.all_craters_in_record
-    n_craters_added = record.ntot
+    ntot = record.ntot
 
     # Assert
     assert [crater2] == list(all_craters)
     assert [crater1] == list(removed)
-    assert n_craters_added == 2
+    assert ntot == 2
 
 
 def test_add_leaves_partially_removed_craters():
@@ -128,12 +128,12 @@ def test_add_leaves_partially_removed_craters():
     record.add(crater1)
     removed = record.add(crater2)
     all_craters = record.all_craters_in_record
-    n_craters_added = record.ntot
+    ntot = record.ntot
 
     # Assert
     assert {crater1, crater2} == set(all_craters)
     assert not removed
-    assert n_craters_added == 2
+    assert ntot == 2
 
 
 def test_crater_radius_ratio_respected():
