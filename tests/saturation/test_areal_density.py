@@ -25,24 +25,6 @@ def test_calculate_areal_density_no_edges():
     assert_almost_equal(result, expected, decimal=3)
 
 
-def test_calculate_areal_density_overlap_2_no_edges():
-    # Arrange
-    # A single crater that does not hit the edges
-    crater = Crater(id=1, x=100, y=100, radius=100)
-    study_region_size = 1000
-    study_region_padding = 0
-    calculator = ArealDensityCalculator((study_region_size, study_region_size),
-                                        (study_region_padding, study_region_padding),
-                                        3)
-
-    # Act
-    calculator.add_crater(crater)
-    result = calculator.areal_density_overlap_2
-
-    # Assert
-    assert_almost_equal(result, 0.0, decimal=3)
-
-
 def test_calculate_areal_density_uses_margin():
     # Arrange
     # A single crater that has a quarter of its area within the study region
@@ -107,36 +89,6 @@ def test_calculate_areal_density_overlapping_craters():
     assert_almost_equal(result, expected, decimal=4)
 
 
-def test_calculate_areal_density_2_and_3_overlapping_craters():
-    # Arrange
-    # Completely overlapping craters
-    study_region_size = 5000
-    study_region_padding = 100
-    calculator = ArealDensityCalculator((study_region_size, study_region_size),
-                                        (study_region_padding, study_region_padding),
-                                        3)
-    crater1 = Crater(id=1, x=study_region_padding, y=study_region_padding, radius=300)
-    crater2 = Crater(id=2, x=study_region_padding, y=study_region_padding, radius=500)
-    crater3 = Crater(id=3, x=study_region_padding, y=study_region_padding, radius=700)
-
-    # Act
-    calculator.add_crater(crater1)
-    calculator.add_crater(crater2)
-    calculator.add_crater(crater3)
-    result_overlap_2 = calculator.areal_density_overlap_2
-    result_overlap_3 = calculator.areal_density_overlap_3
-
-    # Assert
-    crater1_area = crater1.radius ** 2 * np.pi / 4
-    expected_overlap_3 = crater1_area / study_region_size ** 2
-
-    crater2_area = crater2.radius ** 2 * np.pi / 4
-    expected_overlap_2 = crater2_area / study_region_size ** 2
-
-    assert_almost_equal(result_overlap_2, expected_overlap_2, decimal=4)
-    assert_almost_equal(result_overlap_3, expected_overlap_3, decimal=4)
-
-
 def test_calculate_areal_density_disjoint_add_and_remove():
     # Arrange
     # Two craters that have a quarter of each's area within the margin
@@ -152,16 +104,12 @@ def test_calculate_areal_density_disjoint_add_and_remove():
     calculator.add_crater(crater1)
     calculator.add_crater(crater2)
     calculator.remove_craters([crater1])
-    result_1 = calculator.areal_density
-    result_2 = calculator.areal_density_overlap_2
-    result_3 = calculator.areal_density_overlap_3
+    result = calculator.areal_density
 
     # Assert
     crater2_area = crater2.radius ** 2 * np.pi / 4
     expected = crater2_area / study_region_size ** 2
-    assert_almost_equal(result_1, expected, decimal=4)
-    assert_almost_equal(result_2, 0, decimal=4)
-    assert_almost_equal(result_3, 0, decimal=4)
+    assert_almost_equal(result, expected, decimal=4)
 
 
 def test_calculate_areal_density_overlapping_add_and_remove():
@@ -180,15 +128,11 @@ def test_calculate_areal_density_overlapping_add_and_remove():
     calculator.add_crater(crater1)
     calculator.add_crater(crater2)
     calculator.remove_craters([crater1])
-    result_1 = calculator.areal_density
-    result_2 = calculator.areal_density_overlap_2
-    result_3 = calculator.areal_density_overlap_3
+    result = calculator.areal_density
 
     # Assert
     expected = crater2.radius**2 * np.pi / 4 / study_region_size**2
-    assert_almost_equal(result_1, expected, decimal=4)
-    assert_almost_equal(result_2, 0, decimal=4)
-    assert_almost_equal(result_3, 0, decimal=4)
+    assert_almost_equal(result, expected, decimal=4)
 
 
 def test_craters_outside_study_region_do_not_affect_areal_density():
@@ -203,14 +147,10 @@ def test_craters_outside_study_region_do_not_affect_areal_density():
 
     # Act
     calculator.add_crater(crater1)
-    result_1 = calculator.areal_density
-    result_2 = calculator.areal_density_overlap_2
-    result_3 = calculator.areal_density_overlap_3
+    result = calculator.areal_density
 
     # Assert
-    assert_almost_equal(result_1, 0, decimal=4)
-    assert_almost_equal(result_2, 0, decimal=4)
-    assert_almost_equal(result_3, 0, decimal=4)
+    assert_almost_equal(result, 0, decimal=4)
 
 
 def test_craters_smaller_than_r_stat_do_not_affect_areal_density():
@@ -225,11 +165,7 @@ def test_craters_smaller_than_r_stat_do_not_affect_areal_density():
 
     # Act
     calculator.add_crater(crater1)
-    result_1 = calculator.areal_density
-    result_2 = calculator.areal_density_overlap_2
-    result_3 = calculator.areal_density_overlap_3
+    result = calculator.areal_density
 
     # Assert
-    assert_almost_equal(result_1, 0, decimal=4)
-    assert_almost_equal(result_2, 0, decimal=4)
-    assert_almost_equal(result_3, 0, decimal=4)
+    assert_almost_equal(result, 0, decimal=4)

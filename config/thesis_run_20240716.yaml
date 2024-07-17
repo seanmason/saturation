@@ -11,21 +11,21 @@ write_image_cadence: 0
 write_image_points: []
 
 base_config:
-  study_region_size: 4000
-  study_region_padding: 500
+  study_region_size: 2000
+  study_region_padding: 250
   min_crater_radius: 5
-  max_crater_radius: 1000
+  max_crater_radius: 500
   stop_condition:
     name: information_remaining
-    information_remaining_threshold: 0.1
+    information_remaining_threshold: 0.05
   spatial_hash_cell_size: 10
 
 parameters:
   - slope:
-      min: -3.0
+      min: -4.0
       max: -1.0
   - erat:
-      min: 6.0
+      min: 3.0
       max: 15.0
   - mrp:
       min: 0.25

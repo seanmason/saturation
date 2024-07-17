@@ -205,11 +205,10 @@ def get_study_region_boundary_intersection_arc(center: Location,
 
 def get_erased_rim_arcs(craters: pd.DataFrame,
                         min_crater_radius: float,
-                        effective_radius_multiplier: float) -> pd.DataFrame:
+                        rmult: float) -> pd.DataFrame:
     """
     Returns the erased rim arcs resulting from a supplied sequence of craters.
-    effective_radius_multiplier specifies a multiplier on the size of a newly-formed
-    crater at removing other craters' rims.
+    rmult specifies a multiplier on the size of a newly-formed crater at removing other craters' rims.
     Erased rim arcs will only result for craters with radii greater than min_crater_radius
     """
     min_id = min(craters.index)
@@ -222,7 +221,7 @@ def get_erased_rim_arcs(craters: pd.DataFrame,
         new_crater = craters.loc[new_id]
         new_x = new_crater.x
         new_y = new_crater.y
-        new_radius = new_crater.radius * effective_radius_multiplier
+        new_radius = new_crater.radius * rmult
 
         # Filter to only circles with radius greater than the threshold
         filtered = craters.loc[crater_ids_larger_than_min[crater_ids_larger_than_min < new_id]]

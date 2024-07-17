@@ -4,9 +4,9 @@ output_path: /home/mason/full_runs/python/testing
 run_configurations:
   - 1.00_3.00_0.40_1.50_xl_3:
       slope: 1.00
-      r_stat_multiplier: 3.00
-      min_rim_percentage: 0.40
-      effective_radius_multiplier: 1.50
+      erat: 3.00
+      mrp: 0.40
+      rmult: 1.50
       study_region_size: 10000
       study_region_padding: 1250
       min_crater_radius: 2.5
@@ -16,9 +16,9 @@ run_configurations:
 
 #  - 1.25_3.00_0.60_1.10:
 #      slope: 1.25
-#      r_stat_multiplier: 3.00
-#      min_rim_percentage: 0.60
-#      effective_radius_multiplier: 1.10
+#      erat: 3.00
+#      mrp: 0.60
+#      rmult: 1.10
 #      study_region_size: 10000
 #      study_region_padding: 1250
 #      min_crater_radius: 2.5
@@ -28,9 +28,9 @@ run_configurations:
 #
 #  - 1.50_3.00_0.60_1.90_large:
 #      slope: 1.50
-#      r_stat_multiplier: 3.00
-#      min_rim_percentage: 0.60
-#      effective_radius_multiplier: 1.90
+#      erat: 3.00
+#      mrp: 0.60
+#      rmult: 1.90
 #      study_region_size: 10000
 #      study_region_padding: 1250
 #      min_crater_radius: 2.5
@@ -39,9 +39,9 @@ run_configurations:
 #      n_simulations: 2
 #  - 2.00_3.00_0.60_1.90_after:
 #      slope: 2.00
-#      r_stat_multiplier: 3.00
-#      min_rim_percentage: 0.60
-#      effective_radius_multiplier: 1.90
+#      erat: 3.00
+#      mrp: 0.60
+#      rmult: 1.90
 #      study_region_size: 10000
 #      study_region_padding: 1250
 #      min_crater_radius: 2.5
@@ -52,9 +52,9 @@ run_configurations:
 
 #  - 2.50_5.00_0.50_1.10:
 #      slope: 2.50
-#      r_stat_multiplier: 5.00
-#      min_rim_percentage: 0.50
-#      effective_radius_multiplier: 1.10
+#      erat: 5.00
+#      mrp: 0.50
+#      rmult: 1.10
 #      study_region_size: 10000
 #      study_region_padding: 1250
 #      min_crater_radius: 2.5
@@ -64,9 +64,9 @@ run_configurations:
 #
 #  - 2.00_5.00_0.60_1.90_iterative:
 #      slope: 2.00
-#      r_stat_multiplier: 5.00
-#      min_rim_percentage: 0.60
-#      effective_radius_multiplier: 1.90
+#      erat: 5.00
+#      mrp: 0.60
+#      rmult: 1.90
 #      study_region_size: 10000
 #      study_region_padding: 1250
 #      min_crater_radius: 2.5
@@ -76,9 +76,9 @@ run_configurations:
 #
 #  - 3.00_9.00_0.60_1.90_3:
 #        slope: 3.00
-#        r_stat_multiplier: 5.00
-#        min_rim_percentage: 0.60
-#        effective_radius_multiplier: 1.90
+#        erat: 5.00
+#        mrp: 0.60
+#        rmult: 1.90
 #        study_region_size: 10000
 #        study_region_padding: 1250
 #        min_crater_radius: 2.5

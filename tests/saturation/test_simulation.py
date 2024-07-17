@@ -8,7 +8,7 @@ from saturation.simulation import get_craters
 
 class DummyProbabilityDistribution(ProbabilityDistribution):
     def __init__(self):
-        self.inverse_cdf_result = 0
+        self.inverse_cdf_result = np.array([0] * 100)
         self.pdf_result = 0
         self.cdf_result = 0
 

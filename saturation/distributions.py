@@ -30,17 +30,16 @@ class ProbabilityDistribution(ABC):
 
 class ParetoProbabilityDistribution(ProbabilityDistribution):
     """
-    Represents a Pareto distribution given the slope of the CDF and the min/max values.
-    PDF has the form of p(x) = constant * x^slope
+    Represents a truncated Pareto distribution.
     """
-    def __init__(self, *, cdf_slope: float, x_min: float, x_max: float):
-        self._cdf_slope = cdf_slope
+    def __init__(self, *, alpha: float, x_min: float, x_max: float):
+        self._alpha = alpha
         self._x_min = x_min
         self._x_max = x_max
-        self._u_max = 1 - (x_min / x_max) ** cdf_slope
+        self._u_max = 1 - (x_min / x_max) ** alpha
 
     def pullback(self, u: float) -> float:
-        return (1 - (u * self._u_max)) ** (-1. / self._cdf_slope) * self._x_min
+        return (1 - (u * self._u_max)) ** (-1. / self._alpha) * self._x_min
 
     def cdf(self, x: float) -> float:
         if x < self._x_min:
@@ -48,10 +47,10 @@ class ParetoProbabilityDistribution(ProbabilityDistribution):
         elif x > self._x_max:
             return 1.0
 
-        return 1 - (self._x_min / x) ** self._cdf_slope
+        return 1 - (self._x_min / x) ** self._alpha
 
     def pdf(self, x: float) -> float:
         if x < self._x_min:
             return 0.0
 
-        return self._cdf_slope * self._x_min**self._cdf_slope / x ** (self._cdf_slope + 1)
+        return self._alpha * self._x_min**self._alpha / x ** (self._alpha + 1)

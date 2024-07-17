@@ -28,9 +28,9 @@ class SimulationConfig:
     simulation_name: str
     random_seed: int
     slope: float
-    r_stat_multiplier: float
-    min_rim_percentage: float
-    effective_radius_multiplier: float
+    erat: float
+    mrp: float
+    rmult: float
     study_region_size: int
     study_region_padding: int
     min_crater_radius: float
@@ -50,9 +50,9 @@ class SimulationConfig:
             "simulation_name": self.simulation_name,
             "random_seed": self.random_seed,
             "slope": self.slope,
-            "r_stat_multiplier": self.r_stat_multiplier,
-            "min_rim_percentage": self.min_rim_percentage,
-            "effective_radius_multiplier": self.effective_radius_multiplier,
+            "erat": self.erat,
+            "mrp": self.mrp,
+            "rmult": self.rmult,
             "study_region_size": self.study_region_size,
             "study_region_padding": self.study_region_padding,
             "min_crater_radius": self.min_crater_radius,
@@ -122,8 +122,8 @@ def run_simulation(base_output_path: str, config: SimulationConfig):
         r_stat = config.min_crater_radius
 
         full_region_size = config.study_region_size + 2 * config.study_region_padding
-        size_distribution = ParetoProbabilityDistribution(cdf_slope=config.slope,
-                                                          x_min=config.min_crater_radius / config.r_stat_multiplier,
+        size_distribution = ParetoProbabilityDistribution(alpha=-config.slope,
+                                                          x_min=config.min_crater_radius / config.erat,
                                                           x_max=config.max_crater_radius)
         crater_generator = get_craters(size_distribution, full_region_size)
 
@@ -147,9 +147,9 @@ def run_simulation(base_output_path: str, config: SimulationConfig):
         # The crater record handles removal of craters rims and the record
         # of what craters remain at a given point in time.
         crater_record = CraterRecord(r_stat,
-                                     config.r_stat_multiplier,
-                                     config.min_rim_percentage,
-                                     config.effective_radius_multiplier,
+                                     config.erat,
+                                     config.mrp,
+                                     config.rmult,
                                      config.study_region_size,
                                      config.study_region_padding,
                                      config.spatial_hash_cell_size)
@@ -158,7 +158,7 @@ def run_simulation(base_output_path: str, config: SimulationConfig):
                                                           (config.study_region_padding, config.study_region_padding),
                                                           r_stat)
 
-        last_n_craters = 0
+        last_ntot = 0
         for crater in crater_generator:
             removed_craters = crater_record.add(crater)
 
@@ -171,20 +171,18 @@ def run_simulation(base_output_path: str, config: SimulationConfig):
                 crater_writer.write(crater)
 
             # Only perform updates if the study region crater count ticked up
-            n_craters_current = crater_record.n_craters_added_in_study_region
-            if last_n_craters != n_craters_current:
-                last_n_craters = n_craters_current
+            ntot_current = crater_record.ntot
+            if last_ntot != ntot_current:
+                last_ntot = ntot_current
 
                 areal_density = areal_density_calculator.areal_density
-                areal_density_overlap_2 = areal_density_calculator.areal_density_overlap_2
-                areal_density_overlap_3 = areal_density_calculator.areal_density_overlap_3
 
-                if crater_record.n_craters_in_study_region > 1:
-                    mean_nn_distance = crater_record.get_center_to_center_nearest_neighbor_distance_mean()
-                    z = calculate_z_statistic(mean_nn_distance, crater_record.n_craters_in_study_region,
+                if crater_record.nobs > 1:
+                    mean_nn_distance = crater_record.get_nnd_mean()
+                    z = calculate_z_statistic(mean_nn_distance, crater_record.nobs,
                                               study_region_area)
                     za = calculate_za_statistic(mean_nn_distance,
-                                                crater_record.n_craters_in_study_region,
+                                                crater_record.nobs,
                                                 areal_density_calculator.area_covered,
                                                 study_region_area)
                 else:
@@ -194,15 +192,13 @@ def run_simulation(base_output_path: str, config: SimulationConfig):
                 # Save stats
                 statistics_row = StatisticsRow(
                     crater_id=crater.id,
-                    n_craters_added_in_study_region=n_craters_current,
-                    n_craters_in_study_region=crater_record.n_craters_in_study_region,
+                    ntot=ntot_current,
+                    nobs=crater_record.nobs,
                     areal_density=areal_density,
-                    areal_density_overlap_2=areal_density_overlap_2,
-                    areal_density_overlap_3=areal_density_overlap_3,
-                    center_to_center_nearest_neighbor_distance_mean=crater_record.get_center_to_center_nearest_neighbor_distance_mean(),
-                    center_to_center_nearest_neighbor_distance_stdev=crater_record.get_center_to_center_nearest_neighbor_distance_stdev(),
-                    center_to_center_nearest_neighbor_distance_min=crater_record.get_center_to_center_nearest_neighbor_distance_min(),
-                    center_to_center_nearest_neighbor_distance_max=crater_record.get_center_to_center_nearest_neighbor_distance_max(),
+                    nnd_mean=crater_record.get_nnd_mean(),
+                    nnd_stdev=crater_record.get_nnd_stdev(),
+                    nnd_min=crater_record.get_nnd_min(),
+                    nnd_max=crater_record.get_nnd_max(),
                     radius_mean=crater_record.get_mean_radius(),
                     radius_stdev=crater_record.get_radius_stdev(),
                     z=z,
@@ -210,12 +206,12 @@ def run_simulation(base_output_path: str, config: SimulationConfig):
                 )
                 statistics_writer.write(statistics_row)
 
-                if config.write_state_cadence != 0 and n_craters_current % config.write_state_cadence == 0:
-                    state_snapshot_writer.write_state_snapshot(crater_record, crater, n_craters_current)
+                if config.write_state_cadence != 0 and ntot_current % config.write_state_cadence == 0:
+                    state_snapshot_writer.write_state_snapshot(crater_record, crater, ntot_current)
 
-                if n_craters_current in config.write_image_points \
-                        or config.write_image_cadence != 0 and n_craters_current % config.write_image_cadence == 0:
-                    png_name = output_path / f"study_region_{n_craters_current}.png"
+                if ntot_current in config.write_image_points \
+                        or config.write_image_cadence != 0 and ntot_current % config.write_image_cadence == 0:
+                    png_name = output_path / f"study_region_{ntot_current}.png"
                     save_study_region(areal_density_calculator, png_name)
 
                 if stop_condition.should_stop(statistics_row):

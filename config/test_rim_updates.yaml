@@ -6,12 +6,12 @@ write_statistics_cadence: 100000
 
 run_configurations:
   - corner_point_1.896_0.701_8.961_2.011:
-      effective_radius_multiplier: 1.8962772826864172
+      rmult: 1.8962772826864172
       max_crater_radius: 2500
       min_crater_radius: 10
-      min_rim_percentage: 0.7013261697919915
+      mrp: 0.7013261697919915
       n_simulations: 1
-      r_stat_multiplier: 8.960591722055616
+      erat: 8.960591722055616
       slope: 2.0114065624294746
       stop_condition:
         name: crater_count_and_areal_density

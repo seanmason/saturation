@@ -20,7 +20,9 @@ def get_simulation_configs(config: Dict) -> List[SimulationConfig]:
     write_image_points = config['write_image_points']
 
     result = []
-    run_configurations = sorted(config['run_configurations'], key=lambda x: x[list(x.keys())[0]]["slope"], reverse=True)
+    run_configurations = sorted(config['run_configurations'],
+                                key=lambda x: x[list(x.keys())[0]]["slope"],
+                                reverse=False)
     for sim_group_config in run_configurations:
         simulation_id, values = list(sim_group_config.items())[0]
         simulation_name = values["simulation_name"]
@@ -30,9 +32,9 @@ def get_simulation_configs(config: Dict) -> List[SimulationConfig]:
             simulation_name=simulation_name,
             random_seed=values['random_seed'],
             slope=values['slope'],
-            r_stat_multiplier=values['r_stat_multiplier'],
-            min_rim_percentage=values['min_rim_percentage'],
-            effective_radius_multiplier=values['effective_radius_multiplier'],
+            erat=values['erat'],
+            mrp=values['mrp'],
+            rmult=values['rmult'],
             study_region_size=values['study_region_size'],
             study_region_padding=values['study_region_padding'],
             min_crater_radius=values['min_crater_radius'],
