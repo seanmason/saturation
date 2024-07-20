@@ -147,8 +147,8 @@ class CraterRecord(object):
     def nobs(self) -> int:
         return len(self._craters_in_study_region)
 
-    def get_nnd_mean(self) -> float:
-        return self._distances.get_nnd_mean()
+    def get_mnnd(self) -> float:
+        return self._distances.get_mnnd()
 
     def get_nnd_stdev(self) -> float:
         return self._distances.get_nnd_stdev()

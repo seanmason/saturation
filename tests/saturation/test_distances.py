@@ -17,18 +17,18 @@ def assert_float_equal(first: float, second: float, *, percentage: float = None,
         assert abs(first - second) < absolute
 
 
-def test_get_mean_nnd_no_craters():
+def test_get_mnnd_no_craters():
     # Arrange
     nn = Distances(cell_size=50, boundary_min=0, boundary_max=500)
 
     # Act
-    dist = nn.get_nnd_mean()
+    dist = nn.get_mnnd()
 
     # Assert
     assert dist == 0.0
 
 
-def test_get_nnd_mean_single_pair_tracked():
+def test_get_mnnd_single_pair_tracked():
     # Arrange
     nn = Distances(cell_size=50, boundary_min=0, boundary_max=500)
     craters = [
@@ -39,13 +39,13 @@ def test_get_nnd_mean_single_pair_tracked():
         nn.add(crater, tracked)
 
     # Act
-    dist = nn.get_nnd_mean()
+    dist = nn.get_mnnd()
 
     # Assert
     assert dist == 10.0
 
 
-def test_get_nnd_mean_single_pair_untracked():
+def test_get_mnnd_single_pair_untracked():
     # Arrange
     nn = Distances(cell_size=50, boundary_min=0, boundary_max=500)
     craters = [
@@ -57,7 +57,7 @@ def test_get_nnd_mean_single_pair_untracked():
         nn.add(crater, tracked)
 
     # Act
-    dist = nn.get_nnd_mean()
+    dist = nn.get_mnnd()
 
     # Assert
     assert dist == 1.0
@@ -155,7 +155,7 @@ def test_get_mean_nnd_random_adds_and_deletes():
         nn.remove(to_remove)
 
         # Act
-        nnd_mean = nn.get_nnd_mean()
+        mnnd = nn.get_mnnd()
         nnd_min = nn.get_min_nnd()
         nnd_max = nn.get_max_nnd()
         nnd_stdev = nn.get_nnd_stdev()
@@ -170,12 +170,12 @@ def test_get_mean_nnd_random_adds_and_deletes():
         ]
         nnds = [x[2] for x in nns]
 
-        expected_nnd_mean = np.mean(nnds)
+        expected_mnnd = np.mean(nnds)
         expected_nnd_min = np.min(nnds)
         expected_nnd_max = np.max(nnds)
         expected_nnd_stdev = np.std(nnds, ddof=1)
 
-        math.isclose(nnd_mean, expected_nnd_mean)
+        math.isclose(mnnd, expected_mnnd)
         math.isclose(nnd_min, expected_nnd_min)
         math.isclose(nnd_max, expected_nnd_max)
         math.isclose(nnd_stdev, expected_nnd_stdev)

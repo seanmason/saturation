@@ -1,3 +1,4 @@
+import shutil
 import sys
 from pathlib import Path
 from typing import Dict
@@ -67,6 +68,8 @@ def create_random_configs(base_output_path: str, config: Dict):
 
 
 def main(base_output_path: str, config_filename: str):
+    shutil.copy(config_filename, f"{base_output_path}/gen_config.yaml")
+
     with open(config_filename) as config_file:
         config = yaml.safe_load(config_file)
 
