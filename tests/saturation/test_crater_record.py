@@ -167,7 +167,7 @@ def test_crater_radius_ratio_respected():
     assert list(all_craters) == [crater1]
 
 
-def test_get_mean_nnd_empty_from():
+def test_get_mnnd_empty_from():
     # Arrange
     crater1 = _create_crater(id=1, x=200.0, y=200.0, radius=10.0)
     record = CraterRecord(
@@ -182,7 +182,7 @@ def test_get_mean_nnd_empty_from():
 
     # Act
     record.add(crater1)
-    result = record.get_nnd_mean()
+    result = record.get_mnnd()
 
     # Assert
     assert result == 0
@@ -205,7 +205,7 @@ def test_nn_single_from_and_to():
     # Act
     record.add(crater1)
     record.add(crater2)
-    result = record.get_nnd_mean()
+    result = record.get_mnnd()
 
     # Assert
     assert result == 100
@@ -232,7 +232,7 @@ def test_nn_gets_shortest_distance_from_to_craters():
     record.add(crater2)
     record.add(crater3)
     record.add(crater4)
-    result = record.get_nnd_mean()
+    result = record.get_mnnd()
 
     # Assert
     assert result == 1
@@ -257,7 +257,7 @@ def test_get_mean_nnd_is_shortest_distance_for_all_from_craters():
     record.add(crater1)
     record.add(crater2)
     record.add(crater3)
-    result = record.get_nnd_mean()
+    result = record.get_mnnd()
 
     # Assert
     assert result == np.mean([10, 20, 10])
@@ -282,7 +282,7 @@ def test_get_mean_nnd_ignores_smaller_than_r_stat():
     record.add(crater1)
     record.add(crater2)
     record.add(crater3)
-    result = record.get_nnd_mean()
+    result = record.get_mnnd()
 
     # Assert
     assert result == np.mean([20, 20])
@@ -307,7 +307,7 @@ def test_get_mean_nnd_ignores_removed_craters():
     record.add(crater1)
     record.add(crater2)
     record.add(crater3)
-    result = record.get_nnd_mean()
+    result = record.get_mnnd()
 
     # Assert
     assert result == np.mean([60, 60])

@@ -24,7 +24,7 @@ class StatisticsRow:
     ntot: int
     nobs: int
     areal_density: float
-    nnd_mean: float
+    mnnd: float
     nnd_stdev: float
     nnd_min: float
     nnd_max: float

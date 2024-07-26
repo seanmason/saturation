@@ -256,7 +256,7 @@ class Distances:
     def get_nn(self, crater: Crater) -> Tuple[int, float]:
         return self._spatial_hash.get_nnd(crater)
 
-    def get_nnd_mean(self) -> float:
+    def get_mnnd(self) -> float:
         if not self._nnds:
             return 0.0
 

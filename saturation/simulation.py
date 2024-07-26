@@ -178,7 +178,7 @@ def run_simulation(base_output_path: str, config: SimulationConfig):
                 areal_density = areal_density_calculator.areal_density
 
                 if crater_record.nobs > 1:
-                    mean_nn_distance = crater_record.get_nnd_mean()
+                    mean_nn_distance = crater_record.get_mnnd()
                     z = calculate_z_statistic(mean_nn_distance, crater_record.nobs,
                                               study_region_area)
                     za = calculate_za_statistic(mean_nn_distance,
@@ -195,7 +195,7 @@ def run_simulation(base_output_path: str, config: SimulationConfig):
                     ntot=ntot_current,
                     nobs=crater_record.nobs,
                     areal_density=areal_density,
-                    nnd_mean=crater_record.get_nnd_mean(),
+                    mnnd=crater_record.get_mnnd(),
                     nnd_stdev=crater_record.get_nnd_stdev(),
                     nnd_min=crater_record.get_nnd_min(),
                     nnd_max=crater_record.get_nnd_max(),
