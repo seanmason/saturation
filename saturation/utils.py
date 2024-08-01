@@ -186,8 +186,7 @@ def plot_csfd_with_slope(data: pd.DataFrame, slope: float, intercept: float = 1)
 
 def plot_csfds_for_multiple_ntot(
         states: dict[int, pd.DataFrame],
-        reference_slope: float = None,
-        reference_intercept: float = None
+        slope_intercept_line_styles: List[Tuple[float, float, str]]
 ):
     """
     Plots CSFDs for multiple values of ntot
@@ -203,13 +202,14 @@ def plot_csfds_for_multiple_ntot(
     fig = plt.figure(figsize=(9, 4))
     ax = fig.add_subplot(111)
 
+    radii = None
     for idx, (ntot, data) in enumerate(states.items()):
         radii = data.radius.sort_values()
         ax.plot(radii, range(len(radii) + 1, 1, -1), label="$N_{tot}" + f"={ntot}$", c=colors[idx % len(colors)])
 
-    if reference_slope:
-        expected = reference_intercept * radii ** -reference_slope
-        plt.plot(radii, expected, ls="--", c="black")
+    for slope, intercept, line_style in slope_intercept_line_styles:
+        expected = intercept * radii ** slope
+        plt.plot(radii, expected, ls=line_style, c="black")
 
     ax.set_xlabel("$R$", fontsize=14)
     ax.set_ylabel("$N(\\geq R)$", fontsize=14)
@@ -220,6 +220,7 @@ def plot_csfds_for_multiple_ntot(
     ax.set_yscale('log')
 
     return fig
+
 
 def plot_circle(center: Tuple[float, float],
                 radius: float,

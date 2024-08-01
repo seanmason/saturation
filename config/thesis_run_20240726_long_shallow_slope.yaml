@@ -1,0 +1,24 @@
+n_workers: 1
+run_configurations:
+- 1:
+    slope: -1.0
+    erat: 9
+    mrp: 0.5
+    rmult: 1.5
+    max_crater_radius: 500
+    min_crater_radius: 3
+    random_seed: 123
+    simulation_name: long_shallow_slope
+    spatial_hash_cell_size: 5
+    stop_condition:
+      ntot: 10000000
+      name: ntot
+    study_region_padding: 250
+    study_region_size: 2000
+
+write_crater_removals_cadence: 100000
+write_craters_cadence: 100000
+write_image_cadence: 0
+write_image_points: []
+write_state_cadence: 0
+write_statistics_cadence: 100000

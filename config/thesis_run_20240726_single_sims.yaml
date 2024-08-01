@@ -1,0 +1,240 @@
+n_workers: 28
+run_configurations:
+- 1:
+    slope: -1.0
+    erat: 9
+    mrp: 0.5
+    rmult: 1.5
+    max_crater_radius: 500
+    min_crater_radius: 3
+    random_seed: 123
+    simulation_name: shallow_slope_1
+    spatial_hash_cell_size: 5
+    stop_condition:
+      information_remaining_threshold: 0.05
+      name: information_remaining
+    study_region_padding: 250
+    study_region_size: 2000
+- 2:
+    slope: -1.0
+    erat: 9
+    mrp: 0.5
+    rmult: 1.5
+    max_crater_radius: 500
+    min_crater_radius: 3
+    random_seed: 234
+    simulation_name: shallow_slope_2
+    spatial_hash_cell_size: 5
+    stop_condition:
+      information_remaining_threshold: 0.05
+      name: information_remaining
+    study_region_padding: 250
+    study_region_size: 2000
+- 3:
+    slope: -1.0
+    erat: 9
+    mrp: 0.5
+    rmult: 1.5
+    max_crater_radius: 500
+    min_crater_radius: 3
+    random_seed: 345
+    simulation_name: shallow_slope_3
+    spatial_hash_cell_size: 5
+    stop_condition:
+      information_remaining_threshold: 0.05
+      name: information_remaining
+    study_region_padding: 250
+    study_region_size: 2000
+
+- 11:
+    slope: -2.5
+    erat: 9
+    mrp: 0.5
+    rmult: 1.5
+    max_crater_radius: 500
+    min_crater_radius: 3
+    random_seed: 123
+    simulation_name: mid_slope_1
+    spatial_hash_cell_size: 5
+    stop_condition:
+      information_remaining_threshold: 0.05
+      name: information_remaining
+    study_region_padding: 250
+    study_region_size: 2000
+- 12:
+    slope: -2.5
+    erat: 9
+    mrp: 0.5
+    rmult: 1.5
+    max_crater_radius: 500
+    min_crater_radius: 3
+    random_seed: 234
+    simulation_name: mid_slope_2
+    spatial_hash_cell_size: 5
+    stop_condition:
+      information_remaining_threshold: 0.05
+      name: information_remaining
+    study_region_padding: 250
+    study_region_size: 2000
+- 13:
+    slope: -2.5
+    erat: 9
+    mrp: 0.5
+    rmult: 1.5
+    max_crater_radius: 500
+    min_crater_radius: 3
+    random_seed: 345
+    simulation_name: shallow_slope_3
+    spatial_hash_cell_size: 5
+    stop_condition:
+      information_remaining_threshold: 0.05
+      name: information_remaining
+    study_region_padding: 250
+    study_region_size: 2000
+
+- 21:
+    slope: -4.0
+    erat: 9
+    mrp: 0.5
+    rmult: 1.5
+    max_crater_radius: 500
+    min_crater_radius: 3
+    random_seed: 123
+    simulation_name: steep_slope_1
+    spatial_hash_cell_size: 5
+    stop_condition:
+      information_remaining_threshold: 0.05
+      name: information_remaining
+    study_region_padding: 250
+    study_region_size: 2000
+- 22:
+    slope: -4.0
+    erat: 9
+    mrp: 0.5
+    rmult: 1.5
+    max_crater_radius: 500
+    min_crater_radius: 3
+    random_seed: 234
+    simulation_name: steep_slope_2
+    spatial_hash_cell_size: 5
+    stop_condition:
+      information_remaining_threshold: 0.05
+      name: information_remaining
+    study_region_padding: 250
+    study_region_size: 2000
+- 23:
+    slope: -4.0
+    erat: 9
+    mrp: 0.5
+    rmult: 1.5
+    max_crater_radius: 500
+    min_crater_radius: 3
+    random_seed: 345
+    simulation_name: steep_slope_3
+    spatial_hash_cell_size: 5
+    stop_condition:
+      information_remaining_threshold: 0.05
+      name: information_remaining
+    study_region_padding: 250
+    study_region_size: 2000
+
+
+- 31:
+    slope: -2.5
+    erat: 3
+    mrp: 0.25
+    rmult: 1.1
+    max_crater_radius: 500
+    min_crater_radius: 3
+    random_seed: 123
+    simulation_name: mid_slope_low_destruction_1
+    spatial_hash_cell_size: 5
+    stop_condition:
+      information_remaining_threshold: 0.05
+      name: information_remaining
+    study_region_padding: 250
+    study_region_size: 2000
+- 32:
+    slope: -2.5
+    erat: 3
+    mrp: 0.25
+    rmult: 1.1
+    max_crater_radius: 500
+    min_crater_radius: 3
+    random_seed: 234
+    simulation_name: mid_slope_low_destruction_2
+    spatial_hash_cell_size: 5
+    stop_condition:
+      information_remaining_threshold: 0.05
+      name: information_remaining
+    study_region_padding: 250
+    study_region_size: 2000
+- 33:
+    slope: -2.5
+    erat: 3
+    mrp: 0.25
+    rmult: 1.1
+    max_crater_radius: 500
+    min_crater_radius: 3
+    random_seed: 345
+    simulation_name: mid_slope_low_destruction_3
+    spatial_hash_cell_size: 5
+    stop_condition:
+      information_remaining_threshold: 0.05
+      name: information_remaining
+    study_region_padding: 250
+    study_region_size: 2000
+
+- 41:
+    slope: -2.5
+    erat: 15
+    mrp: 0.75
+    rmult: 1.9
+    max_crater_radius: 500
+    min_crater_radius: 3
+    random_seed: 123
+    simulation_name: mid_slope_high_destruction_1
+    spatial_hash_cell_size: 5
+    stop_condition:
+      information_remaining_threshold: 0.05
+      name: information_remaining
+    study_region_padding: 250
+    study_region_size: 2000
+- 42:
+    slope: -2.5
+    erat: 15
+    mrp: 0.75
+    rmult: 1.9
+    max_crater_radius: 500
+    min_crater_radius: 3
+    random_seed: 234
+    simulation_name: mid_slope_high_destruction_2
+    spatial_hash_cell_size: 5
+    stop_condition:
+      information_remaining_threshold: 0.05
+      name: information_remaining
+    study_region_padding: 250
+    study_region_size: 2000
+- 43:
+    slope: -2.5
+    erat: 15
+    mrp: 0.75
+    rmult: 1.9
+    max_crater_radius: 500
+    min_crater_radius: 3
+    random_seed: 345
+    simulation_name: mid_slope_high_destruction_3
+    spatial_hash_cell_size: 5
+    stop_condition:
+      information_remaining_threshold: 0.05
+      name: information_remaining
+    study_region_padding: 250
+    study_region_size: 2000
+
+
+write_crater_removals_cadence: 100000
+write_craters_cadence: 100000
+write_image_cadence: 0
+write_image_points: []
+write_state_cadence: 0
+write_statistics_cadence: 100000

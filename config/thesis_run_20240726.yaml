@@ -1,6 +1,6 @@
 random_seed: 23456
 n_workers: 28
-n_simulations: 5000
+n_simulations: 10000
 n_simulations_per_config: 500
 
 write_statistics_cadence: 100000
