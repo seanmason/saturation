@@ -20,8 +20,11 @@ def read_config(path: Path) -> Dict:
     return config
 
 
-def read_configs(base_path: str, spark_session: SparkSession) -> pyspark.RDD:
-    completed_filenames = list(Path(base_path).glob("*/completed.txt"))
+def read_configs(base_path: str, spark_session: SparkSession, completed_only: bool=True) -> pyspark.RDD:
+    if completed_only:
+        completed_filenames = list(Path(base_path).glob("*/completed.txt"))
+    else:
+        completed_filenames = list(Path(base_path).glob("*/config.yaml"))
     configs = map(lambda x: x.parent / "config.yaml", completed_filenames)
     configs = map(read_config, configs)
     return spark_session.sparkContext.parallelize(configs)
@@ -33,7 +36,9 @@ def create_configs_df(configs: pyspark.RDD) -> DataFrame:
         "slope",
         "erat",
         "rmult",
-        "mrp"
+        "mrp",
+        "study_region_size",
+        "study_region_padding"
     ]
     return configs.map(lambda x: {k: v for k, v in x.items() if k in config_columns}).toDF().cache()
 
@@ -185,8 +190,8 @@ def plot_csfd_with_slope(data: pd.DataFrame, slope: float, intercept: float = 1)
 
 
 def plot_csfds_for_multiple_ntot(
-        states: dict[int, pd.DataFrame],
-        slope_intercept_line_styles: List[Tuple[float, float, str]]
+    states: dict[int, pd.DataFrame],
+    slope_intercept_line_styles: List[Tuple[float, float, str]]
 ):
     """
     Plots CSFDs for multiple values of ntot
@@ -209,7 +214,7 @@ def plot_csfds_for_multiple_ntot(
 
     for slope, intercept, line_style in slope_intercept_line_styles:
         expected = intercept * radii ** slope
-        plt.plot(radii, expected, ls=line_style, c="black")
+        plt.plot(radii[expected > 1], expected[expected > 1], ls=line_style, c="black")
 
     ax.set_xlabel("$R$", fontsize=14)
     ax.set_ylabel("$N(\\geq R)$", fontsize=14)

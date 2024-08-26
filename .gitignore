@@ -12,6 +12,7 @@
 /notebooks/thesis/Chapter4/iframe_figures/
 /notebooks/thesis/Chapter4/backup/
 /notebooks/thesis/Chapter4/data/*
+/notebooks/thesis/Chapter4/figures/*
 *.parquet
 /**/.ipynb_checkpoints/*
 /venv/*

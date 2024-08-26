@@ -1,36 +1,19 @@
-from typing import List, Iterable, Dict
-from collections import OrderedDict
+from typing import List, Iterable, Dict, Callable
+from collections import defaultdict
 
 import numpy as np
 import numba as nb
-from numba.experimental import jitclass
 from saturation.geometry import get_intersection_arc, add_arc
 from saturation.datatypes import Crater, Arc
 from saturation.distances import Distances
 
 
-crater_type = nb.typeof(Crater(np.int64(1), np.float32(1.0), np.float32(1.0), np.float32(1.0)))
-int_to_crater_dict_type = nb.types.DictType(
-    keyty=nb.types.int64,
-    valty=crater_type
-)
-
-
-crater_dictionary_spec = OrderedDict({
-    "_craters": int_to_crater_dict_type,
-})
-
-
-@jitclass(spec=crater_dictionary_spec)
 class CraterDictionary(object):
     """
     Convenience wrapper around a dictionary for Craters.
     """
     def __init__(self):
-        self._craters: Dict[int, Crater] = nb.typed.Dict.empty(
-            key_type=nb.types.int64,
-            value_type=crater_type
-        )
+        self._craters: Dict[int, Crater] = dict()
 
     def add(self, crater: Crater):
         self._craters[crater.id] = crater
@@ -51,56 +34,20 @@ class CraterDictionary(object):
         return len(self._craters)
 
 
-arc_type = nb.types.UniTuple(nb.float64, 2)
-erased_arcs_type = nb.types.DictType(
-    keyty=nb.int64,
-    valty=nb.types.ListType(arc_type)
-)
-remaining_rim_percentages_type = nb.types.DictType(
-    keyty=nb.int64,
-    valty=nb.float64
-)
-arc_list_type = nb.types.ListType(arc_type)
-crater_list_type = nb.types.ListType(crater_type)
-
-crater_record_spec = OrderedDict({
-    "_r_stat": nb.float64,
-    "_erat": nb.float64,
-    "_mrp": nb.float64,
-    "_rmult": nb.float64,
-    "_study_region_size": nb.int64,
-    "_study_region_padding": nb.int64,
-    "_min_x": nb.int64,
-    "_min_y": nb.int64,
-    "_max_x": nb.int64,
-    "_max_y": nb.int64,
-    "_distances": Distances.class_type.instance_type,
-    "_all_craters_in_record": CraterDictionary.class_type.instance_type,
-    "_craters_in_study_region": CraterDictionary.class_type.instance_type,
-    "_ntot": nb.int64,
-    "_erased_arcs": erased_arcs_type,
-    "_remaining_rim_percentages": remaining_rim_percentages_type,
-    "_craters_to_remove": crater_list_type,
-    "_sum_tracked_radii": nb.float64,
-    "_sum_tracked_squared_radii": nb.float64,
-})
-
-
-@jitclass(spec=crater_record_spec)
 class CraterRecord(object):
     """
     Maintains the record of craters.
     """
     def __init__(self,
                  r_stat: float,
-                 erat: float,
+                 rim_erasure_effectiveness_function: Callable[[float, float], bool],
                  mrp: float,
                  rmult: float,
                  study_region_size: int,
                  study_region_padding: int,
                  cell_size: int):
         self._r_stat = r_stat
-        self._erat = erat
+        self._rim_erasure_effectiveness_function = rim_erasure_effectiveness_function
         self._mrp = mrp
         self._rmult = rmult
         self._study_region_size = study_region_size
@@ -125,16 +72,12 @@ class CraterRecord(object):
 
         self._ntot = 0
 
-        self._erased_arcs: Dict[int, List[Arc]] = nb.typed.Dict.empty(
-            key_type=nb.int64,
-            value_type=arc_list_type
+        self._erased_arcs: Dict[int, List[Arc]] = defaultdict(
+            lambda: nb.typed.List.empty_list(nb.types.UniTuple(nb.float64, 2))
         )
-        self._remaining_rim_percentages: Dict[int, float] = nb.typed.Dict.empty(
-            key_type=nb.int64,
-            value_type=nb.float64
-        )
+        self._remaining_rim_percentages: Dict[int, float] = dict()
 
-        self._craters_to_remove: List[Crater] = nb.typed.List.empty_list(crater_type)
+        self._craters_to_remove: List[Crater] = []
 
         self._sum_tracked_radii: float = 0.0
         self._sum_tracked_squared_radii: float = 0.0
@@ -176,14 +119,15 @@ class CraterRecord(object):
 
             old_crater = self._all_craters_in_record[old_crater_id]
 
-            # For a new crater to affect an old crater, (new crater radius) > (old crater radius) / erat
-            if new_crater.radius >= old_crater.radius / self._erat:
+            # For a new crater to affect an old crater, (new crater radius) > func(old crater radius)
+            can_affect_old = self._rim_erasure_effectiveness_function(new_crater.radius, old_crater.radius)
+            if can_affect_old:
                 arc = get_intersection_arc((old_crater.x, old_crater.y),
                                            old_crater.radius,
                                            (new_x, new_y),
                                            effective_radius)
 
-                erased_arcs = self._erased_arcs.setdefault(old_crater.id, nb.typed.List.empty_list(arc_type))
+                erased_arcs = self._erased_arcs[old_crater.id]
                 add_arc(arc, erased_arcs)
 
                 remaining_rim_percentage = 1.0 - sum([x[1] - x[0] for x in erased_arcs]) / (2 * np.pi)
@@ -203,7 +147,7 @@ class CraterRecord(object):
                 self._sum_tracked_squared_radii -= crater.radius ** 2
 
         result = self._craters_to_remove
-        self._craters_to_remove = nb.typed.List.empty_list(crater_type)
+        self._craters_to_remove = []
         return result
 
     def add(self, crater: Crater) -> List[Crater]:

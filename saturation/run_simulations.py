@@ -12,15 +12,15 @@ def get_simulation_configs(config: Dict) -> List[SimulationConfig]:
     Given a config, read directly from the YAML config file,
     creates a set of SimulationConfigs, one per run.
     """
-    write_statistics_cadence = config['write_statistics_cadence']
-    write_craters_cadence = config['write_craters_cadence']
-    write_crater_removals_cadence = config['write_crater_removals_cadence']
-    write_state_cadence = config['write_state_cadence']
-    write_image_cadence = config['write_image_cadence']
-    write_image_points = config['write_image_points']
+    write_statistics_cadence = config["write_statistics_cadence"]
+    write_craters_cadence = config["write_craters_cadence"]
+    write_crater_removals_cadence = config["write_crater_removals_cadence"]
+    write_state_cadence = config["write_state_cadence"]
+    write_image_cadence = config["write_image_cadence"]
+    write_image_points = config["write_image_points"]
 
     result = []
-    run_configurations = sorted(config['run_configurations'],
+    run_configurations = sorted(config["run_configurations"],
                                 key=lambda x: x[list(x.keys())[0]]["slope"],
                                 reverse=False)
     for sim_group_config in run_configurations:
@@ -30,23 +30,24 @@ def get_simulation_configs(config: Dict) -> List[SimulationConfig]:
         result.append(SimulationConfig(
             simulation_id=simulation_id,
             simulation_name=simulation_name,
-            random_seed=values['random_seed'],
-            slope=values['slope'],
-            erat=values['erat'],
-            mrp=values['mrp'],
-            rmult=values['rmult'],
-            study_region_size=values['study_region_size'],
-            study_region_padding=values['study_region_padding'],
-            min_crater_radius=values['min_crater_radius'],
-            max_crater_radius=values['max_crater_radius'],
-            stop_condition=values['stop_condition'],
+            random_seed=values["random_seed"],
+            slope=values["slope"],
+            mrp=values["mrp"],
+            rmult=values["rmult"],
+            rim_erasure_effectiveness_function=values["rim_erasure_effectiveness_function"],
+            r_min=values["r_min"],
+            r_stat=values["r_stat"],
+            r_max=values["r_max"],
+            study_region_size=values["study_region_size"],
+            study_region_padding=values["study_region_padding"],
+            stop_condition=values["stop_condition"],
             write_statistics_cadence=write_statistics_cadence,
             write_craters_cadence=write_craters_cadence,
             write_crater_removals_cadence=write_crater_removals_cadence,
             write_state_cadence=write_state_cadence,
             write_image_cadence=write_image_cadence,
             write_image_points=write_image_points,
-            spatial_hash_cell_size=values['spatial_hash_cell_size'],
+            spatial_hash_cell_size=values["spatial_hash_cell_size"],
         ))
 
     return result

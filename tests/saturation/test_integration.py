@@ -22,7 +22,7 @@ def test_crater_record_integration():
     crater_generator = get_craters(distribution, study_region_size + study_region_padding)
     record = CraterRecord(
         r_stat=r_stat,
-        erat=3,
+        rim_erasure_effectiveness_function=lambda x, y: x > y / 3.0,
         mrp=0.5,
         rmult=1.5,
         study_region_size=study_region_size,

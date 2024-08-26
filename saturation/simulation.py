@@ -4,9 +4,10 @@ import sys
 import traceback
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Callable, Generator, Dict, List
+from typing import Callable, Generator, Dict, List, Any
 
 import numpy as np
+import numba as nb
 import yaml
 
 from saturation.areal_density import ArealDensityCalculator
@@ -28,13 +29,14 @@ class SimulationConfig:
     simulation_name: str
     random_seed: int
     slope: float
-    erat: float
+    rim_erasure_effectiveness_function: Dict[str, Any]
     mrp: float
     rmult: float
     study_region_size: int
     study_region_padding: int
-    min_crater_radius: float
-    max_crater_radius: float
+    r_min: float
+    r_stat: float
+    r_max: float
     stop_condition: Dict
     write_statistics_cadence: int
     write_craters_cadence: int
@@ -50,13 +52,14 @@ class SimulationConfig:
             "simulation_name": self.simulation_name,
             "random_seed": self.random_seed,
             "slope": self.slope,
-            "erat": self.erat,
+            "rim_erasure_effectiveness_function": self.rim_erasure_effectiveness_function,
+            "r_min": self.r_min,
+            "r_stat": self.r_stat,
+            "r_max": self.r_max,
             "mrp": self.mrp,
             "rmult": self.rmult,
             "study_region_size": self.study_region_size,
             "study_region_padding": self.study_region_padding,
-            "min_crater_radius": self.min_crater_radius,
-            "max_crater_radius": self.max_crater_radius,
             "stop_condition": self.stop_condition,
             "write_statistics_cadence": self.write_statistics_cadence,
             "write_craters_cadence": self.write_craters_cadence,
@@ -66,6 +69,56 @@ class SimulationConfig:
             "write_image_points": self.write_image_points,
             "spatial_hash_cell_size": self.spatial_hash_cell_size,
         }
+
+
+def get_multiplier_rim_erasure_effectiveness_function(multiplier: float) -> Callable[[float, float], bool]:
+    @nb.njit
+    def func(new_radius: float, existing_radius: float) -> bool:
+        return new_radius > existing_radius * multiplier
+
+    return func
+
+
+@nb.njit
+def log_rim_erasure_effectiveness_function(existing_radius: float, new_radius: float) -> bool:
+    return np.log(new_radius) > existing_radius
+
+
+@nb.njit
+def sqrt_rim_erasure_effectiveness_function(existing_radius: float, new_radius: float) -> bool:
+    return np.sqrt(new_radius) > existing_radius
+
+
+def get_sin_log_rim_erasure_effectiveness_function(
+        n_periods: float,
+        min_r_period: float,
+        max_r_period: float) -> Callable[[float, float], bool]:
+
+    scale = 2 * np.pi / np.log(max_r_period / min_r_period) * n_periods
+
+    @nb.njit
+    def func(new_radius: float, existing_radius: float) -> bool:
+        return new_radius > np.sin(np.log(existing_radius) * scale + 2) * existing_radius * 3
+
+    return func
+
+
+def get_rim_erasure_effectiveness_function(config: Dict[str, any]) -> Callable[[float, float], bool]:
+    name = config["name"]
+
+    result = None
+    if name == "multiplier":
+        result = get_multiplier_rim_erasure_effectiveness_function(config["multiplier"])
+    elif name == "log":
+        result = log_rim_erasure_effectiveness_function
+    elif name == "sqrt":
+        result = sqrt_rim_erasure_effectiveness_function
+    elif name == "sin_log":
+        result = get_sin_log_rim_erasure_effectiveness_function(config["n_periods"],
+                                                                config["min_r_period"],
+                                                                config["max_r_period"])
+
+    return result
 
 
 def get_craters(size_distribution: ProbabilityDistribution,
@@ -119,12 +172,10 @@ def run_simulation(base_output_path: str, config: SimulationConfig):
         np.random.seed(config.random_seed)
         output_path.mkdir(parents=True, exist_ok=True)
 
-        r_stat = config.min_crater_radius
-
         full_region_size = config.study_region_size + 2 * config.study_region_padding
         size_distribution = ParetoProbabilityDistribution(alpha=-config.slope,
-                                                          x_min=config.min_crater_radius / config.erat,
-                                                          x_max=config.max_crater_radius)
+                                                          x_min=config.r_min,
+                                                          x_max=config.r_max)
         crater_generator = get_craters(size_distribution, full_region_size)
 
         start_time = datetime.datetime.now()
@@ -146,8 +197,12 @@ def run_simulation(base_output_path: str, config: SimulationConfig):
 
         # The crater record handles removal of craters rims and the record
         # of what craters remain at a given point in time.
-        crater_record = CraterRecord(r_stat,
-                                     config.erat,
+        r_stat = config.r_stat
+        rim_erasure_effectiveness_function = get_rim_erasure_effectiveness_function(
+            config.rim_erasure_effectiveness_function
+        )
+        crater_record = CraterRecord(config.r_stat,
+                                     rim_erasure_effectiveness_function,
                                      config.mrp,
                                      config.rmult,
                                      config.study_region_size,

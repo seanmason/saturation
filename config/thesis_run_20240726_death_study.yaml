@@ -1,0 +1,399 @@
+n_workers: 26
+run_configurations:
+- 0:
+    slope: -2.5
+    erat: 1.0
+    mrp: 0.25
+    rmult: 1.0
+    max_crater_radius: 250
+    min_crater_radius: 3
+    random_seed: 123
+    simulation_name: "0"
+    spatial_hash_cell_size: 3
+    stop_condition:
+      ntot: 50000000
+      name: ntot
+    study_region_padding: 125
+    study_region_size: 1000
+- 1:
+    slope: -2.5
+    erat: 1.0
+    mrp: 0.25
+    rmult: 1.0
+    max_crater_radius: 250
+    min_crater_radius: 3
+    random_seed: 234
+    simulation_name: "1"
+    spatial_hash_cell_size: 3
+    stop_condition:
+      ntot: 50000000
+      name: ntot
+    study_region_padding: 125
+    study_region_size: 1000
+- 2:
+    slope: -2.5
+    erat: 1.0
+    mrp: 0.75
+    rmult: 1.0
+    max_crater_radius: 250
+    min_crater_radius: 3
+    random_seed: 123
+    simulation_name: "2"
+    spatial_hash_cell_size: 3
+    stop_condition:
+      ntot: 50000000
+      name: ntot
+    study_region_padding: 125
+    study_region_size: 1000
+- 3:
+    slope: -2.5
+    erat: 1.0
+    mrp: 0.75
+    rmult: 1.0
+    max_crater_radius: 250
+    min_crater_radius: 3
+    random_seed: 234
+    simulation_name: "3"
+    spatial_hash_cell_size: 3
+    stop_condition:
+      ntot: 50000000
+      name: ntot
+    study_region_padding: 125
+    study_region_size: 1000
+- 4:
+    slope: -2.5
+    erat: 3.0
+    mrp: 0.25
+    rmult: 1.0
+    max_crater_radius: 250
+    min_crater_radius: 3
+    random_seed: 123
+    simulation_name: "4"
+    spatial_hash_cell_size: 3
+    stop_condition:
+      ntot: 50000000
+      name: ntot
+    study_region_padding: 125
+    study_region_size: 1000
+- 5:
+    slope: -2.5
+    erat: 3.0
+    mrp: 0.25
+    rmult: 1.0
+    max_crater_radius: 250
+    min_crater_radius: 3
+    random_seed: 234
+    simulation_name: "5"
+    spatial_hash_cell_size: 3
+    stop_condition:
+      ntot: 50000000
+      name: ntot
+    study_region_padding: 125
+    study_region_size: 1000
+- 6:
+    slope: -2.5
+    erat: 3.0
+    mrp: 0.75
+    rmult: 1.0
+    max_crater_radius: 250
+    min_crater_radius: 3
+    random_seed: 123
+    simulation_name: "6"
+    spatial_hash_cell_size: 3
+    stop_condition:
+      ntot: 50000000
+      name: ntot
+    study_region_padding: 125
+    study_region_size: 1000
+- 7:
+    slope: -2.5
+    erat: 3.0
+    mrp: 0.75
+    rmult: 1.0
+    max_crater_radius: 250
+    min_crater_radius: 3
+    random_seed: 234
+    simulation_name: "7"
+    spatial_hash_cell_size: 3
+    stop_condition:
+      ntot: 50000000
+      name: ntot
+    study_region_padding: 125
+    study_region_size: 1000
+- 8:
+    slope: -3.5
+    erat: 1.0
+    mrp: 0.25
+    rmult: 1.0
+    max_crater_radius: 250
+    min_crater_radius: 3
+    random_seed: 123
+    simulation_name: "8"
+    spatial_hash_cell_size: 3
+    stop_condition:
+      ntot: 50000000
+      name: ntot
+    study_region_padding: 125
+    study_region_size: 1000
+- 9:
+    slope: -3.5
+    erat: 1.0
+    mrp: 0.25
+    rmult: 1.0
+    max_crater_radius: 250
+    min_crater_radius: 3
+    random_seed: 234
+    simulation_name: "9"
+    spatial_hash_cell_size: 3
+    stop_condition:
+      ntot: 50000000
+      name: ntot
+    study_region_padding: 125
+    study_region_size: 1000
+- 10:
+    slope: -3.5
+    erat: 1.0
+    mrp: 0.75
+    rmult: 1.0
+    max_crater_radius: 250
+    min_crater_radius: 3
+    random_seed: 123
+    simulation_name: "10"
+    spatial_hash_cell_size: 3
+    stop_condition:
+      ntot: 50000000
+      name: ntot
+    study_region_padding: 125
+    study_region_size: 1000
+- 11:
+    slope: -3.5
+    erat: 1.0
+    mrp: 0.75
+    rmult: 1.0
+    max_crater_radius: 250
+    min_crater_radius: 3
+    random_seed: 234
+    simulation_name: "11"
+    spatial_hash_cell_size: 3
+    stop_condition:
+      ntot: 50000000
+      name: ntot
+    study_region_padding: 125
+    study_region_size: 1000
+- 12:
+    slope: -3.5
+    erat: 3.0
+    mrp: 0.25
+    rmult: 1.0
+    max_crater_radius: 250
+    min_crater_radius: 3
+    random_seed: 123
+    simulation_name: "12"
+    spatial_hash_cell_size: 3
+    stop_condition:
+      ntot: 50000000
+      name: ntot
+    study_region_padding: 125
+    study_region_size: 1000
+- 13:
+    slope: -3.5
+    erat: 3.0
+    mrp: 0.25
+    rmult: 1.0
+    max_crater_radius: 250
+    min_crater_radius: 3
+    random_seed: 234
+    simulation_name: "13"
+    spatial_hash_cell_size: 3
+    stop_condition:
+      ntot: 50000000
+      name: ntot
+    study_region_padding: 125
+    study_region_size: 1000
+- 14:
+    slope: -3.5
+    erat: 3.0
+    mrp: 0.75
+    rmult: 1.0
+    max_crater_radius: 250
+    min_crater_radius: 3
+    random_seed: 123
+    simulation_name: "14"
+    spatial_hash_cell_size: 3
+    stop_condition:
+      ntot: 50000000
+      name: ntot
+    study_region_padding: 125
+    study_region_size: 1000
+- 15:
+    slope: -3.5
+    erat: 3.0
+    mrp: 0.75
+    rmult: 1.0
+    max_crater_radius: 250
+    min_crater_radius: 3
+    random_seed: 234
+    simulation_name: "15"
+    spatial_hash_cell_size: 3
+    stop_condition:
+      ntot: 50000000
+      name: ntot
+    study_region_padding: 125
+    study_region_size: 1000
+- 16:
+    slope: -4.0
+    erat: 1.0
+    mrp: 0.25
+    rmult: 1.0
+    max_crater_radius: 250
+    min_crater_radius: 3
+    random_seed: 123
+    simulation_name: "16"
+    spatial_hash_cell_size: 3
+    stop_condition:
+      ntot: 50000000
+      name: ntot
+    study_region_padding: 125
+    study_region_size: 1000
+- 17:
+    slope: -4.0
+    erat: 1.0
+    mrp: 0.25
+    rmult: 1.0
+    max_crater_radius: 250
+    min_crater_radius: 3
+    random_seed: 234
+    simulation_name: "17"
+    spatial_hash_cell_size: 3
+    stop_condition:
+      ntot: 50000000
+      name: ntot
+    study_region_padding: 125
+    study_region_size: 1000
+- 18:
+    slope: -4.0
+    erat: 1.0
+    mrp: 0.75
+    rmult: 1.0
+    max_crater_radius: 250
+    min_crater_radius: 3
+    random_seed: 123
+    simulation_name: "18"
+    spatial_hash_cell_size: 3
+    stop_condition:
+      ntot: 50000000
+      name: ntot
+    study_region_padding: 125
+    study_region_size: 1000
+- 19:
+    slope: -4.0
+    erat: 1.0
+    mrp: 0.75
+    rmult: 1.0
+    max_crater_radius: 250
+    min_crater_radius: 3
+    random_seed: 234
+    simulation_name: "19"
+    spatial_hash_cell_size: 3
+    stop_condition:
+      ntot: 50000000
+      name: ntot
+    study_region_padding: 125
+    study_region_size: 1000
+- 20:
+    slope: -4.0
+    erat: 3.0
+    mrp: 0.25
+    rmult: 1.0
+    max_crater_radius: 250
+    min_crater_radius: 3
+    random_seed: 123
+    simulation_name: "20"
+    spatial_hash_cell_size: 3
+    stop_condition:
+      ntot: 50000000
+      name: ntot
+    study_region_padding: 125
+    study_region_size: 1000
+- 21:
+    slope: -4.0
+    erat: 3.0
+    mrp: 0.25
+    rmult: 1.0
+    max_crater_radius: 250
+    min_crater_radius: 3
+    random_seed: 234
+    simulation_name: "21"
+    spatial_hash_cell_size: 3
+    stop_condition:
+      ntot: 50000000
+      name: ntot
+    study_region_padding: 125
+    study_region_size: 1000
+- 22:
+    slope: -4.0
+    erat: 3.0
+    mrp: 0.75
+    rmult: 1.0
+    max_crater_radius: 250
+    min_crater_radius: 3
+    random_seed: 123
+    simulation_name: "22"
+    spatial_hash_cell_size: 3
+    stop_condition:
+      ntot: 50000000
+      name: ntot
+    study_region_padding: 125
+    study_region_size: 1000
+- 23:
+    slope: -4.0
+    erat: 3.0
+    mrp: 0.75
+    rmult: 1.0
+    max_crater_radius: 250
+    min_crater_radius: 3
+    random_seed: 234
+    simulation_name: "23"
+    spatial_hash_cell_size: 3
+    stop_condition:
+      ntot: 50000000
+      name: ntot
+    study_region_padding: 125
+    study_region_size: 1000
+- 1000:
+    slope: -1.25
+    erat: 1
+    mrp: 0.5
+    rmult: 1.0
+    max_crater_radius: 250
+    min_crater_radius: 3
+    random_seed: 123
+    simulation_name: "1000"
+    spatial_hash_cell_size: 3
+    stop_condition:
+      ntot: 50000000
+      name: ntot
+    study_region_padding: 125
+    study_region_size: 1000
+- 2000:
+    slope: -5
+    erat: 1
+    mrp: 0.75
+    rmult: 1.0
+    max_crater_radius: 250
+    min_crater_radius: 3
+    random_seed: 123
+    simulation_name: "2000"
+    spatial_hash_cell_size: 3
+    stop_condition:
+      ntot: 50000000
+      name: ntot
+    study_region_padding: 125
+    study_region_size: 1000
+
+write_crater_removals_cadence: 100000
+write_craters_cadence: 100000
+write_image_cadence: 0
+write_image_points: []
+write_state_cadence: 0
+write_statistics_cadence: 100000
