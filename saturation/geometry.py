@@ -21,6 +21,9 @@ def get_xy_intersection(center1: Location,
     Does not handle the case where the circles do not intersect.
     Adapted from https://gist.github.com/jupdike/bfe5eb23d1c395d8a0a1a4ddd94882ac
     """
+    if center1 == center2:
+        return (0.0, 0.0), (0.0, 0.0)
+
     x1, y1 = center1
     x2, y2 = center2
 
@@ -52,7 +55,11 @@ def get_intersection_arc(center1: Location,
     # Circle 1 is completely encompassed by circle 2
     distance = np.sqrt((center1[0] - center2[0]) ** 2 + (center1[1] - center2[1]) ** 2)
     if distance + r1 < r2:
-        return 0, 2 * np.pi
+        return 0.0, 2 * np.pi
+
+    # Circle 2 is completely encompassed by circle 1
+    if distance + r2 < r1:
+        return 0.0, 0.0
 
     i1, i2 = get_xy_intersection(center1, center2, r1, r2)
 

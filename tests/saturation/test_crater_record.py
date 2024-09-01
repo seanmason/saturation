@@ -2,10 +2,18 @@ import numpy as np
 
 from saturation.crater_record import CraterRecord
 from saturation.datatypes import Crater
+from saturation.rim_erasure_calculators import get_rim_erasure_calculator
 
 
 def _create_crater(id: int, x: float, y: float, radius: float) -> Crater:
     return Crater(id=np.int64(id), x=np.float32(x), y=np.float32(y), radius=np.float32(radius))
+
+
+def effectiveness_function(existing: Crater, new: Crater) -> float:
+    if existing.radius < new.radius / 3.0:
+        return existing.radius * np.pi * 2
+
+    return 0.0
 
 
 def test_add_in_study_region():
@@ -13,7 +21,7 @@ def test_add_in_study_region():
     crater = _create_crater(id=1, x=100.0, y=100.0, radius=100.0)
     record = CraterRecord(
         r_stat=10.0,
-        rim_erasure_effectiveness_function=lambda x, y: x > y / 3.0,
+        rim_erasure_calculator=effectiveness_function,
         mrp=0.5,
         rmult=1.0,
         study_region_size=1000,
@@ -39,7 +47,7 @@ def test_add_outside_study_region():
     crater = _create_crater(id=1, x=100.0, y=100.0, radius=100.0)
     record = CraterRecord(
         r_stat=10,
-        rim_erasure_effectiveness_function=lambda x, y: x > y / 3.0,
+        rim_erasure_calculator=effectiveness_function,
         mrp=0.5,
         rmult=1.0,
         study_region_size=1000,
@@ -64,7 +72,7 @@ def test_add_does_not_add_small_craters():
     crater = _create_crater(id=1, x=100.0, y=100.0, radius=9.0)
     record = CraterRecord(
         r_stat=10,
-        rim_erasure_effectiveness_function=lambda x, y: x > y / 3.0,
+        rim_erasure_calculator=effectiveness_function,
         mrp=0.5,
         rmult=1.0,
         study_region_size=1000,
@@ -89,7 +97,7 @@ def test_add_removes_obliterated_craters():
     crater2 = _create_crater(id=2, x=110.0, y=110.0, radius=50.0)
     record = CraterRecord(
         r_stat=10,
-        rim_erasure_effectiveness_function=lambda x, y: x > y / 3.0,
+        rim_erasure_calculator=effectiveness_function,
         mrp=0.5,
         rmult=1.0,
         study_region_size=1000,
@@ -116,7 +124,7 @@ def test_add_leaves_partially_removed_craters():
     crater2 = _create_crater(id=2, x=110.0, y=110.0, radius=10.0)
     record = CraterRecord(
         r_stat=10,
-        rim_erasure_effectiveness_function=lambda x, y: x > y / 3.0,
+        rim_erasure_calculator=effectiveness_function,
         mrp=0.5,
         rmult=1.0,
         study_region_size=1000,
@@ -147,7 +155,7 @@ def test_crater_radius_ratio_respected():
     crater5 = _create_crater(id=5, x=100.0, y=90.0, radius=4.0)
     record = CraterRecord(
         r_stat=10,
-        rim_erasure_effectiveness_function=lambda x, y: x > y / 2.0,
+        rim_erasure_calculator=effectiveness_function,
         mrp=0.9,
         rmult=1.0,
         study_region_size=1000,
@@ -172,7 +180,7 @@ def test_get_mnnd_empty_from():
     crater1 = _create_crater(id=1, x=200.0, y=200.0, radius=10.0)
     record = CraterRecord(
         r_stat=10,
-        rim_erasure_effectiveness_function=lambda x, y: x > y / 3.0,
+        rim_erasure_calculator=effectiveness_function,
         mrp=0.5,
         rmult=1.0,
         study_region_size=100,
@@ -194,7 +202,7 @@ def test_nn_single_from_and_to():
     crater2 = _create_crater(id=2, x=150.0, y=150.0, radius=10.0)
     record = CraterRecord(
         r_stat=10,
-        rim_erasure_effectiveness_function=lambda x, y: x > y / 3.0,
+        rim_erasure_calculator=effectiveness_function,
         mrp=0.5,
         rmult=1.0,
         study_region_size=100,
@@ -219,7 +227,7 @@ def test_nn_gets_shortest_distance_from_to_craters():
     crater4 = _create_crater(id=4, x=99.0, y=100.0, radius=10.0)
     record = CraterRecord(
         r_stat=10,
-        rim_erasure_effectiveness_function=lambda x, y: x > y / 3.0,
+        rim_erasure_calculator=effectiveness_function,
         mrp=0.0,
         rmult=1.0,
         study_region_size=100,
@@ -245,7 +253,7 @@ def test_get_mean_nnd_is_shortest_distance_for_all_from_craters():
     crater3 = _create_crater(id=3, x=110.0, y=100.0, radius=10.0)
     record = CraterRecord(
         r_stat=10,
-        rim_erasure_effectiveness_function=lambda x, y: x > y / 3.0,
+        rim_erasure_calculator=effectiveness_function,
         mrp=0.0,
         rmult=1.0,
         study_region_size=100,
@@ -270,7 +278,7 @@ def test_get_mean_nnd_ignores_smaller_than_r_stat():
     crater3 = _create_crater(id=3, x=110.0, y=100.0, radius=5.0)
     record = CraterRecord(
         r_stat=10,
-        rim_erasure_effectiveness_function=lambda x, y: x > y / 3.0,
+        rim_erasure_calculator=effectiveness_function,
         mrp=0.5,
         rmult=1.0,
         study_region_size=100,
@@ -295,7 +303,7 @@ def test_get_mean_nnd_ignores_removed_craters():
     crater3 = _create_crater(id=3, x=100.0, y=160.0, radius=50.0)
     record = CraterRecord(
         r_stat=10,
-        rim_erasure_effectiveness_function=lambda x, y: x > y / 3.0,
+        rim_erasure_calculator=effectiveness_function,
         mrp=0.5,
         rmult=1.0,
         study_region_size=100,
@@ -322,7 +330,7 @@ def test_removal_percentage_too_low():
 
     record = CraterRecord(
         r_stat=10,
-        rim_erasure_effectiveness_function=lambda x, y: x > y / 10.0,
+        rim_erasure_calculator=effectiveness_function,
         mrp=0.51,
         rmult=1.0,
         study_region_size=500,
@@ -356,9 +364,14 @@ def test_removal_percentage_high_enough():
     percent_each_crater = 0.05
     n_craters = 10
 
+    func = get_rim_erasure_calculator({
+        "name": "multiplier",
+        "multiplier": 10.0
+    }, 1.0)
+
     record = CraterRecord(
         r_stat=10,
-        rim_erasure_effectiveness_function=lambda x, y: x > y / 10.0,
+        rim_erasure_calculator=func,
         mrp=0.51,
         rmult=1.0,
         study_region_size=500,

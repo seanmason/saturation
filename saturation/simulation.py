@@ -4,23 +4,21 @@ import sys
 import traceback
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Callable, Generator, Dict, List, Any
+from typing import Generator, Dict, List, Any
 
 import numpy as np
-import numba as nb
 import yaml
 
 from saturation.areal_density import ArealDensityCalculator
 from saturation.crater_record import CraterRecord
 from saturation.distributions import ProbabilityDistribution, ParetoProbabilityDistribution
+from saturation.initial_rim_state_calculators import get_initial_rim_state_calculator
+from saturation.rim_erasure_calculators import get_rim_erasure_calculator
 from saturation.plotting import save_study_region
 from saturation.stop_conditions import get_stop_condition
 from saturation.writers import StatisticsWriter, StateSnapshotWriter, StatisticsRow, CraterWriter, CraterRemovalWriter
 from saturation.z_stats import calculate_z_statistic, calculate_za_statistic
 from saturation.datatypes import Crater
-
-# Type definitions
-LocationFunc = Callable[[], np.array]
 
 
 @dataclass(frozen=True, kw_only=True)
@@ -29,7 +27,8 @@ class SimulationConfig:
     simulation_name: str
     random_seed: int
     slope: float
-    rim_erasure_effectiveness_function: Dict[str, Any]
+    rim_erasure_method: Dict[str, Any]
+    initial_rim_calculation_method: Dict[str, Any]
     mrp: float
     rmult: float
     study_region_size: int
@@ -52,7 +51,8 @@ class SimulationConfig:
             "simulation_name": self.simulation_name,
             "random_seed": self.random_seed,
             "slope": self.slope,
-            "rim_erasure_effectiveness_function": self.rim_erasure_effectiveness_function,
+            "rim_erasure_method": self.rim_erasure_method,
+            "initial_rim_calculation_method": self.initial_rim_calculation_method,
             "r_min": self.r_min,
             "r_stat": self.r_stat,
             "r_max": self.r_max,
@@ -69,56 +69,6 @@ class SimulationConfig:
             "write_image_points": self.write_image_points,
             "spatial_hash_cell_size": self.spatial_hash_cell_size,
         }
-
-
-def get_multiplier_rim_erasure_effectiveness_function(multiplier: float) -> Callable[[float, float], bool]:
-    @nb.njit
-    def func(new_radius: float, existing_radius: float) -> bool:
-        return new_radius > existing_radius * multiplier
-
-    return func
-
-
-@nb.njit
-def log_rim_erasure_effectiveness_function(existing_radius: float, new_radius: float) -> bool:
-    return np.log(new_radius) > existing_radius
-
-
-@nb.njit
-def sqrt_rim_erasure_effectiveness_function(existing_radius: float, new_radius: float) -> bool:
-    return np.sqrt(new_radius) > existing_radius
-
-
-def get_sin_log_rim_erasure_effectiveness_function(
-        n_periods: float,
-        min_r_period: float,
-        max_r_period: float) -> Callable[[float, float], bool]:
-
-    scale = 2 * np.pi / np.log(max_r_period / min_r_period) * n_periods
-
-    @nb.njit
-    def func(new_radius: float, existing_radius: float) -> bool:
-        return new_radius > np.sin(np.log(existing_radius) * scale + 2) * existing_radius * 3
-
-    return func
-
-
-def get_rim_erasure_effectiveness_function(config: Dict[str, any]) -> Callable[[float, float], bool]:
-    name = config["name"]
-
-    result = None
-    if name == "multiplier":
-        result = get_multiplier_rim_erasure_effectiveness_function(config["multiplier"])
-    elif name == "log":
-        result = log_rim_erasure_effectiveness_function
-    elif name == "sqrt":
-        result = sqrt_rim_erasure_effectiveness_function
-    elif name == "sin_log":
-        result = get_sin_log_rim_erasure_effectiveness_function(config["n_periods"],
-                                                                config["min_r_period"],
-                                                                config["max_r_period"])
-
-    return result
 
 
 def get_craters(size_distribution: ProbabilityDistribution,
@@ -198,11 +148,15 @@ def run_simulation(base_output_path: str, config: SimulationConfig):
         # The crater record handles removal of craters rims and the record
         # of what craters remain at a given point in time.
         r_stat = config.r_stat
-        rim_erasure_effectiveness_function = get_rim_erasure_effectiveness_function(
-            config.rim_erasure_effectiveness_function
+        rim_erasure_effectiveness_function = get_rim_erasure_calculator(
+            config.rim_erasure_method,
+            config.rmult
         )
+
+        initial_rim_state_calculator = get_initial_rim_state_calculator(config.initial_rim_calculation_method)
         crater_record = CraterRecord(config.r_stat,
                                      rim_erasure_effectiveness_function,
+                                     initial_rim_state_calculator,
                                      config.mrp,
                                      config.rmult,
                                      config.study_region_size,
@@ -217,9 +171,9 @@ def run_simulation(base_output_path: str, config: SimulationConfig):
         for crater in crater_generator:
             removed_craters = crater_record.add(crater)
 
-            areal_density_calculator.add_crater(crater)
+            # areal_density_calculator.add_crater(crater)
             if removed_craters:
-                areal_density_calculator.remove_craters(removed_craters)
+                # areal_density_calculator.remove_craters(removed_craters)
                 crater_removals_writer.write(removed_craters, crater)
 
             if crater.radius >= r_stat:
@@ -231,14 +185,17 @@ def run_simulation(base_output_path: str, config: SimulationConfig):
                 last_ntot = ntot_current
 
                 areal_density = areal_density_calculator.areal_density
+                areal_density = 0.0
 
                 if crater_record.nobs > 1:
                     mean_nn_distance = crater_record.get_mnnd()
-                    z = calculate_z_statistic(mean_nn_distance, crater_record.nobs,
+                    z = calculate_z_statistic(mean_nn_distance,
+                                              crater_record.nobs,
                                               study_region_area)
                     za = calculate_za_statistic(mean_nn_distance,
                                                 crater_record.nobs,
-                                                areal_density_calculator.area_covered,
+                                                # areal_density_calculator.area_covered,
+                                                1.0,
                                                 study_region_area)
                 else:
                     z = np.nan

@@ -134,8 +134,6 @@ def test_get_mean_nnd_random_adds_and_deletes():
     P_TRACKED = 0.8
 
     for n in range(N_REPEATS):
-        print(n)
-
         # Arrange
         np.random.seed(n)
 
