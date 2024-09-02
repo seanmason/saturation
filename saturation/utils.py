@@ -199,9 +199,9 @@ def plot_csfds_for_multiple_ntot(
     colors = [
         "blue",
         "red",
-        "lightgreen",
         "orange",
-        "black"
+        "black",
+        "green",
     ]
 
     fig = plt.figure(figsize=(9, 4))
@@ -212,9 +212,15 @@ def plot_csfds_for_multiple_ntot(
         radii = data.radius.sort_values()
         ax.plot(radii, range(len(radii) + 1, 1, -1), label="$N_{tot}" + f"={ntot}$", c=colors[idx % len(colors)])
 
-    for slope, intercept, line_style in slope_intercept_line_styles:
+    for slope, intercept, line_style, label in slope_intercept_line_styles:
         expected = intercept * radii ** slope
-        plt.plot(radii[expected > 1], expected[expected > 1], ls=line_style, c="black")
+        plt.plot(
+            radii[expected > 1],
+            expected[expected > 1],
+            ls=line_style,
+            c="black",
+            label=label
+        )
 
     ax.set_xlabel("$R$", fontsize=14)
     ax.set_ylabel("$N(\\geq R)$", fontsize=14)
