@@ -174,8 +174,8 @@ def plot_csfd_with_slope(data: pd.DataFrame, slope: float, intercept: float = 1)
     radii = data.radius.sort_values()
     
     plt.plot(radii, range(len(radii) + 1, 1, -1), label="Observed")
-    plt.xlabel("$R$")
-    plt.ylabel("$N(\\geq R)$")
+    plt.xlabel("$r$")
+    plt.ylabel("$N(\\geq r)$")
 
     expected = intercept * radii ** -slope
     plt.plot(radii, expected, label="Estimated", ls="--")
@@ -204,7 +204,7 @@ def plot_csfds_for_multiple_ntot(
         "green",
     ]
 
-    fig = plt.figure(figsize=(9, 4))
+    fig = plt.figure(figsize=(6, 4))
     ax = fig.add_subplot(111)
 
     radii = None
@@ -222,9 +222,8 @@ def plot_csfds_for_multiple_ntot(
             label=label
         )
 
-    ax.set_xlabel("$R$", fontsize=14)
-    ax.set_ylabel("$N(\\geq R)$", fontsize=14)
-    fig.subplots_adjust(right=0.7)
+    ax.set_xlabel("$r$", fontsize=14)
+    ax.set_ylabel("$N(\\geq r)$", fontsize=14)
 
     ax.legend()
     ax.set_xscale('log')
