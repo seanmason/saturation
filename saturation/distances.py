@@ -192,9 +192,10 @@ class Distances:
             self._spatial_hash.remove(crater)
 
             if crater.id in self._tracked_nns:
-                nn_dist = self._nnds[crater.id]
-                self._sum_tracked_nnds -= nn_dist
-                self._sum_tracked_squared_nnds -= nn_dist ** 2
+                if crater.id in self._nnds:
+                    nn_dist = self._nnds[crater.id]
+                    self._sum_tracked_nnds -= nn_dist
+                    self._sum_tracked_squared_nnds -= nn_dist ** 2
 
                 self._tracked_nn_count -= 1
 
