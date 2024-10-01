@@ -35,7 +35,8 @@ def test_crater_record_integration():
         rmult=1.5,
         study_region_size=study_region_size,
         study_region_padding=study_region_padding,
-        cell_size=50
+        cell_size=50,
+        calculate_nearest_neighbor_stats=True
     )
     areal_density_calculator = ArealDensityCalculator((study_region_size, study_region_size),
                                                       (study_region_padding, study_region_padding),

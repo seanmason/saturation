@@ -11,7 +11,7 @@ from scipy.optimize import minimize_scalar
 
 import pyspark
 import pyspark.sql.functions as F
-from pyspark.sql import SparkSession, DataFrame, Window
+from pyspark.sql import SparkSession, DataFrame
 
 
 def read_config(path: Path) -> Dict:
@@ -34,11 +34,11 @@ def create_configs_df(configs: pyspark.RDD) -> DataFrame:
     config_columns = [
         "simulation_id",
         "slope",
-        "erat",
         "rmult",
         "mrp",
         "study_region_size",
-        "study_region_padding"
+        "study_region_padding",
+        "rim_erasure_method"
     ]
     return configs.map(lambda x: {k: v for k, v in x.items() if k in config_columns}).toDF().cache()
 
@@ -53,7 +53,7 @@ def join_configs(data: DataFrame, configs: DataFrame, spark: SparkSession) -> Da
         configs.slope,
         configs.mrp,
         configs.rmult,
-        configs.erat,
+        configs.rim_erasure_method,
         data.*
     FROM
         data
@@ -63,14 +63,16 @@ def join_configs(data: DataFrame, configs: DataFrame, spark: SparkSession) -> Da
     return spark.sql(query)
 
 
-def get_state_at_time(stats_df: DataFrame,
-                      craters_df: DataFrame,
-                      removals_df: DataFrame,
-                      simulation_id: int,
-                      target_ntot: int,
-                      study_region_size: int,
-                      study_region_padding: int,
-                      spark: SparkSession) -> pd.DataFrame:
+def get_state_at_time(
+    stats_df: DataFrame,
+    craters_df: DataFrame,
+    removals_df: DataFrame,
+    simulation_id: int,
+    target_ntot: int,
+    study_region_size: int,
+    study_region_padding: int,
+    spark: SparkSession
+) -> pd.DataFrame:
     max_crater_id = stats_df.where(
         (F.col("simulation_id") == F.lit(simulation_id))
         & (F.col("ntot") <= F.lit(target_ntot))
@@ -131,13 +133,77 @@ def estimate_cumulative_slope(radii: List[float],
     return cumulative_slope, sigma
 
 
+def get_states_at_ntots(
+    *,
+    simulation_id: int,
+    configs_dict: Dict,
+    base_path: str,
+    spark: SparkSession,
+    target_ntots: Optional[List[int]] = None,
+    max_ntot: Optional[int] = None,
+    n_states: int = 25,
+) -> Dict[int, pd.DataFrame]:
+    """
+    Returns a dict from values of ntot (a moment in time) to a dataframe of crater locations and radii at that time.
+    """
+    if not target_ntots:
+        target_ntots = [
+            int(10 ** 2 * 10 ** ((x + 1) / n_states * (np.log10(max_ntot) - 2)))
+            for x in range(n_states)
+        ]
+
+    study_region_size = configs_dict[simulation_id]["study_region_size"]
+    study_region_padding = configs_dict[simulation_id]["study_region_padding"]
+
+    sim_path = f"{base_path}/{simulation_id}"
+
+    stats_df = spark.read.parquet(f"{sim_path}/statistics_*.parquet")
+    craters_df = spark.read.parquet( f"{sim_path}/craters_*.parquet")
+    removals_df = spark.read.parquet(f"{sim_path}/crater_removals_*.parquet")
+
+    return {
+        x: get_state_at_time(
+            stats_df,
+            craters_df,
+            removals_df,
+            simulation_id,
+            x,
+            study_region_size,
+            study_region_padding,
+            spark
+        )
+        for x in target_ntots}
+
+
+def estimate_slopes_for_states(
+    states: Dict[int, pd.DataFrame],
+    r_min: float
+) -> pd.DataFrame:
+    estimates = []
+    for ntot, state in states.items():
+        state = states[ntot]
+        alpha, sigma = estimate_cumulative_slope(
+            state.radius,
+            r_min,
+            state.radius.max(),
+            min_search_slope=0.0,
+            max_search_slope=10.0
+        )
+        estimates.append(
+            {
+                "ntot": ntot, "alpha": alpha, "sigma": sigma,
+            }
+        )
+    return pd.DataFrame(estimates)
+
+
 def estimate_intercept(radii: pd.Series, slope: float) -> float:
-    def create_sfd_loss(radii: pd.Series, slope: float) -> Callable[float, float]:
-        radii = radii.sort_values()
+    def create_sfd_loss(radii: pd.Series, slope: float) -> Callable[[float], float]:
+        r = radii.sort_values()
         
         def loss_func(intercept: float) -> float:
-            expected = intercept * radii ** -slope
-            actual = np.flip(range(radii.shape[0]))
+            expected = intercept * r ** -slope
+            actual = np.flip(range(r.shape[0]))
             loss = ((actual - expected)**2).sum()
             return loss
     
@@ -242,12 +308,17 @@ def plot_circle(center: Tuple[float, float],
     """
     Plots the specified circle on the supplied subplot.
     """
-    axes_subplot.add_patch(matplotlib.patches.Circle(center,
-                                                     radius=radius,
-                                                     color=color,
-                                                     fill=fill,
-                                                     lw=lw,
-                                                     antialiased=antialiased))
+    axes_subplot.add_patch(
+        matplotlib.patches.Circle(
+            center,
+            radius=radius,
+            color=color,
+            fill=fill,
+            lw=lw,
+            antialiased=antialiased
+        )
+    )
+
 
 def plot_terrain(data: pd.DataFrame):
     x_range = data.x.max() - data.x.min()
@@ -259,9 +330,6 @@ def plot_terrain(data: pd.DataFrame):
 
     # x, y are in km, radius is in m, let's make them consistent
     data = data.copy()
-
-    # ax.set_xlim([data.x.min() - 15, data.x.min() + xy_range + 15])
-    # ax.set_ylim([data.y.min() - 15, data.y.min() + xy_range + 15])
 
     ax.set_xlim([data.x.min() - 15, data.x.max() + 15])
     ax.set_ylim([data.y.min() - 15, data.y.max() + 15])
@@ -297,16 +365,18 @@ def setup_dataset(data: DataFrame,
     return data_and_configs
 
 
-def setup_datasets_for_model(data: DataFrame,
-                             configs: DataFrame,
-                             test_simulations_fraction: float,
-                             predictor_variables: List[str],
-                             target: str,
-                             train_sample_fraction: float,
-                             n_test_observations: int,
-                             spark: SparkSession,
-                             cache_train: bool = True,
-                             cache_test: bool = True):
+def setup_datasets_for_model(
+    data: DataFrame,
+    configs: DataFrame,
+    test_simulations_fraction: float,
+    predictor_variables: List[str],
+    target: str,
+    train_sample_fraction: float,
+    n_test_observations: int,
+    spark: SparkSession,
+    cache_train: bool = True,
+    cache_test: bool = True
+):
     """
     Joins data and configs, splits data into train and test datasets.
     `train_sample_fraction` specifies the fraction of simulations to use in the test set.
@@ -336,3 +406,66 @@ def setup_datasets_for_model(data: DataFrame,
     test.createOrReplaceTempView("test")
     
     return train, test
+
+
+def get_lifetimes_for_simulation(
+    simulation_id: int,
+    base_path: str,
+    sample_fraction: float,
+    spark: SparkSession
+) -> pd.DataFrame:
+    craters = spark.read.parquet(f"{base_path}/*/craters_*.parquet").sample(sample_fraction)
+    removals = spark.read.parquet(f"{base_path}/*/crater_removals_*.parquet")
+    configs_df = F.broadcast(
+        create_configs_df(
+            read_configs(
+                base_path,
+                spark,
+                completed_only=False
+            )
+        )
+    )
+
+    configs_df.createOrReplaceTempView("config")
+    craters.createOrReplaceTempView("craters")
+    removals.createOrReplaceTempView("removals")
+
+    query = f"""
+    WITH lifetimes AS
+    (
+        SELECT
+            simulation_id,
+            removed_crater_id AS id,
+            removed_by_crater_id - removed_crater_id AS lifetime
+        FROM
+            removals
+    ),
+    craters AS
+    (
+        SELECT
+            c.simulation_id,
+            c.id,
+            radius
+        FROM
+            craters c
+            INNER JOIN config cfg ON
+                c.simulation_id = cfg.simulation_id
+        WHERE
+            1=1
+            AND c.x BETWEEN study_region_padding AND study_region_size + study_region_padding
+            AND c.y BETWEEN study_region_padding AND study_region_size + study_region_padding
+    )
+    SELECT
+        radius,
+        lifetime
+    FROM
+        lifetimes l
+        INNER JOIN craters c ON
+            c.id = l.id
+            AND c.simulation_id = l.simulation_id
+    WHERE
+        l.simulation_id = {simulation_id}
+    ORDER BY
+        radius
+    """
+    return spark.sql(query).toPandas()

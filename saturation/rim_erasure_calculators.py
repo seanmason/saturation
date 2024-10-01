@@ -77,12 +77,13 @@ class RadiusRatioConditionalRimOverlapRimErasureCalculator(ConditionalRimOverlap
         return existing.radius / new.radius < self._ratio
 
 
-@jitclass(spec={"_rmult": nb.types.float32})
-class SqrtRadiusConditionalRimOverlapRimErasureCalculator(ConditionalRimOverlapRimErasureCalculator):
+@jitclass(spec={"_exponent": nb.types.float32, "_rmult": nb.types.float32})
+class ExponentRadiusConditionalRimOverlapRimErasureCalculator(ConditionalRimOverlapRimErasureCalculator):
     """
-    A portion of the rim is erased if r_n > sqrt(r_e).
+    A portion of the rim is erased if r_n > r_e**exponent.
     """
-    def __init__(self, rmult: float):
+    def __init__(self, exponent: float, rmult: float):
+        self._exponent = exponent
         self._rmult = rmult
 
     def _crater_can_be_affected(
@@ -91,7 +92,7 @@ class SqrtRadiusConditionalRimOverlapRimErasureCalculator(ConditionalRimOverlapR
         existing_rim_state: float,
         new: Crater
     ):
-        return new.radius > np.sqrt(existing.radius)
+        return new.radius > existing.radius**self._exponent
 
 
 @jitclass(spec={"_rmult": nb.types.float32})
@@ -185,8 +186,8 @@ def get_rim_erasure_calculator(config: Dict[str, any], rmult: float) -> RimErasu
         result = RadiusRatioConditionalRimOverlapRimErasureCalculator(config["ratio"], rmult)
     elif name == "log":
         result = LogRadiusConditionalRimOverlapRimErasureCalculator(rmult)
-    elif name == "sqrt":
-        result = SqrtRadiusConditionalRimOverlapRimErasureCalculator(rmult)
+    elif name == "exponent":
+        result = ExponentRadiusConditionalRimOverlapRimErasureCalculator(config["exponent"], rmult)
     elif name == "sin_log":
         result = SinLogRadiusConditionalRimOverlapRimErasureCalculator(
             config["n_periods"],

@@ -4,7 +4,7 @@ from numpy.testing import assert_almost_equal
 from saturation.datatypes import Crater
 from saturation.rim_erasure_calculators import (
     RadiusRatioConditionalRimOverlapRimErasureCalculator,
-    SqrtRadiusConditionalRimOverlapRimErasureCalculator,
+    ExponentRadiusConditionalRimOverlapRimErasureCalculator,
     LogRadiusConditionalRimOverlapRimErasureCalculator,
     SinLogRadiusConditionalRimOverlapRimErasureCalculator,
 )
@@ -101,9 +101,9 @@ def test_log_radius_conditional_overlap_large_enough():
     assert_almost_equal(result, 50 * 0.9890612105165573)
 
 
-def test_sqrt_radius_conditional_overlap_too_small():
+def test_exponent_radius_conditional_overlap_too_small():
     # Arrange
-    calculator = SqrtRadiusConditionalRimOverlapRimErasureCalculator(1.0)
+    calculator = ExponentRadiusConditionalRimOverlapRimErasureCalculator(0.5, 1.0)
     existing = Crater(id=1, x=0, y=0, radius=5**2)
     new = Crater(id=2, x=0, y=existing.radius, radius=4)
 
@@ -114,9 +114,9 @@ def test_sqrt_radius_conditional_overlap_too_small():
     assert result == 50.0
 
 
-def test_sqrt_radius_conditional_overlap_large_enough():
+def test_exponent_radius_conditional_overlap_large_enough():
     # Arrange
-    calculator = SqrtRadiusConditionalRimOverlapRimErasureCalculator(1.0)
+    calculator = ExponentRadiusConditionalRimOverlapRimErasureCalculator(0.5, 1.0)
     existing = Crater(id=1, x=0, y=0, radius=5**2)
     new = Crater(id=2, x=0, y=existing.radius, radius=5.1)
 

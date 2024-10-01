@@ -30,7 +30,8 @@ def test_add_in_study_region():
         rmult=1.0,
         study_region_size=1000,
         study_region_padding=100,
-        cell_size=50
+        cell_size=50,
+        calculate_nearest_neighbor_stats=True
     )
 
     # Act
@@ -57,7 +58,8 @@ def test_add_outside_study_region():
         rmult=1.0,
         study_region_size=1000,
         study_region_padding=200,
-        cell_size=50
+        cell_size=50,
+        calculate_nearest_neighbor_stats=True
     )
 
     # Act
@@ -83,7 +85,8 @@ def test_add_does_not_add_small_craters():
         rmult=1.0,
         study_region_size=1000,
         study_region_padding=100,
-        cell_size=50
+        cell_size=50,
+        calculate_nearest_neighbor_stats=True
     )
 
     # Act
@@ -109,7 +112,8 @@ def test_add_removes_obliterated_craters():
         rmult=1.0,
         study_region_size=1000,
         study_region_padding=100,
-        cell_size=50
+        cell_size=50,
+        calculate_nearest_neighbor_stats=True
     )
 
     # Act
@@ -137,7 +141,8 @@ def test_add_leaves_partially_removed_craters():
         rmult=1.0,
         study_region_size=1000,
         study_region_padding=100,
-        cell_size=50
+        cell_size=50,
+        calculate_nearest_neighbor_stats=True
     )
 
     # Act
@@ -169,7 +174,8 @@ def test_crater_radius_ratio_respected():
         rmult=1.0,
         study_region_size=1000,
         study_region_padding=0,
-        cell_size=50
+        cell_size=50,
+        calculate_nearest_neighbor_stats=True
     )
 
     # Act
@@ -195,7 +201,8 @@ def test_get_mnnd_empty_from():
         rmult=1.0,
         study_region_size=100,
         study_region_padding=100,
-        cell_size=50
+        cell_size=50,
+        calculate_nearest_neighbor_stats=True
     )
 
     # Act
@@ -218,7 +225,8 @@ def test_nn_single_from_and_to():
         rmult=1.0,
         study_region_size=100,
         study_region_padding=100,
-        cell_size=50
+        cell_size=50,
+        calculate_nearest_neighbor_stats=True
     )
 
     # Act
@@ -244,7 +252,8 @@ def test_nn_gets_shortest_distance_from_to_craters():
         rmult=1.0,
         study_region_size=100,
         study_region_padding=100,
-        cell_size=50
+        cell_size=50,
+        calculate_nearest_neighbor_stats=True
     )
 
     # Act
@@ -271,7 +280,8 @@ def test_get_mean_nnd_is_shortest_distance_for_all_from_craters():
         rmult=1.0,
         study_region_size=100,
         study_region_padding=100,
-        cell_size=50
+        cell_size=50,
+        calculate_nearest_neighbor_stats=True
     )
 
     # Act
@@ -297,7 +307,8 @@ def test_get_mean_nnd_ignores_smaller_than_r_stat():
         rmult=1.0,
         study_region_size=100,
         study_region_padding=100,
-        cell_size=50
+        cell_size=50,
+        calculate_nearest_neighbor_stats=True
     )
 
     # Act
@@ -323,7 +334,8 @@ def test_get_mean_nnd_ignores_removed_craters():
         rmult=1.0,
         study_region_size=100,
         study_region_padding=100,
-        cell_size=50
+        cell_size=50,
+        calculate_nearest_neighbor_stats=True
     )
 
     # Act
@@ -348,7 +360,8 @@ def test_get_nnd_after_two_craters():
         rmult=1.0,
         study_region_size=100,
         study_region_padding=100,
-        cell_size=50
+        cell_size=50,
+        calculate_nearest_neighbor_stats=True
     )
 
     # Act
@@ -378,7 +391,8 @@ def test_removal_percentage_too_low():
         rmult=1.0,
         study_region_size=500,
         study_region_padding=0,
-        cell_size=5
+        cell_size=5,
+        calculate_nearest_neighbor_stats=True
     )
 
     # Act
@@ -420,7 +434,8 @@ def test_removal_percentage_high_enough():
         rmult=1.0,
         study_region_size=500,
         study_region_padding=0,
-        cell_size=5
+        cell_size=5,
+        calculate_nearest_neighbor_stats=True
     )
 
     # Act

@@ -37,6 +37,8 @@ class SimulationConfig:
     r_stat: float
     r_max: float
     stop_condition: Dict
+    calculate_areal_density: bool
+    calculate_nearest_neighbor_stats: bool
     write_statistics_cadence: int
     write_craters_cadence: int
     write_crater_removals_cadence: int
@@ -61,6 +63,8 @@ class SimulationConfig:
             "study_region_size": self.study_region_size,
             "study_region_padding": self.study_region_padding,
             "stop_condition": self.stop_condition,
+            "calculate_areal_density": self.calculate_areal_density,
+            "calculate_nearest_neighbor_stats": self.calculate_nearest_neighbor_stats,
             "write_statistics_cadence": self.write_statistics_cadence,
             "write_craters_cadence": self.write_craters_cadence,
             "write_crater_removals_cadence": self.write_crater_removals_cadence,
@@ -108,16 +112,18 @@ def run_simulation(base_output_path: str, config: SimulationConfig):
     print(f'Starting simulation {config.simulation_name}')
     sys.stdout.flush()
 
-    output_path = Path(base_output_path) / config.simulation_name
+    output_path = Path(base_output_path) / str(config.simulation_name)
 
     # Check if we should skip the run
     if os.path.exists(output_path / "completed.txt"):
         print(f'Found completion file for {config.simulation_name}, skipping...')
         return
 
-    start_time = datetime.datetime.now()
     stop_condition = get_stop_condition(config.stop_condition)
+    calculate_areal_density = config.calculate_areal_density
+    calculate_nearest_neighbor_stats = config.calculate_nearest_neighbor_stats
 
+    start_time = datetime.datetime.now()
     try:
         np.random.seed(config.random_seed)
         output_path.mkdir(parents=True, exist_ok=True)
@@ -127,8 +133,6 @@ def run_simulation(base_output_path: str, config: SimulationConfig):
                                                           x_min=config.r_min,
                                                           x_max=config.r_max)
         crater_generator = get_craters(size_distribution, full_region_size)
-
-        start_time = datetime.datetime.now()
 
         # Write out the config file
         with open(output_path / "config.yaml", 'w') as config_output:
@@ -154,26 +158,34 @@ def run_simulation(base_output_path: str, config: SimulationConfig):
         )
 
         initial_rim_state_calculator = get_initial_rim_state_calculator(config.initial_rim_calculation_method)
-        crater_record = CraterRecord(config.r_stat,
-                                     rim_erasure_effectiveness_function,
-                                     initial_rim_state_calculator,
-                                     config.mrp,
-                                     config.rmult,
-                                     config.study_region_size,
-                                     config.study_region_padding,
-                                     config.spatial_hash_cell_size)
+        crater_record = CraterRecord(
+            config.r_stat,
+            rim_erasure_effectiveness_function,
+            initial_rim_state_calculator,
+            config.mrp,
+            config.rmult,
+            config.study_region_size,
+            config.study_region_padding,
+            config.spatial_hash_cell_size,
+            calculate_nearest_neighbor_stats
+        )
 
-        areal_density_calculator = ArealDensityCalculator((config.study_region_size, config.study_region_size),
-                                                          (config.study_region_padding, config.study_region_padding),
-                                                          r_stat)
+        areal_density_calculator = ArealDensityCalculator(
+            (config.study_region_size, config.study_region_size),
+            (config.study_region_padding, config.study_region_padding),
+            r_stat
+        )
 
         last_ntot = 0
         for crater in crater_generator:
             removed_craters = crater_record.add(crater)
 
-            # areal_density_calculator.add_crater(crater)
+            if calculate_areal_density:
+                areal_density_calculator.add_crater(crater)
+
             if removed_craters:
-                # areal_density_calculator.remove_craters(removed_craters)
+                if calculate_areal_density:
+                    areal_density_calculator.remove_craters(removed_craters)
                 crater_removals_writer.write(removed_craters, crater)
 
             if crater.radius >= r_stat:
@@ -185,7 +197,6 @@ def run_simulation(base_output_path: str, config: SimulationConfig):
                 last_ntot = ntot_current
 
                 areal_density = areal_density_calculator.areal_density
-                areal_density = 0.0
 
                 if crater_record.nobs > 1:
                     mean_nn_distance = crater_record.get_mnnd()
@@ -194,8 +205,7 @@ def run_simulation(base_output_path: str, config: SimulationConfig):
                                               study_region_area)
                     za = calculate_za_statistic(mean_nn_distance,
                                                 crater_record.nobs,
-                                                # areal_density_calculator.area_covered,
-                                                1.0,
+                                                areal_density_calculator.area_covered,
                                                 study_region_area)
                 else:
                     z = np.nan

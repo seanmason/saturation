@@ -46,7 +46,8 @@ class CraterRecord(object):
                  rmult: float,
                  study_region_size: int,
                  study_region_padding: int,
-                 cell_size: int):
+                 cell_size: int,
+                 calculate_nearest_neighbor_stats: bool):
         self._r_stat = r_stat
         self._rim_erasure_calculator = rim_erasure_calculator
         self._initial_rim_state_calculator = initial_rim_state_calculator
@@ -59,11 +60,13 @@ class CraterRecord(object):
         self._min_y = study_region_padding
         self._max_x = study_region_size + study_region_padding - 1
         self._max_y = study_region_size + study_region_padding - 1
+        self._calculate_nearest_neighbor_stats = calculate_nearest_neighbor_stats
 
         self._distances = Distances(
             cell_size,
             0,
-            study_region_size + 2 * study_region_padding
+            study_region_size + 2 * study_region_padding,
+            calculate_nearest_neighbor_stats
         )
 
         # Contains all craters with r > r_stat, may be outside the study region
@@ -111,9 +114,11 @@ class CraterRecord(object):
             self._remaining_rims[new_crater.id] = initial
             self._initial_rims[new_crater.id] = initial
 
-        craters_in_range = self._distances.get_craters_with_overlapping_rims(new_x,
-                                                                             new_y,
-                                                                             effective_radius)
+        craters_in_range = self._distances.get_craters_with_overlapping_rims(
+            new_x,
+            new_y,
+            effective_radius
+        )
         for old_crater_id in craters_in_range:
             if old_crater_id == new_crater.id:
                 continue

@@ -19,7 +19,7 @@ def assert_float_equal(first: float, second: float, *, percentage: float = None,
 
 def test_get_mnnd_no_craters():
     # Arrange
-    nn = Distances(cell_size=50, boundary_min=0, boundary_max=500)
+    nn = Distances(cell_size=50, boundary_min=0, boundary_max=500, calculate_nearest_neighbor_stats=True)
 
     # Act
     dist = nn.get_mnnd()
@@ -30,7 +30,7 @@ def test_get_mnnd_no_craters():
 
 def test_get_mnnd_single_pair_tracked():
     # Arrange
-    nn = Distances(cell_size=50, boundary_min=0, boundary_max=500)
+    nn = Distances(cell_size=50, boundary_min=0, boundary_max=500, calculate_nearest_neighbor_stats=True)
     craters = [
         (_create_crater(id=1, x=10.0, y=10.0, radius=10.0), True),
         (_create_crater(id=2, x=20.0, y=10.0, radius=10.0), True)
@@ -45,9 +45,46 @@ def test_get_mnnd_single_pair_tracked():
     assert dist == 10.0
 
 
+def test_add_and_get_craters_with_overlapping_rims():
+    # Arrange
+    nn = Distances(cell_size=50, boundary_min=0, boundary_max=500, calculate_nearest_neighbor_stats=False)
+    crater1 = _create_crater(id=1, x=10.0, y=10.0, radius=10.0)
+
+    # Act
+    nn.add(crater1, True)
+
+    # Assert
+    found = nn.get_craters_with_overlapping_rims(
+        crater1.x + 5,
+        crater1.y + 5,
+        10
+    )
+    assert len(found) == 1
+    assert crater1.id in found
+    assert len(nn.get_craters_with_overlapping_rims(crater1.x + 50, crater1.y + 50, 10)) == 0
+
+
+def test_add_and_remove_and_get_craters_with_overlapping_rims():
+    # Arrange
+    nn = Distances(cell_size=50, boundary_min=0, boundary_max=500, calculate_nearest_neighbor_stats=False)
+    crater1 = _create_crater(id=1, x=10.0, y=10.0, radius=10.0)
+
+    # Act
+    nn.add(crater1, True)
+    nn.remove([crater1])
+
+    # Assert
+    found = nn.get_craters_with_overlapping_rims(
+        crater1.x + 5,
+        crater1.y + 5,
+        10
+    )
+    assert len(found) == 0
+
+
 def test_get_mnnd_single_pair_untracked():
     # Arrange
-    nn = Distances(cell_size=50, boundary_min=0, boundary_max=500)
+    nn = Distances(cell_size=50, boundary_min=0, boundary_max=500, calculate_nearest_neighbor_stats=True)
     craters = [
         (_create_crater(id=1, x=10.0, y=10.0, radius=10.0), True),
         (_create_crater(id=2, x=20.0, y=10.0, radius=10.0), False),
@@ -65,7 +102,7 @@ def test_get_mnnd_single_pair_untracked():
 
 def test_get_craters_with_overlapping_rims_no_overlaps():
     # Arrange
-    nn = Distances(cell_size=50, boundary_min=0, boundary_max=500)
+    nn = Distances(cell_size=50, boundary_min=0, boundary_max=500, calculate_nearest_neighbor_stats=True)
     craters = [
         _create_crater(id=1, x=100.0, y=100.0, radius=50.0)
     ]
@@ -81,7 +118,7 @@ def test_get_craters_with_overlapping_rims_no_overlaps():
 
 def test_get_craters_with_overlapping_rims_contained():
     # Arrange
-    nn = Distances(cell_size=50, boundary_min=0, boundary_max=500)
+    nn = Distances(cell_size=50, boundary_min=0, boundary_max=500, calculate_nearest_neighbor_stats=True)
     craters = [
         _create_crater(id=1, x=100.0, y=100.0, radius=50.0)
     ]
@@ -97,7 +134,7 @@ def test_get_craters_with_overlapping_rims_contained():
 
 def test_get_craters_with_overlapping_rims_simple_case():
     # Arrange
-    nn = Distances(cell_size=50, boundary_min=0, boundary_max=500)
+    nn = Distances(cell_size=50, boundary_min=0, boundary_max=500, calculate_nearest_neighbor_stats=True)
     craters = [
         _create_crater(id=1, x=100.0, y=100.0, radius=50.0)
     ]
@@ -113,7 +150,7 @@ def test_get_craters_with_overlapping_rims_simple_case():
 
 def test_get_craters_with_overlapping_rims_tiny_overlap():
     # Arrange
-    nn = Distances(cell_size=50, boundary_min=0, boundary_max=500)
+    nn = Distances(cell_size=50, boundary_min=0, boundary_max=500, calculate_nearest_neighbor_stats=True)
     craters = [
         _create_crater(id=1, x=100.0, y=100.0, radius=50.0)
     ]
@@ -137,7 +174,7 @@ def test_get_mean_nnd_random_adds_and_deletes():
         # Arrange
         np.random.seed(n)
 
-        nn = Distances(cell_size=5, boundary_min=0, boundary_max=STUDY_REGION_SIZE)
+        nn = Distances(cell_size=5, boundary_min=0, boundary_max=STUDY_REGION_SIZE, calculate_nearest_neighbor_stats=True)
         points = np.random.rand(N_POINTS, 2) * STUDY_REGION_SIZE
         craters = [
             (
