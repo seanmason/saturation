@@ -63,6 +63,18 @@ def join_configs(data: DataFrame, configs: DataFrame, spark: SparkSession) -> Da
     return spark.sql(query)
 
 
+def get_scientific_notation(
+    number: float, sig_fig: int
+):
+    ret_string = "{0:.{1:d}e}".format(number, sig_fig)
+    a, b = ret_string.split("e")
+
+    # remove leading "+" and strip leading zeros
+    b = int(b)
+
+    return f"{a} \\cdot 10^{b}"
+
+
 def get_state_at_time(
     stats_df: DataFrame,
     craters_df: DataFrame,
@@ -276,7 +288,8 @@ def plot_csfds_for_multiple_ntot(
     radii = None
     for idx, (ntot, data) in enumerate(states.items()):
         radii = data.radius.sort_values()
-        ax.plot(radii, range(len(radii) + 1, 1, -1), label="$N_{tot}" + f"={ntot}$", c=colors[idx % len(colors)])
+        ntot_string = ntot if ntot <= 1e6 else get_scientific_notation(ntot, 2)
+        ax.plot(radii, range(len(radii) + 1, 1, -1), label="$N_{tot}" + f"={ntot_string}$", c=colors[idx % len(colors)])
 
     for slope, intercept, line_style, label in slope_intercept_line_styles:
         expected = intercept * radii ** slope
@@ -409,23 +422,13 @@ def setup_datasets_for_model(
 
 
 def get_lifetimes_for_simulation(
+    *,
     simulation_id: int,
-    base_path: str,
-    sample_fraction: float,
-    spark: SparkSession
+    spark: SparkSession,
+    craters: DataFrame=None,
+    removals: DataFrame=None,
+    configs_df: DataFrame=None,
 ) -> pd.DataFrame:
-    craters = spark.read.parquet(f"{base_path}/*/craters_*.parquet").sample(sample_fraction)
-    removals = spark.read.parquet(f"{base_path}/*/crater_removals_*.parquet")
-    configs_df = F.broadcast(
-        create_configs_df(
-            read_configs(
-                base_path,
-                spark,
-                completed_only=False
-            )
-        )
-    )
-
     configs_df.createOrReplaceTempView("config")
     craters.createOrReplaceTempView("craters")
     removals.createOrReplaceTempView("removals")
