@@ -288,7 +288,7 @@ def plot_csfds_for_multiple_ntot(
     radii = None
     for idx, (ntot, data) in enumerate(states.items()):
         radii = data.radius.sort_values()
-        ntot_string = ntot if ntot <= 1e6 else get_scientific_notation(ntot, 2)
+        ntot_string = ntot if ntot < 1e5 else get_scientific_notation(ntot, 2)
         ax.plot(radii, range(len(radii) + 1, 1, -1), label="$N_{tot}" + f"={ntot_string}$", c=colors[idx % len(colors)])
 
     for slope, intercept, line_style, label in slope_intercept_line_styles:
