@@ -248,23 +248,39 @@ def calculate_areal_density(craters: pd.DataFrame,
     return ad_calculator.areal_density
     
 
-def plot_csfd_with_slope(data: pd.DataFrame, slope: float, intercept: float = 1):
+def plot_csfd(data: pd.DataFrame):
+    font_size = 16
+
     radii = data.radius.sort_values()
-    
-    plt.plot(radii, range(len(radii) + 1, 1, -1), label="Observed")
-    plt.xlabel("$r$")
-    plt.ylabel("$N(\\geq r)$")
 
+    fig = plt.figure(figsize=(9, 6), dpi=400)
+    ax = fig.add_subplot(111)
+
+    ax.plot(radii, range(len(radii) + 1, 1, -1), label="Observed")
+    ax.set_xlabel("$r$", fontsize=font_size)
+    ax.set_ylabel("$N(\\geq r)$", fontsize=font_size)
+
+    ax.set_xscale("log")
+    ax.set_yscale("log")
+
+    return fig
+
+
+def plot_csfd_with_slope(
+    data: pd.DataFrame,
+    slope: float,
+    intercept: float = 1
+):
+    fig = plot_csfd(data)
+    ax = fig.axes[0]
+
+    radii = data.radius.sort_values()
     expected = intercept * radii ** -slope
-    plt.plot(radii, expected, label="Estimated", ls="--")
+    ax.plot(radii, expected, label="Estimated", ls="--", c="green")
 
-    plt.subplots_adjust(right=0.7)
-    plt.tight_layout(rect=[0, 0, 0.75, 1])
-    
-    plt.legend(bbox_to_anchor=(1.04, 1), loc="upper left")
-    plt.xscale('log')
-    plt.yscale('log')
-    plt.show()
+    ax.legend()
+
+    return fig
 
 
 def plot_csfds_for_multiple_ntot(
@@ -282,7 +298,7 @@ def plot_csfds_for_multiple_ntot(
         "green",
     ]
 
-    fig = plt.figure(figsize=(6, 4))
+    fig = plt.figure(figsize=(6, 4), dpi=400)
     ax = fig.add_subplot(111)
 
     radii = None
@@ -293,7 +309,7 @@ def plot_csfds_for_multiple_ntot(
 
     for slope, intercept, line_style, label in slope_intercept_line_styles:
         expected = intercept * radii ** slope
-        plt.plot(
+        ax.plot(
             radii[expected > 1],
             expected[expected > 1],
             ls=line_style,
@@ -472,3 +488,97 @@ def get_lifetimes_for_simulation(
         radius
     """
     return spark.sql(query).toPandas()
+
+
+def plot_metric(
+    data: pd.DataFrame, x_var: str, x_label: str, y_var: str, y_label: str, dotted_horizontal_lines: list[float] = None
+):
+    font_size = 16
+
+    fig = plt.figure(figsize=(6, 4), dpi=400)
+    ax = fig.add_subplot(111)
+
+    simulation_ids = data.simulation_id.drop_duplicates()
+    for idx, simulation_id in enumerate(simulation_ids):
+        data_subset = data[data.simulation_id == simulation_id].sort_values("ntot")
+        ax.plot(
+            data_subset[x_var], data_subset[y_var], c=colors[idx % len(colors)], ls=line_styles[idx % len(line_styles)]
+        )
+
+    if dotted_horizontal_lines:
+        for y_val in dotted_horizontal_lines:
+            ax.axhline(y_val, color="r", linestyle="--")
+
+    ax.set_xlabel(x_label, fontsize=font_size)
+    ax.set_ylabel(y_label, fontsize=font_size)
+
+    return fig
+
+
+def plot_metrics(
+    *, df: pd.DataFrame, scenario_name: str, ntot_bound_saturation: int, show_plots: bool = False
+):
+    ad_line = df[df.ntot > ntot_bound_saturation].ad.mean()
+    print(f"AD line: {ad_line}")
+    fig = plot_metric(
+        df, "ntot", "$N_{tot}$", "ad", "$A_d$", dotted_horizontal_lines=[ad_line]
+    )
+    if show_plots:
+        plt.show()
+    fig.savefig(f"figures/{scenario_name}_ntot_ad.png", bbox_inches="tight")
+
+    log_mnnd_line = df[df.ntot > ntot_bound_saturation].log_mnnd.mean()
+    print(f"log_mnnd line: {log_mnnd_line}")
+    fig = plot_metric(
+        df, "ntot", "$N_{tot}$", "log_mnnd", "$log_{10}(\\overline{NN}_d)$", dotted_horizontal_lines=[log_mnnd_line]
+    )
+    plt.show()
+    fig.savefig(f"figures/{scenario_name}_ntot_mnnd.png", bbox_inches="tight")
+
+    fig = plot_metric(
+        df, "ntot", "$N_{tot}$", "z", "$Z$", dotted_horizontal_lines=[-1.96, 1.96]
+    )
+    if show_plots:
+        plt.show()
+    fig.savefig(f"figures/{scenario_name}_ntot_z.png", bbox_inches="tight")
+
+    fig = plot_metric(
+        df, "ntot", "$N_{tot}$", "za", "$Z_a$", dotted_horizontal_lines=[-1.96, 1.96]
+    )
+    if show_plots:
+        plt.show()
+    fig.savefig(f"figures/{scenario_name}_ntot_za.png", bbox_inches="tight")
+
+    radius_mean_line = df[df.ntot > ntot_bound_saturation].radius_mean.mean()
+    print(f"radius_mean line: {radius_mean_line}")
+    fig = plot_metric(
+        df, "ntot", "$N_{tot}$", "radius_mean", "$\\overline{r}$", dotted_horizontal_lines=[radius_mean_line]
+    )
+    if show_plots:
+        plt.show()
+    fig.savefig(f"figures/{scenario_name}_ntot_radius_mean.png", bbox_inches="tight")
+
+    radius_stdev_line = df[df.ntot > ntot_bound_saturation].radius_stdev.mean()
+    print(f"radius_stdev line: {radius_stdev_line}")
+    fig = plot_metric(
+        df, "ntot", "$N_{tot}$", "radius_stdev", "$\\sigma_r$", dotted_horizontal_lines=[radius_stdev_line]
+    )
+    if show_plots:
+        plt.show()
+    fig.savefig(f"figures/{scenario_name}_ntot_radius_stdev.png", bbox_inches="tight")
+
+
+def plot_slope_estimates(estimates_df: pd.DataFrame):
+    font_size = 16
+
+    fig = plt.figure(figsize=(6, 4), dpi=400)
+    ax = fig.add_subplot(111)
+
+    ax.errorbar(
+        estimates_df.ntot, estimates_df.alpha, estimates_df.sigma, ls="None", marker="+"
+    )
+    ax.set_xlabel("$N_{tot}$", fontsize=font_size)
+    ax.set_ylabel("$b$", fontsize=font_size)
+    ax.set_xscale("log")
+
+    return fig

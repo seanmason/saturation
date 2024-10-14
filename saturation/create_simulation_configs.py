@@ -257,6 +257,34 @@ def main():
         configs_to_add=configs_to_add
     )
 
+
+    # Add configs for an extended "infinite" erat
+    configs_to_add = create_configs_for_product_of_parameters(
+        slopes=[-1.0, -3.0, -3.5, -4.0],
+        rim_erasure_methods=[{"name": "radius_ratio", "ratio": 1000000.0}],
+        rmults=[1.5],
+        mrps=[0.5],
+        stop_ntot=10000000,
+        base_config=base_config,
+    )
+    run_configurations = add_configs(
+        configs=run_configurations,
+        configs_to_add=configs_to_add
+    )
+
+    configs_to_add = create_configs_for_product_of_parameters(
+        slopes=[-1.0, -3.0, -3.5, -4.0],
+        rim_erasure_methods=[{"name": "radius_ratio", "ratio": 1000000.0}],
+        rmults=[1.5],
+        mrps=[0.5],
+        stop_ntot=10000000,
+        base_config=base_config,
+    )
+    run_configurations = add_configs(
+        configs=run_configurations,
+        configs_to_add=configs_to_add
+    )
+
     final_config = {
         "n_workers": min(n_workers, len(run_configurations)),
         "run_configurations": run_configurations,
