@@ -83,7 +83,7 @@ class StateSnapshotWriter:
                 x=report_crater.x,
                 y=report_crater.y,
                 radius=report_crater.radius,
-                rim_percent_remaining=crater_record.get_remaining_rim_percent(report_crater.id)
+                rim_remaining=crater_record.get_remaining_rim(report_crater.id)
             ))
 
         state_filename = f'{self._output_path}/state_{ntot}.parquet'

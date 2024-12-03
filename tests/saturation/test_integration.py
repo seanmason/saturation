@@ -3,6 +3,8 @@ import numpy as np
 from saturation.areal_density import ArealDensityCalculator
 from saturation.crater_record import CraterRecord
 from saturation.distributions import ParetoProbabilityDistribution
+from saturation.initial_rim_state_calculators import CircumferenceInitialRimStateCalculator
+from saturation.rim_erasure_calculators import get_rim_erasure_calculator
 from saturation.simulation import get_craters
 
 
@@ -18,16 +20,23 @@ def test_crater_record_integration():
     study_region_padding = 125
     r_stat = 15
 
+    rim_erasure_calculator = get_rim_erasure_calculator({
+        "name": "radius_ratio",
+        "ratio": 5.0
+    }, 1.5)
+
     distribution = ParetoProbabilityDistribution(alpha=1.5, x_min=5, x_max=250)
     crater_generator = get_craters(distribution, study_region_size + study_region_padding)
     record = CraterRecord(
         r_stat=r_stat,
-        rim_erasure_effectiveness_function=lambda x, y: x > y / 3.0,
+        rim_erasure_calculator=rim_erasure_calculator,
+        initial_rim_state_calculator=CircumferenceInitialRimStateCalculator(),
         mrp=0.5,
         rmult=1.5,
         study_region_size=study_region_size,
         study_region_padding=study_region_padding,
-        cell_size=50
+        cell_size=50,
+        calculate_nearest_neighbor_stats=True
     )
     areal_density_calculator = ArealDensityCalculator((study_region_size, study_region_size),
                                                       (study_region_padding, study_region_padding),
@@ -50,6 +59,6 @@ def test_crater_record_integration():
 
     # Assert
     print(f"{removed_counter}, {record.nobs}, {areal_density_calculator.areal_density}")
-    assert removed_counter == 19
-    assert record.nobs == 49
-    assert areal_density_calculator.areal_density == 0.23791
+    assert removed_counter == 21
+    assert record.nobs == 48
+    assert areal_density_calculator.areal_density == 0.237018

@@ -1,11 +1,11 @@
-from typing import List, Iterable, Dict, Callable
-from collections import defaultdict
+from typing import List, Dict
 
 import numpy as np
 import numba as nb
-from saturation.geometry import get_intersection_arc, add_arc
-from saturation.datatypes import Crater, Arc
+from saturation.datatypes import Crater
 from saturation.distances import Distances
+from saturation.initial_rim_state_calculators import InitialRimStateCalculator
+from saturation.rim_erasure_calculators import RimErasureCalculator
 
 
 class CraterDictionary(object):
@@ -40,14 +40,17 @@ class CraterRecord(object):
     """
     def __init__(self,
                  r_stat: float,
-                 rim_erasure_effectiveness_function: Callable[[float, float], bool],
+                 rim_erasure_calculator: RimErasureCalculator,
+                 initial_rim_state_calculator: InitialRimStateCalculator,
                  mrp: float,
                  rmult: float,
                  study_region_size: int,
                  study_region_padding: int,
-                 cell_size: int):
+                 cell_size: int,
+                 calculate_nearest_neighbor_stats: bool):
         self._r_stat = r_stat
-        self._rim_erasure_effectiveness_function = rim_erasure_effectiveness_function
+        self._rim_erasure_calculator = rim_erasure_calculator
+        self._initial_rim_state_calculator = initial_rim_state_calculator
         self._mrp = mrp
         self._rmult = rmult
         self._study_region_size = study_region_size
@@ -57,11 +60,13 @@ class CraterRecord(object):
         self._min_y = study_region_padding
         self._max_x = study_region_size + study_region_padding - 1
         self._max_y = study_region_size + study_region_padding - 1
+        self._calculate_nearest_neighbor_stats = calculate_nearest_neighbor_stats
 
         self._distances = Distances(
             cell_size,
             0,
-            study_region_size + 2 * study_region_padding
+            study_region_size + 2 * study_region_padding,
+            calculate_nearest_neighbor_stats
         )
 
         # Contains all craters with r > r_stat, may be outside the study region
@@ -72,11 +77,8 @@ class CraterRecord(object):
 
         self._ntot = 0
 
-        self._erased_arcs: Dict[int, List[Arc]] = defaultdict(
-            lambda: nb.typed.List.empty_list(nb.types.UniTuple(nb.float64, 2))
-        )
-        self._remaining_rim_percentages: Dict[int, float] = dict()
-
+        self._initial_rims: Dict[int, float] = dict()
+        self._remaining_rims: Dict[int, float] = dict()
         self._craters_to_remove: List[Crater] = []
 
         self._sum_tracked_radii: float = 0.0
@@ -108,39 +110,33 @@ class CraterRecord(object):
         effective_radius = new_crater.radius * self._rmult
 
         if new_crater.radius >= self._r_stat:
-            self._remaining_rim_percentages[new_crater.id] = 1.
+            initial = self._initial_rim_state_calculator.calculate(new_crater)
+            self._remaining_rims[new_crater.id] = initial
+            self._initial_rims[new_crater.id] = initial
 
-        craters_in_range = self._distances.get_craters_with_overlapping_rims(new_x,
-                                                                             new_y,
-                                                                             effective_radius)
+        craters_in_range = self._distances.get_craters_with_overlapping_rims(
+            new_x,
+            new_y,
+            effective_radius
+        )
         for old_crater_id in craters_in_range:
             if old_crater_id == new_crater.id:
                 continue
 
             old_crater = self._all_craters_in_record[old_crater_id]
 
-            # For a new crater to affect an old crater, (new crater radius) > func(old crater radius)
-            can_affect_old = self._rim_erasure_effectiveness_function(new_crater.radius, old_crater.radius)
-            if can_affect_old:
-                arc = get_intersection_arc((old_crater.x, old_crater.y),
-                                           old_crater.radius,
-                                           (new_x, new_y),
-                                           effective_radius)
-
-                erased_arcs = self._erased_arcs[old_crater.id]
-                add_arc(arc, erased_arcs)
-
-                remaining_rim_percentage = 1.0 - sum([x[1] - x[0] for x in erased_arcs]) / (2 * np.pi)
-                self._remaining_rim_percentages[old_crater.id] = remaining_rim_percentage
-
-                if remaining_rim_percentage < self._mrp:
-                    self._craters_to_remove.append(old_crater)
+            initial_rim = self._initial_rims[old_crater.id]
+            existing_rim = self._remaining_rims[old_crater_id]
+            updated_rim = self._rim_erasure_calculator.calculate_new_rim_state(old_crater, existing_rim, new_crater)
+            self._remaining_rims[old_crater_id] = updated_rim
+            if updated_rim / initial_rim < self._mrp:
+                self._craters_to_remove.append(old_crater)
 
     def _remove_craters_with_destroyed_rims(self) -> List[Crater]:
         for crater in self._craters_to_remove:
-            del self._erased_arcs[crater.id]
+            del self._remaining_rims[crater.id]
+            del self._initial_rims[crater.id]
             self._all_craters_in_record.remove(crater)
-            del self._remaining_rim_percentages[crater.id]
             if crater.id in self._craters_in_study_region:
                 self._craters_in_study_region.remove(crater)
                 self._sum_tracked_radii -= crater.radius
@@ -197,14 +193,8 @@ class CraterRecord(object):
         """
         return self._craters_in_study_region.get_craters()
 
-    def get_erased_rim_segments(self, crater_id: int) -> Iterable[Arc]:
-        """
-        Returns the erased rim segments for the specified crater.
-        """
-        return self._erased_arcs[crater_id]
-
-    def get_remaining_rim_percent(self, crater_id: int) -> float:
-        return self._remaining_rim_percentages.get(crater_id, 1.0)
+    def get_remaining_rim(self, crater_id: int) -> float:
+        return self._remaining_rims[crater_id]
 
     def get_mean_radius(self) -> float:
         n = self.nobs
