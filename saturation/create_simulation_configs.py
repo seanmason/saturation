@@ -86,7 +86,7 @@ def main():
     # Add configs for steep vs shallow slope
     erat = 5.0
     configs_to_add = create_configs_for_product_of_parameters(
-        slopes=[-1.0, -4.0],
+        slopes=[-1.0, -5.0],
         rim_erasure_methods=[{"name": "radius_ratio", "ratio": erat}],
         rmults=[1.5],
         mrps=[0.5],
@@ -145,7 +145,7 @@ def main():
 
     # Add configs for an "infinite" erat simulations
     configs_to_add = create_configs_for_product_of_parameters(
-        slopes=[-1.0, -4.0],
+        slopes=[-1.0, -5.0],
         rim_erasure_methods=[{"name": "radius_ratio", "ratio": 1000000.0}],
         rmults=[1.0],
         mrps=[0.5],

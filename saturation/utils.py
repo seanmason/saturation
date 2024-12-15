@@ -249,7 +249,7 @@ def calculate_areal_density(craters: pd.DataFrame,
     
 
 def plot_csfd(data: pd.DataFrame):
-    font_size = 16
+    font_size = 24
 
     radii = data.radius.sort_values()
 
