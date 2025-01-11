@@ -62,7 +62,7 @@ def add_configs(
 
 
 def main():
-    n_workers = 22
+    n_workers = 16
     base_config = {
         "r_min": 0.5,
         "r_max": 500,
@@ -86,7 +86,7 @@ def main():
     # Add configs for steep vs shallow slope
     erat = 5.0
     configs_to_add = create_configs_for_product_of_parameters(
-        slopes=[-1.0, -5.0],
+        slopes=[-1.0, -4.0],
         rim_erasure_methods=[{"name": "radius_ratio", "ratio": erat}],
         rmults=[1.5],
         mrps=[0.5],
@@ -103,10 +103,10 @@ def main():
         configs_to_add=configs_to_add
     )
 
-    # Add configs for high destruction
+    # Add configs steep vs shallow slope, high destruction
     erat = 11.0
     configs_to_add = create_configs_for_product_of_parameters(
-        slopes=[-2.5],
+        slopes=[-1, -4],
         rim_erasure_methods=[{"name": "radius_ratio", "ratio": erat}],
         rmults=[1.9],
         mrps=[0.75],
@@ -116,17 +116,17 @@ def main():
             "r_min": base_config["r_stat"] / erat,
             "calculate_areal_density": True,
             "calculate_nearest_neighbor_stats": True,
+            "random_seed": 123
         }
     )
     run_configurations = add_configs(
-        configs=run_configurations,
-        configs_to_add=configs_to_add
+        configs=run_configurations, configs_to_add=configs_to_add
     )
 
-    # Add configs for low destruction
+    # Add configs steep vs shallow slope, low destruction
     erat = 3.0
     configs_to_add = create_configs_for_product_of_parameters(
-        slopes=[-2.5],
+        slopes=[-1, -4],
         rim_erasure_methods=[{"name": "radius_ratio", "ratio": erat}],
         rmults=[1.1],
         mrps=[0.25],
@@ -136,67 +136,11 @@ def main():
             "r_min": base_config["r_stat"] / erat,
             "calculate_areal_density": True,
             "calculate_nearest_neighbor_stats": True,
+            "random_seed": 123
         }
     )
     run_configurations = add_configs(
-        configs=run_configurations,
-        configs_to_add=configs_to_add
-    )
-
-    # Add configs for an "infinite" erat simulations
-    configs_to_add = create_configs_for_product_of_parameters(
-        slopes=[-1.0, -5.0],
-        rim_erasure_methods=[{"name": "radius_ratio", "ratio": 1000000.0}],
-        rmults=[1.0],
-        mrps=[0.5],
-        stop_ntot=2500000,
-        base_config=base_config,
-    )
-    run_configurations = add_configs(
-        configs=run_configurations,
-        configs_to_add=configs_to_add
-    )
-
-    # Add config for a range of slopes, 12 simulations from slope -1.0 to -5.0
-    # Lower erat
-    n_sims = 12
-    min_slope = -5.0
-    max_slope = -1.0
-    step_size = (max_slope - min_slope) / n_sims
-    erat = 3.0
-    configs_to_add = create_configs_for_product_of_parameters(
-        slopes=[min_slope + x * step_size for x in range(n_sims + 1)],
-        rim_erasure_methods=[
-            {"name": "radius_ratio", "ratio": erat},
-        ],
-        rmults=[1.1, 1.9],
-        mrps=[0.25, 0.75],
-        stop_ntot=1000000,
-        base_config=base_config,
-        overrides={"r_min": base_config["r_stat"] / erat}
-    )
-    run_configurations = add_configs(
-        configs=run_configurations,
-        configs_to_add=configs_to_add
-    )
-
-    # Add config for a range of slopes, 12 simulations from slope -1.0 to -5.0
-    # Higher erat
-    erat = 7.0
-    configs_to_add = create_configs_for_product_of_parameters(
-        slopes=[min_slope + x * step_size for x in range(n_sims + 1)],
-        rim_erasure_methods=[
-            {"name": "radius_ratio", "ratio": erat},
-        ],
-        rmults=[1.1, 1.9],
-        mrps=[0.25, 0.75],
-        stop_ntot=1000000,
-        base_config=base_config,
-        overrides={"r_min": base_config["r_stat"] / erat}
-    )
-    run_configurations = add_configs(
-        configs=run_configurations,
-        configs_to_add=configs_to_add
+        configs=run_configurations, configs_to_add=configs_to_add
     )
 
     # Add config for a long-running simulation with shallow slope
@@ -215,49 +159,6 @@ def main():
         configs_to_add=configs_to_add
     )
 
-    # Add configs for alternate rim erasure methods
-    for exponent in [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]:
-        rim_erasure_methods = [
-            {"name": "exponent", "exponent": exponent},
-        ]
-        configs_to_add = create_configs_for_product_of_parameters(
-            slopes=[-3.5],
-            rim_erasure_methods=rim_erasure_methods,
-            rmults=[1.5],
-            mrps=[0.5],
-            stop_ntot=2500000,
-            base_config=base_config,
-            overrides={"r_min": base_config["r_stat"]**exponent}
-        )
-        run_configurations = add_configs(
-            configs=run_configurations,
-            configs_to_add=configs_to_add
-        )
-
-    # Add configs for exponents and slopes
-    min_exponent = 0.1
-    max_exponent = 0.9
-    n_exponents = 16
-    exponents = [min_exponent + x * (max_exponent - min_exponent) / n_exponents for x in range(n_exponents + 1)]
-    n_sims = 12
-    min_slope = -5.0
-    max_slope = -1.0
-    step_size = (max_slope - min_slope) / n_sims
-    for exponent in exponents:
-        rim_erasure_methods = [{"name": "exponent", "exponent": exponent}, ]
-        configs_to_add = create_configs_for_product_of_parameters(
-            slopes=[min_slope + x * step_size for x in range(n_sims + 1)],
-            rim_erasure_methods=rim_erasure_methods,
-            rmults=[1.5],
-            mrps=[0.5],
-            stop_ntot=1000000,
-            base_config=base_config,
-            overrides={"r_min": base_config["r_stat"] ** exponent}
-        )
-        run_configurations = add_configs(
-            configs=run_configurations, configs_to_add=configs_to_add
-        )
-
     # Add configs for infinite erat (no erasure threshold) by a range of slopes
     n_sims = 12
     min_slope = -5.0
@@ -275,6 +176,42 @@ def main():
     run_configurations = add_configs(
         configs=run_configurations, configs_to_add=configs_to_add
     )
+
+    # Add configs for exponents and slopes, restricting rmin, smaller area
+    ratio = 2.0
+    min_exponent = 0.1
+    max_exponent = 1.0
+    n_exponents = 10
+    exponents = [round(min_exponent + x * (max_exponent - min_exponent) / (n_exponents - 1), 3) for x in
+                 range(n_exponents)]
+    n_sims = 21
+    min_slope = -5.0
+    max_slope = -1.0
+    step_size = (max_slope - min_slope) / (n_sims - 1)
+    for exponent in exponents:
+        rim_erasure_methods = [{
+            "name": "exponent",
+            "exponent": exponent,
+            "ratio": ratio
+        }, ]
+        configs_to_add = create_configs_for_product_of_parameters(
+            slopes=[round(min_slope + x * step_size, 3) for x in range(n_sims)],
+            rim_erasure_methods=rim_erasure_methods,
+            rmults=[1.0],
+            mrps=[0.5],
+            stop_ntot=1000000,
+            base_config=base_config,
+            overrides={
+                "r_min": 1.1 / ratio,
+                "study_region_padding": 125,
+                "study_region_size": 1000,
+                "r_max": 250,
+            }
+        )
+        run_configurations = add_configs(
+            configs=run_configurations, configs_to_add=configs_to_add
+        )
+
 
     final_config = {
         "n_workers": min(n_workers, len(run_configurations)),

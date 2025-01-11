@@ -36,6 +36,7 @@ def create_configs_df(configs: pyspark.RDD) -> DataFrame:
         "slope",
         "rmult",
         "mrp",
+        "r_min",
         "study_region_size",
         "study_region_padding",
         "rim_erasure_method"
