@@ -212,6 +212,82 @@ def main():
             configs=run_configurations, configs_to_add=configs_to_add
         )
 
+    # Add configs for simulations to "test" the developed kappa model.
+    ratio = 2.0
+    configs_to_add = create_configs_for_product_of_parameters(
+        slopes=[-3.3, -4.3],
+        rim_erasure_methods=[{
+            "name": "exponent",
+            "exponent": 0.65,
+            "ratio": ratio
+        }, ],
+        rmults=[1.0],
+        mrps=[0.5],
+        stop_ntot=1000000,
+        base_config=base_config,
+        overrides={
+            "r_min": 1.1 / ratio,
+            "study_region_padding": 125,
+            "study_region_size": 1000,
+            "r_max": 250,
+        }
+    )
+    run_configurations = add_configs(
+        configs=run_configurations,
+        configs_to_add=configs_to_add
+    )
+
+    configs_to_add = create_configs_for_product_of_parameters(
+        slopes=[-3.3, -4.3],
+        rim_erasure_methods=[{
+            "name": "exponent",
+            "exponent": 0.35,
+            "ratio": ratio
+        }, ],
+        rmults=[1.0],
+        mrps=[0.5],
+        stop_ntot=1000000,
+        base_config=base_config,
+        overrides={
+            "r_min": 1.1 / ratio,
+            "study_region_padding": 125,
+            "study_region_size": 1000,
+            "r_max": 250,
+        }
+    )
+    run_configurations = add_configs(
+        configs=run_configurations,
+        configs_to_add=configs_to_add
+    )
+
+    # A last simulation that has a steeper slope
+    configs_to_add = create_configs_for_product_of_parameters(
+        slopes=[-5.5, -5.25, -4.85],
+        rim_erasure_methods=[{
+            "name": "exponent",
+            "exponent": 0.09,
+            "ratio": ratio
+        },
+        {
+            "name": "exponent",
+            "exponent": 0.15,
+            "ratio": ratio
+        },],
+        rmults=[1.0],
+        mrps=[0.5],
+        stop_ntot=1000000,
+        base_config=base_config,
+        overrides={
+            "r_min": 1.1 / ratio,
+            "study_region_padding": 125,
+            "study_region_size": 1000,
+            "r_max": 250,
+        }
+    )
+    run_configurations = add_configs(
+        configs=run_configurations, configs_to_add=configs_to_add
+    )
+
 
     final_config = {
         "n_workers": min(n_workers, len(run_configurations)),

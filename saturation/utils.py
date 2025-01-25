@@ -583,3 +583,69 @@ def plot_slope_estimates(estimates_df: pd.DataFrame):
     ax.set_xscale("log")
 
     return fig
+
+
+def get_statistics_with_lifespans_for_simulations(
+    simulation_ids: List[int],
+    base_path: str,
+    configs_df: DataFrame,
+    spark: SparkSession,
+    n_samples_per_sim: int
+) -> pd.DataFrame:
+    """
+    Returns statistics and lifespans a sampling of craters for each simulation id specified.
+    Returns only craters with centers in the study region.
+    """
+    F.broadcast(configs_df).createOrReplaceTempView("configs")
+
+    results = []
+
+    for simulation_id in simulation_ids:
+        craters = spark.read.parquet(f"{base_path}/{simulation_id}/craters_*.parquet")
+        removals = spark.read.parquet(f"{base_path}/{simulation_id}/crater_removals_*.parquet")
+        statistics_for_simulation = spark.read.parquet(f"{base_path}/{simulation_id}/statistics_*.parquet")
+
+        max_n = statistics_for_simulation.select(F.max("ntot")).collect()[0][0]
+
+        statistics_for_simulation.createOrReplaceTempView("statistics")
+        craters.createOrReplaceTempView("craters")
+        removals.createOrReplaceTempView("removals")
+
+        query = f"""
+        SELECT
+            c.x,
+            c.y,
+            c.radius,
+            s.simulation_id,
+            s.ntot,
+            s.nobs,
+            s.areal_density,
+            configs.slope,
+            configs.mrp,
+            configs.rmult,
+            configs.rim_erasure_method['name'] AS rim_erasure_method_name,
+            COALESCE(configs.rim_erasure_method['ratio'], 0) AS rim_erasure_radius_ratio,
+            COALESCE(configs.rim_erasure_method['exponent'], 0) AS rim_erasure_exponent,
+            CASE
+                WHEN r.removed_by_crater_id IS NULL THEN NULL
+                ELSE r.removed_by_crater_id - c.id
+            END AS lifespan
+        FROM
+            statistics s
+            INNER JOIN craters c ON
+                c.id = s.crater_id
+            INNER JOIN removals r ON
+                r.removed_crater_id = c.id
+            INNER JOIN configs ON
+                configs.simulation_id = s.simulation_id
+        WHERE
+            s.ntot <= {int(max_n * 0.75)}
+            AND c.x BETWEEN configs.study_region_padding AND configs.study_region_padding + configs.study_region_size
+            AND c.y BETWEEN configs.study_region_padding AND configs.study_region_padding + configs.study_region_size
+        """
+        result_for_simulation = spark.sql(query)
+        results_count = result_for_simulation.count()
+        result_for_simulation = result_for_simulation.sample((n_samples_per_sim * 1.1) / results_count)
+        results.append(result_for_simulation.limit(n_samples_per_sim).toPandas())
+
+    return pd.concat(results, axis=0)
