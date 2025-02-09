@@ -1,3 +1,5 @@
+import glob
+
 import pandas as pd
 import numpy as np
 from pathlib import Path
@@ -62,6 +64,32 @@ def join_configs(data: DataFrame, configs: DataFrame, spark: SparkSession) -> Da
             ON data.simulation_id = configs.simulation_id
     """
     return spark.sql(query)
+
+
+def get_configs(
+    *,
+    base_path: str,
+    spark: SparkSession,
+    completed_only: bool=False,
+) -> Tuple[pd.DataFrame, DataFrame, Dict]:
+    configs_df = create_configs_df(
+        read_configs(
+            base_path,
+            spark,
+            completed_only=completed_only
+        )
+    ).cache()
+    configs_pdf = configs_df.toPandas()
+
+    configs_pdf = configs_pdf[~configs_pdf.simulation_id.isna()].copy()
+    configs_pdf["rim_erasure_exponent"] = configs_pdf.rim_erasure_method.apply(lambda x: x.get("exponent", -1))
+    configs_pdf["rim_erasure_radius_ratio"] = configs_pdf.rim_erasure_method.apply(lambda x: x.get("ratio", -1))
+
+    configs_dict = dict()
+    for config_file in glob.glob(f"{base_path}/config/config*.yaml"):
+        configs_dict.update(read_config(Path(config_file))["run_configurations"])
+
+    return configs_pdf, configs_df, configs_dict
 
 
 def get_scientific_notation(

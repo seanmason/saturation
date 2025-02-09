@@ -152,7 +152,7 @@ class CraterRecord(object):
         :param crater: New crater to be added.
         :return: A list of craters that were erased as a result of the addition.
         """
-        in_study_region = self._min_x <= crater.x <= self._max_x and self._min_y <= crater.y <= self._max_y
+        in_study_region = self._is_in_study_region(crater)
         if crater.radius >= self._r_stat:
             self._distances.add(crater, in_study_region)
 
@@ -172,6 +172,9 @@ class CraterRecord(object):
             self._distances.remove(removed)
 
         return removed
+
+    def _is_in_study_region(self, crater):
+        return self._min_x <= crater.x <= self._max_x and self._min_y <= crater.y <= self._max_y
 
     def get_crater(self, crater_id: int) -> Crater:
         """

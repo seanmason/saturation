@@ -288,6 +288,42 @@ def main():
         configs=run_configurations, configs_to_add=configs_to_add
     )
 
+    # Let's try this again - larger n_stop,
+    # Add configs for exponents and slopes, restricting rmin, smaller area
+    ratio = 2.0
+    min_exponent = 0.1
+    max_exponent = 1.0
+    n_exponents = 10
+    exponents = [round(min_exponent + x * (max_exponent - min_exponent) / (n_exponents - 1), 3) for x in
+                 range(n_exponents)]
+    n_sims = 21
+    min_slope = -5.0
+    max_slope = -1.0
+    step_size = (max_slope - min_slope) / (n_sims - 1)
+    for exponent in exponents:
+        rim_erasure_methods = [{
+            "name": "exponent",
+            "exponent": exponent,
+            "ratio": ratio
+        }, ]
+        configs_to_add = create_configs_for_product_of_parameters(
+            slopes=[round(min_slope + x * step_size, 3) for x in range(n_sims)],
+            rim_erasure_methods=rim_erasure_methods,
+            rmults=[1.0],
+            mrps=[0.5],
+            stop_ntot=5000000,
+            base_config=base_config,
+            overrides={
+                "r_min": 1.1 / ratio,
+                "study_region_padding": 125,
+                "study_region_size": 1000,
+                "r_max": 250,
+            }
+        )
+        run_configurations = add_configs(
+            configs=run_configurations, configs_to_add=configs_to_add
+        )
+
 
     final_config = {
         "n_workers": min(n_workers, len(run_configurations)),

@@ -153,8 +153,9 @@ def run_simulation(base_output_path: str, config: SimulationConfig):
         # of what craters remain at a given point in time.
         r_stat = config.r_stat
         rim_erasure_effectiveness_function = get_rim_erasure_calculator(
-            config.rim_erasure_method,
-            config.rmult
+            config=config.rim_erasure_method,
+            rmult=config.rmult,
+            r_stat=r_stat
         )
 
         initial_rim_state_calculator = get_initial_rim_state_calculator(config.initial_rim_calculation_method)
@@ -178,6 +179,10 @@ def run_simulation(base_output_path: str, config: SimulationConfig):
 
         last_ntot = 0
         for crater in crater_generator:
+            # This check is an optimization; it is redundant with other checks.
+            if not rim_erasure_effectiveness_function.can_affect_rims(crater.radius):
+                continue
+
             removed_craters = crater_record.add(crater)
 
             if calculate_areal_density:
