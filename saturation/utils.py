@@ -41,7 +41,8 @@ def create_configs_df(configs: pyspark.RDD) -> DataFrame:
         "r_min",
         "study_region_size",
         "study_region_padding",
-        "rim_erasure_method"
+        "rim_erasure_method",
+        "stop_condition"
     ]
     return configs.map(lambda x: {k: v for k, v in x.items() if k in config_columns}).toDF().cache()
 
@@ -93,7 +94,8 @@ def get_configs(
 
 
 def get_scientific_notation(
-    number: float, sig_fig: int
+    number: float,
+    sig_fig: int
 ):
     ret_string = "{0:.{1:d}e}".format(number, sig_fig)
     a, b = ret_string.split("e")
@@ -356,13 +358,15 @@ def plot_csfds_for_multiple_ntot(
     return fig
 
 
-def plot_circle(center: Tuple[float, float],
-                radius: float,
-                axes_subplot,
-                fill: bool = False,
-                color: str = 'black',
-                lw: float = 1,
-                antialiased: bool = True):
+def plot_circle(
+    center: Tuple[float, float],
+    radius: float,
+    axes_subplot,
+    fill: bool = False,
+    color: str = 'black',
+    lw: float = 1,
+    antialiased: bool = True
+):
     """
     Plots the specified circle on the supplied subplot.
     """
@@ -466,7 +470,7 @@ def setup_datasets_for_model(
     return train, test
 
 
-def get_lifetimes_for_simulation(
+def get_lifespans_for_simulation(
     *,
     simulation_id: int,
     spark: SparkSession,
@@ -479,12 +483,12 @@ def get_lifetimes_for_simulation(
     removals.createOrReplaceTempView("removals")
 
     query = f"""
-    WITH lifetimes AS
+    WITH lifespans AS
     (
         SELECT
             simulation_id,
             removed_crater_id AS id,
-            removed_by_crater_id - removed_crater_id AS lifetime
+            removed_by_crater_id - removed_crater_id AS lifespan
         FROM
             removals
     ),
@@ -505,9 +509,9 @@ def get_lifetimes_for_simulation(
     )
     SELECT
         radius,
-        lifetime
+        lifespan
     FROM
-        lifetimes l
+        lifespans l
         INNER JOIN craters c ON
             c.id = l.id
             AND c.simulation_id = l.simulation_id
@@ -618,11 +622,12 @@ def get_statistics_with_lifespans_for_simulations(
     base_path: str,
     configs_df: DataFrame,
     spark: SparkSession,
-    n_samples_per_sim: int
+    n_samples_per_sim: Optional[int]=None
 ) -> pd.DataFrame:
     """
-    Returns statistics and lifespans a sampling of craters for each simulation id specified.
+    Returns statistics and lifespans for each simulation id specified.
     Returns only craters with centers in the study region.
+    Optionally sampled.
     """
     F.broadcast(configs_df).createOrReplaceTempView("configs")
 
@@ -645,7 +650,7 @@ def get_statistics_with_lifespans_for_simulations(
             c.y,
             c.radius,
             s.simulation_id,
-            s.ntot,
+            s.ntot AS nstat,
             s.nobs,
             s.areal_density,
             configs.slope,
@@ -662,18 +667,19 @@ def get_statistics_with_lifespans_for_simulations(
             statistics s
             INNER JOIN craters c ON
                 c.id = s.crater_id
-            INNER JOIN removals r ON
+            LEFT JOIN removals r ON
                 r.removed_crater_id = c.id
             INNER JOIN configs ON
                 configs.simulation_id = s.simulation_id
-        WHERE
-            s.ntot <= {int(max_n * 0.75)}
-            AND c.x BETWEEN configs.study_region_padding AND configs.study_region_padding + configs.study_region_size
-            AND c.y BETWEEN configs.study_region_padding AND configs.study_region_padding + configs.study_region_size
         """
         result_for_simulation = spark.sql(query)
-        results_count = result_for_simulation.count()
-        result_for_simulation = result_for_simulation.sample((n_samples_per_sim * 1.1) / results_count)
-        results.append(result_for_simulation.limit(n_samples_per_sim).toPandas())
+
+        if n_samples_per_sim:
+            result_for_simulation = result_for_simulation.where(result_for_simulation.nstat <= int(max_n * 0.75))
+            results_count = result_for_simulation.count()
+            result_for_simulation = result_for_simulation.sample((n_samples_per_sim * 1.1) / results_count)
+            result_for_simulation = result_for_simulation.limit(n_samples_per_sim)
+
+        results.append(result_for_simulation.orderBy("nstat").toPandas())
 
     return pd.concat(results, axis=0)

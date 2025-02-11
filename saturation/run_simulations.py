@@ -13,9 +13,7 @@ def get_simulation_configs(config: Dict) -> List[SimulationConfig]:
     creates a set of SimulationConfigs, one per run.
     """
     result = []
-    run_configurations = sorted(config["run_configurations"].items(),
-                                key=lambda x: x[1]["slope"],
-                                reverse=True)
+    run_configurations = sorted(config["run_configurations"].items(), key=lambda x: x[1]["slope"])
     for simulation_id, values in run_configurations:
         result.append(
             SimulationConfig(
