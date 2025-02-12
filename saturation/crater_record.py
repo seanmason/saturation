@@ -1,27 +1,34 @@
 from typing import List, Dict
 
 import numpy as np
-from saturation.datatypes import Crater
+import numba as nb
+from numba.experimental import jitclass
+from saturation.datatypes import Crater, CraterType
 from saturation.distances import Distances
-from saturation.initial_rim_state_calculators import InitialRimStateCalculator
-from saturation.rim_erasure_calculators import RimErasureCalculator
+from saturation.initial_rim_state_calculators import InitialRimStateCalculator, CircumferenceInitialRimStateCalculator
+from saturation.rim_erasure_calculators import (
+    RimErasureCalculator, ExponentRadiusConditionalRimOverlapRimErasureCalculator,
+)
 
 
+@jitclass({
+    "_craters": nb.types.DictType(nb.int64, CraterType),
+})
 class CraterDictionary(object):
     """
     Convenience wrapper around a dictionary for Craters.
     """
     def __init__(self):
-        self._craters: Dict[int, Crater] = dict()
+        self._craters = nb.typed.Dict.empty(key_type=nb.int64, value_type=CraterType)
 
-    def add(self, crater: Crater):
+    def add(self, crater: Crater) -> None:
         self._craters[crater.id] = crater
 
-    def remove(self, crater: Crater):
-        del self._craters[crater.id]
+    def remove(self, crater_id: int) -> None:
+        del self._craters[crater_id]
 
-    def get_craters(self) -> List[Crater]:
-        return list(self._craters.values())
+    def get_craters(self) -> nb.typed.List[Crater]:
+        return nb.typed.List(self._craters.values())
 
     def __getitem__(self, crater_id: int) -> Crater:
         return self._craters[crater_id]
@@ -29,26 +36,52 @@ class CraterDictionary(object):
     def __contains__(self, crater_id: int) -> bool:
         return crater_id in self._craters
 
-    def __len__(self):
+    def __len__(self) -> int:
         return len(self._craters)
 
 
+spec = {
+    "_rstat": nb.float64,
+    "_rim_erasure_calculator": ExponentRadiusConditionalRimOverlapRimErasureCalculator.class_type.instance_type,
+    "_initial_rim_state_calculator": CircumferenceInitialRimStateCalculator.class_type.instance_type,
+    "_mrp": nb.float64,
+    "_rmult": nb.float64,
+    "_study_region_size": nb.int64,
+    "_study_region_padding": nb.int64,
+    "_min_x": nb.int64,
+    "_min_y": nb.int64,
+    "_max_x": nb.int64,
+    "_max_y": nb.int64,
+    "_calculate_nearest_neighbor_stats": nb.boolean,
+    "_distances": Distances.class_type.instance_type,
+    "_all_craters_in_record": CraterDictionary.class_type.instance_type,
+    "_craters_in_study_region": CraterDictionary.class_type.instance_type,
+    "_nstat": nb.int64,
+    "_initial_rims": nb.types.DictType(nb.int64, nb.float64),
+    "_remaining_rims": nb.types.DictType(nb.int64, nb.float64),
+    "_crater_ids_to_remove": nb.types.DictType(nb.int64, nb.boolean),
+    "_sum_tracked_radii": nb.float64,
+    "_sum_tracked_squared_radii": nb.float64,
+}
+
+
+@jitclass(spec)
 class CraterRecord(object):
     """
     Maintains the record of craters.
     """
-    def __init__(self,
-                 *,
-                 rstat: float,
-                 rim_erasure_calculator: RimErasureCalculator,
-                 initial_rim_state_calculator: InitialRimStateCalculator,
-                 mrp: float,
-                 rmult: float,
-                 study_region_size: int,
-                 study_region_padding: int,
-                 cell_size: int,
-                 calculate_nearest_neighbor_stats: bool
-        ):
+    def __init__(
+        self,
+        rstat: float,
+        rim_erasure_calculator: RimErasureCalculator,
+        initial_rim_state_calculator: InitialRimStateCalculator,
+        mrp: float,
+        rmult: float,
+        study_region_size: int,
+        study_region_padding: int,
+        cell_size: int,
+        calculate_nearest_neighbor_stats: bool
+    ):
         self._rstat = rstat
         self._rim_erasure_calculator = rim_erasure_calculator
         self._initial_rim_state_calculator = initial_rim_state_calculator
@@ -78,9 +111,9 @@ class CraterRecord(object):
 
         self._nstat = 0
 
-        self._initial_rims: Dict[int, float] = dict()
-        self._remaining_rims: Dict[int, float] = dict()
-        self._craters_to_remove: List[Crater] = []
+        self._initial_rims = nb.typed.Dict.empty(key_type=nb.int64, value_type=nb.float64)
+        self._remaining_rims = nb.typed.Dict.empty(key_type=nb.int64, value_type=nb.float64)
+        self._crater_ids_to_remove = nb.typed.Dict.empty(key_type=nb.int64, value_type=nb.boolean)
 
         self._sum_tracked_radii: float = 0.0
         self._sum_tracked_squared_radii: float = 0.0
@@ -105,68 +138,61 @@ class CraterRecord(object):
     def get_nnd_max(self) -> float:
         return self._distances.get_max_nnd()
 
-    def _update_rim_arcs(self, new_crater: Crater):
-        new_x = new_crater.x
-        new_y = new_crater.y
-        effective_radius = new_crater.radius * self._rmult
+    def _update_rim_arcs(self, new_craters: nb.typed.List[Crater]):
+        for new_crater in new_craters:
+            if new_crater.radius >= self._rstat:
+                initial = self._initial_rim_state_calculator.calculate(new_crater)
+                self._remaining_rims[new_crater.id] = initial
+                self._initial_rims[new_crater.id] = initial
 
-        if new_crater.radius >= self._rstat:
-            initial = self._initial_rim_state_calculator.calculate(new_crater)
-            self._remaining_rims[new_crater.id] = initial
-            self._initial_rims[new_crater.id] = initial
+        for new_crater in new_craters:
+            craters_in_range = self._distances.get_craters_with_overlapping_rims(
+                new_crater.x,
+                new_crater.y,
+                new_crater.radius * self._rmult
+            )
+            for old_crater_id in craters_in_range:
+                if old_crater_id == new_crater.id:
+                    continue
 
-        craters_in_range = self._distances.get_craters_with_overlapping_rims(
-            new_x,
-            new_y,
-            effective_radius
-        )
-        for old_crater_id in craters_in_range:
-            if old_crater_id == new_crater.id:
-                continue
+                if old_crater_id in self._crater_ids_to_remove:
+                    continue
 
-            old_crater = self._all_craters_in_record[old_crater_id]
+                initial_rim = self._initial_rims[old_crater_id]
+                existing_rim = self._remaining_rims[old_crater_id]
 
-            initial_rim = self._initial_rims[old_crater.id]
-            existing_rim = self._remaining_rims[old_crater_id]
-            updated_rim = self._rim_erasure_calculator.calculate_new_rim_state(old_crater, existing_rim, new_crater)
-            self._remaining_rims[old_crater_id] = updated_rim
-            if updated_rim / initial_rim < self._mrp:
-                self._craters_to_remove.append(old_crater)
+                old_crater = self._all_craters_in_record[old_crater_id]
+                updated_rim = self._rim_erasure_calculator.calculate_new_rim_state(old_crater, existing_rim, new_crater)
 
-    def _remove_craters_with_destroyed_rims(self) -> List[Crater]:
-        for crater in self._craters_to_remove:
-            del self._remaining_rims[crater.id]
-            del self._initial_rims[crater.id]
-            self._all_craters_in_record.remove(crater)
-            if crater.id in self._craters_in_study_region:
-                self._craters_in_study_region.remove(crater)
+                self._remaining_rims[old_crater_id] = updated_rim
+                if updated_rim / initial_rim < self._mrp:
+                    self._crater_ids_to_remove[old_crater_id] = True
+
+    def _remove_craters_with_destroyed_rims(self) -> nb.typed.List[Crater]:
+        removed = nb.typed.List.empty_list(CraterType)
+        for crater_id in self._crater_ids_to_remove:
+            crater = self._all_craters_in_record[crater_id]
+            removed.append(crater)
+
+            del self._remaining_rims[crater_id]
+            del self._initial_rims[crater_id]
+            self._all_craters_in_record.remove(crater_id)
+            if crater_id in self._craters_in_study_region:
+                self._craters_in_study_region.remove(crater_id)
                 self._sum_tracked_radii -= crater.radius
                 self._sum_tracked_squared_radii -= crater.radius ** 2
 
-        result = self._craters_to_remove
-        self._craters_to_remove = []
-        return result
+        self._crater_ids_to_remove = nb.typed.Dict.empty(key_type=nb.int64, value_type=nb.boolean)
+        return removed
 
-    def add(self, crater: Crater) -> List[Crater]:
+    def add_craters_smaller_than_rstat(self, craters: List[Crater]) -> nb.typed.List[Crater]:
         """
         Adds the supplied crater to the record, possibly destroying other craters.
-        :param crater: New crater to be added.
-        :return: A list of craters that were erased as a result of the addition.
+        All craters must be smaller than rstat.
+        :param craters: New craters to be added.
+        :return: A list of craters that were erased as a result of the additions.
         """
-        in_study_region = self._is_in_study_region(crater)
-        if crater.radius >= self._rstat:
-            self._distances.add(crater, in_study_region)
-
-        self._update_rim_arcs(crater)
-
-        if crater.radius >= self._rstat:
-            self._all_craters_in_record.add(crater)
-
-            if in_study_region:
-                self._craters_in_study_region.add(crater)
-                self._nstat += 1
-                self._sum_tracked_radii += crater.radius
-                self._sum_tracked_squared_radii += crater.radius ** 2
+        self._update_rim_arcs(craters)
 
         removed = self._remove_craters_with_destroyed_rims()
         if removed:
@@ -174,30 +200,46 @@ class CraterRecord(object):
 
         return removed
 
-    def _is_in_study_region(self, crater):
+    def add_crater_geq_rstat(self, crater: Crater) -> nb.typed.List[Crater]:
+        """
+        Adds the supplied crater to the record, possibly destroying other craters.
+        The crater must be larger than rstat.
+        :param crater: New crater to be added.
+        :return: A list of craters that were erased as a result of the additions.
+        """
+        is_in_study_region = self._is_in_study_region(crater)
+        self._distances.add(crater, is_in_study_region)
+
+        self._all_craters_in_record.add(crater)
+        if is_in_study_region:
+            self._craters_in_study_region.add(crater)
+            self._nstat += 1
+            self._sum_tracked_radii += crater.radius
+            self._sum_tracked_squared_radii += crater.radius ** 2
+
+        self._update_rim_arcs(nb.typed.List([crater]))
+
+        removed = self._remove_craters_with_destroyed_rims()
+        if removed:
+            self._distances.remove(removed)
+
+        return removed
+
+    def _is_in_study_region(self, crater: Crater):
         return (
             self._min_x <= crater.x <= self._max_x
             and self._min_y <= crater.y <= self._max_y
         )
 
     def get_crater(self, crater_id: int) -> Crater:
-        """
-        Returns the crater with the specified id.
-        """
         return self._all_craters_in_record[crater_id]
 
     @property
-    def all_craters_in_record(self) -> List[Crater]:
-        """
-        Returns a list of all craters in the record.
-        """
+    def all_craters_in_record(self) -> nb.typed.List[Crater]:
         return self._all_craters_in_record.get_craters()
 
     @property
-    def craters_in_study_region(self) -> List[Crater]:
-        """
-        Returns a list of all craters in the record that are in the study region.
-        """
+    def craters_in_study_region(self) -> nb.typed.List[Crater]:
         return self._craters_in_study_region.get_craters()
 
     def get_remaining_rim(self, crater_id: int) -> float:

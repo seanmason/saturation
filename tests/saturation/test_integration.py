@@ -1,5 +1,3 @@
-import numpy as np
-
 from saturation.areal_density import ArealDensityCalculator
 from saturation.crater_record import CraterRecord
 from saturation.distributions import ParetoProbabilityDistribution
@@ -59,19 +57,32 @@ def test_crater_record_integration():
     # Act
     counter = 0
     removed_counter = 0
+    craters_smaller_than_rstat = []
     for crater in crater_generator:
-        removed_craters = record.add(crater)
+        if crater.radius < rstat:
+            craters_smaller_than_rstat.append(crater)
+        else:
+            if craters_smaller_than_rstat:
+                removed_craters = record.add_craters_smaller_than_rstat(craters_smaller_than_rstat)
+                craters_smaller_than_rstat = []
 
-        areal_density_calculator.add_crater(crater)
-        if removed_craters:
-            removed_counter += len(removed_craters)
-            areal_density_calculator.remove_craters(removed_craters)
+                if removed_craters:
+                    removed_counter += len(removed_craters)
+                    areal_density_calculator.remove_craters(removed_craters)
+
+            removed_craters = record.add_crater_geq_rstat(crater)
+            areal_density_calculator.add_crater(crater)
+
+            if removed_craters:
+                removed_counter += len(removed_craters)
+                areal_density_calculator.remove_craters(removed_craters)
 
         counter += 1
         if record.nstat == nstop:
             break
 
     # Assert
+    print(len(record.all_craters_in_record))
     print(f"{counter}, {removed_counter}, {record.nobs}, {record.nstat}, {areal_density_calculator.areal_density}, {crater.id}")
     assert record.nstat == nstop
     assert record.nobs == 71

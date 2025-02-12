@@ -13,7 +13,7 @@ def test_pareto_distribution_uniform_to_density_max_value_respected():
     result = distribution.pullback(1)
 
     # Assert
-    assert_almost_equal(result, 25)
+    assert_almost_equal(result, 25, decimal=3)
 
 
 def test_pareto_distribution_slope():

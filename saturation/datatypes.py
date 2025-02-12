@@ -1,3 +1,6 @@
+import numpy as np
+import numba as nb
+
 from typing import Tuple, Dict, NamedTuple
 
 # Type definitions
@@ -29,3 +32,6 @@ class Crater(NamedTuple):
                 ("radius", self.radius)
             ]
         )
+
+
+CraterType = nb.typeof(Crater(np.int64(1), np.float32(1.0), np.float32(1.0), np.float32(1.0)))

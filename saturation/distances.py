@@ -6,11 +6,10 @@ import numpy as np
 from numba.experimental import jitclass
 
 from saturation.data_structures.spatial_hash import SpatialHash
-from saturation.datatypes import Crater
+from saturation.datatypes import Crater, CraterType
 
-crater_type = nb.typeof(Crater(np.int64(1), np.float32(1.0), np.float32(1.0), np.float32(1.0)))
 crater_set_type = nb.types.DictType(
-    keyty=crater_type,
+    keyty=CraterType,
     valty=nb.boolean
 )
 int_set_type = nb.types.DictType(
@@ -24,7 +23,7 @@ spec = OrderedDict({
     "_calculate_nearest_neighbor_stats": nb.boolean,
     "_all_craters": nb.types.DictType(
         keyty=nb.int64,
-        valty=crater_type
+        valty=CraterType
     ),
     "_nnds": nb.types.DictType(
         keyty=nb.int64,
@@ -65,7 +64,7 @@ class Distances:
 
         self._all_craters: Dict[int, Crater] = nb.typed.Dict.empty(
             key_type=nb.int64,
-            value_type=crater_type
+            value_type=CraterType
         )
 
         # Mapping from crater ids to nearest neighbor

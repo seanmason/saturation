@@ -41,7 +41,7 @@ def test_add_in_study_region():
     )
 
     # Act
-    removed = record.add(crater)
+    removed = record.add_crater_geq_rstat(crater)
     all_craters = record.all_craters_in_record
     craters_in_study_region = record.craters_in_study_region
     nstat = record.nstat
@@ -74,7 +74,7 @@ def test_add_outside_study_region():
     )
 
     # Act
-    record.add(crater)
+    record.add_crater_geq_rstat(crater)
     all_craters = record.all_craters_in_record
     craters_in_study_region = record.craters_in_study_region
     nstat = record.nstat
@@ -82,36 +82,6 @@ def test_add_outside_study_region():
     # Assert
     assert [crater] == list(all_craters)
     assert not craters_in_study_region
-    assert nstat == 0
-
-
-def test_add_does_not_add_small_craters():
-    # Arrange
-    crater = _create_crater(id=1, x=100.0, y=100.0, radius=9.0)
-    record = CraterRecord(
-        rstat=10,
-        rim_erasure_calculator=ExponentRadiusConditionalRimOverlapRimErasureCalculator(
-            rstat=3.0,
-            ratio=1.0,
-            exponent=1.0,
-            rmult=1.0
-        ),
-        initial_rim_state_calculator=CircumferenceInitialRimStateCalculator(),
-        mrp=0.5,
-        rmult=1.0,
-        study_region_size=1000,
-        study_region_padding=100,
-        cell_size=50,
-        calculate_nearest_neighbor_stats=True
-    )
-
-    # Act
-    record.add(crater)
-    all_craters = record.all_craters_in_record
-    nstat = record.nstat
-
-    # Assert
-    assert not all_craters
     assert nstat == 0
 
 
@@ -138,8 +108,8 @@ def test_add_removes_obliterated_craters():
     )
 
     # Act
-    record.add(crater1)
-    removed = record.add(crater2)
+    record.add_crater_geq_rstat(crater1)
+    removed = record.add_crater_geq_rstat(crater2)
     all_craters = record.all_craters_in_record
     nstat = record.nstat
 
@@ -172,8 +142,8 @@ def test_add_leaves_partially_removed_craters():
     )
 
     # Act
-    record.add(crater1)
-    removed = record.add(crater2)
+    record.add_crater_geq_rstat(crater1)
+    removed = record.add_crater_geq_rstat(crater2)
     all_craters = record.all_craters_in_record
     nstat = record.nstat
 
@@ -195,7 +165,7 @@ def test_crater_radius_ratio_respected():
     record = CraterRecord(
         rstat=10,
         rim_erasure_calculator=ExponentRadiusConditionalRimOverlapRimErasureCalculator(
-            rstat=2.0,
+            rstat=4.1,
             ratio=1.0,
             exponent=1.0,
             rmult=1.0
@@ -210,11 +180,8 @@ def test_crater_radius_ratio_respected():
     )
 
     # Act
-    record.add(crater1)
-    record.add(crater2)
-    record.add(crater3)
-    record.add(crater4)
-    record.add(crater5)
+    record.add_crater_geq_rstat(crater1)
+    record.add_craters_smaller_than_rstat([crater2, crater3, crater4, crater5])
     all_craters = record.all_craters_in_record
 
     # Assert
@@ -242,7 +209,7 @@ def test_get_mnnd_empty_from():
     )
 
     # Act
-    record.add(crater1)
+    record.add_crater_geq_rstat(crater1)
     result = record.get_mnnd()
 
     # Assert
@@ -271,8 +238,8 @@ def test_nn_single_from_and_to():
     )
 
     # Act
-    record.add(crater1)
-    record.add(crater2)
+    record.add_crater_geq_rstat(crater1)
+    record.add_crater_geq_rstat(crater2)
     result = record.get_mnnd()
 
     # Assert
@@ -303,10 +270,10 @@ def test_nn_gets_shortest_distance_from_to_craters():
     )
 
     # Act
-    record.add(crater1)
-    record.add(crater2)
-    record.add(crater3)
-    record.add(crater4)
+    record.add_crater_geq_rstat(crater1)
+    record.add_crater_geq_rstat(crater2)
+    record.add_crater_geq_rstat(crater3)
+    record.add_crater_geq_rstat(crater4)
     result = record.get_mnnd()
 
     # Assert
@@ -336,9 +303,9 @@ def test_get_mean_nnd_is_shortest_distance_for_all_from_craters():
     )
 
     # Act
-    record.add(crater1)
-    record.add(crater2)
-    record.add(crater3)
+    record.add_crater_geq_rstat(crater1)
+    record.add_crater_geq_rstat(crater2)
+    record.add_crater_geq_rstat(crater3)
     result = record.get_mnnd()
 
     # Assert
@@ -353,7 +320,7 @@ def test_get_mean_nnd_ignores_smaller_than_rstat():
     record = CraterRecord(
         rstat=10,
         rim_erasure_calculator=ExponentRadiusConditionalRimOverlapRimErasureCalculator(
-            rstat=3.0,
+            rstat=7.0,
             ratio=1.0,
             exponent=1.0,
             rmult=1.0
@@ -368,9 +335,9 @@ def test_get_mean_nnd_ignores_smaller_than_rstat():
     )
 
     # Act
-    record.add(crater1)
-    record.add(crater2)
-    record.add(crater3)
+    record.add_crater_geq_rstat(crater1)
+    record.add_crater_geq_rstat(crater2)
+    record.add_craters_smaller_than_rstat([crater3])
     result = record.get_mnnd()
 
     # Assert
@@ -400,9 +367,9 @@ def test_get_mean_nnd_ignores_removed_craters():
     )
 
     # Act
-    record.add(crater1)
-    record.add(crater2)
-    record.add(crater3)
+    record.add_crater_geq_rstat(crater1)
+    record.add_crater_geq_rstat(crater2)
+    record.add_crater_geq_rstat(crater3)
     result = record.get_mnnd()
 
     # Assert
@@ -431,8 +398,8 @@ def test_get_nnd_after_two_craters():
     )
 
     # Act
-    record.add(crater1)
-    record.add(crater2)
+    record.add_crater_geq_rstat(crater1)
+    record.add_crater_geq_rstat(crater2)
     r1 = record._distances.get_nn(crater1)
     r2 = record._distances.get_nn(crater2)
 
@@ -468,7 +435,7 @@ def test_removal_percentage_too_low():
 
     # Act
     crater1 = _create_crater(id=1, x=center, y=center, radius=large_radius)
-    record.add(crater1)
+    record.add_crater_geq_rstat(crater1)
 
     small_theta = 2 * np.pi * percent_each_crater / 2
     small_radius = np.sqrt(
@@ -476,11 +443,13 @@ def test_removal_percentage_too_low():
         + (large_radius - large_radius * np.cos(small_theta))**2
     )
     theta_delta = 2 * np.pi / n_craters
+    small_craters = []
     for offset in range(n_craters):
         x = center + large_radius * np.cos(theta_delta * offset)
         y = center + large_radius * np.sin(theta_delta * offset)
         crater = _create_crater(id=offset + 2, x=x, y=y, radius=small_radius)
-        record.add(crater)
+        small_craters.append(crater)
+    record.add_craters_smaller_than_rstat(small_craters)
 
     assert crater1 in record.all_craters_in_record
 
@@ -516,7 +485,7 @@ def test_removal_percentage_high_enough():
 
     # Act
     crater1 = _create_crater(id=1, x=center, y=center, radius=large_radius)
-    record.add(crater1)
+    record.add_crater_geq_rstat(crater1)
 
     small_theta = 2 * np.pi * percent_each_crater / 2
     small_radius = np.sqrt(
@@ -524,10 +493,12 @@ def test_removal_percentage_high_enough():
         + (large_radius - large_radius * np.cos(small_theta))**2
     )
     theta_delta = 2 * np.pi / n_craters
+    small_craters = []
     for offset in range(n_craters):
         x = center + large_radius * np.cos(theta_delta * offset)
         y = center + large_radius * np.sin(theta_delta * offset)
         crater = _create_crater(id=offset + 2, x=x, y=y, radius=small_radius)
-        record.add(crater)
+        small_craters.append(crater)
+    record.add_craters_smaller_than_rstat(small_craters)
 
     assert crater1 not in record.all_craters_in_record

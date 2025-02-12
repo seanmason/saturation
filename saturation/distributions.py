@@ -1,10 +1,12 @@
-from abc import ABC, abstractmethod
+from abc import abstractmethod
 from typing import Union
 
 import numpy as np
+import numba as nb
+from numba.experimental import jitclass
 
 
-class ProbabilityDistribution(ABC):
+class ProbabilityDistribution(object):
     """
     Abstract base class for a probability distribution.
     """
@@ -31,11 +33,17 @@ class ProbabilityDistribution(ABC):
         pass
 
 
+@jitclass(spec={
+    "_alpha": nb.types.float32,
+    "_x_min": nb.types.float32,
+    "_x_max": nb.types.float32,
+    "_u_max": nb.types.float32
+})
 class ParetoProbabilityDistribution(ProbabilityDistribution):
     """
     Represents a truncated Pareto distribution.
     """
-    def __init__(self, *, alpha: float, x_min: float, x_max: float):
+    def __init__(self, alpha: float, x_min: float, x_max: float):
         self._alpha = alpha
         self._x_min = x_min
         self._x_max = x_max
