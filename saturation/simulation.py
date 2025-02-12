@@ -86,7 +86,7 @@ def get_craters(
     Infinite generator for craters. Generates craters only if their radius is above min_radius_threshold.
     Assumes valid craters are extremely rare (e.g., 1 in 1000).
     """
-    CHUNK_SIZE = 100000
+    CHUNK_SIZE = int(1e6)
     BATCH_SIZE = CHUNK_SIZE
     DTYPE = np.float32
 
