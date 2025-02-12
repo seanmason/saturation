@@ -467,8 +467,8 @@ def test_removal_percentage_too_low():
     )
 
     # Act
-    crater = _create_crater(id=1, x=center, y=center, radius=large_radius)
-    record.add(crater)
+    crater1 = _create_crater(id=1, x=center, y=center, radius=large_radius)
+    record.add(crater1)
 
     small_theta = 2 * np.pi * percent_each_crater / 2
     small_radius = np.sqrt(
@@ -482,7 +482,7 @@ def test_removal_percentage_too_low():
         crater = _create_crater(id=offset + 2, x=x, y=y, radius=small_radius)
         record.add(crater)
 
-    assert crater in record.all_craters_in_record
+    assert crater1 in record.all_craters_in_record
 
 
 def test_removal_percentage_high_enough():
@@ -495,7 +495,8 @@ def test_removal_percentage_high_enough():
     func = get_rim_erasure_calculator(
         config={
             "name": "exponent_radius_ratio",
-            "ratio": 10.0
+            "ratio": 10.0,
+            "exponent": 1.0
         },
         rmult=1.0,
         rstat=1.0
@@ -514,8 +515,8 @@ def test_removal_percentage_high_enough():
     )
 
     # Act
-    crater = _create_crater(id=1, x=center, y=center, radius=large_radius)
-    record.add(crater)
+    crater1 = _create_crater(id=1, x=center, y=center, radius=large_radius)
+    record.add(crater1)
 
     small_theta = 2 * np.pi * percent_each_crater / 2
     small_radius = np.sqrt(
@@ -529,4 +530,4 @@ def test_removal_percentage_high_enough():
         crater = _create_crater(id=offset + 2, x=x, y=y, radius=small_radius)
         record.add(crater)
 
-    assert crater not in record.all_craters_in_record
+    assert crater1 not in record.all_craters_in_record

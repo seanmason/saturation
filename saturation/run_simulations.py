@@ -14,8 +14,11 @@ def get_simulation_configs(config: Dict) -> List[SimulationConfig]:
     """
     result = []
 
-    # Start high rmax/rmin ratio first, they take longer
-    key_func = lambda x: (x[1]["rmin"] / x[1]["rmax"] , x[1]["slope"])
+    # Order sims by their expected runtimes. Longer-running sims should be started first.
+    # Sims that calculate nearest neighbor stats first
+    # Then prioritize high rmax/rmin ratio
+    # Then prioritize steep slopes
+    key_func = lambda x: (not x[1]["calculate_nearest_neighbor_stats"], x[1]["rmin"] / x[1]["rmax"] , x[1]["slope"])
     run_configurations = sorted(config["run_configurations"].items(), key=key_func)
     for simulation_id, values in run_configurations:
         result.append(

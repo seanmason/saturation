@@ -27,7 +27,13 @@ def test_get_craters_ids_increase():
     distribution = DummyProbabilityDistribution()
 
     # Act
-    result = list(itertools.islice(get_craters(distribution, 2), 10))
+    craters = get_craters(
+        size_distribution=distribution,
+        region_size=2,
+        min_radius_threshold=1,
+        random_seed=123
+    )
+    result = list(itertools.islice(craters, 10))
 
     # Assert
     ids = [x.id for x in result]

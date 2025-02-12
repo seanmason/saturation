@@ -71,4 +71,4 @@ def test_get_min_radius_threshold():
     )
 
     # Assert
-    assert calculator.get_min_radius_threshold() == 10.0**0.5 / ratio
+    assert_almost_equal(calculator.get_min_radius_threshold(), 10.0**0.5 / ratio, decimal=5)

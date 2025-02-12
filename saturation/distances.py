@@ -120,12 +120,14 @@ class Distances:
         if self._calculate_nearest_neighbor_stats:
             self._update_nnds(crater, tracked)
 
-    def _update_nn(self,
-                   crater_id: int,
-                   new_nn_id: int,
-                   new_distance: float,
-                   force: bool,
-                   tracked: bool):
+    def _update_nn(
+        self,
+        crater_id: int,
+        new_nn_id: int,
+        new_distance: float,
+        force: bool,
+        tracked: bool
+    ):
         old_distance = self._nnds.get(crater_id, 0.0)
         if force or old_distance == 0.0 or new_distance < old_distance:
             if tracked:

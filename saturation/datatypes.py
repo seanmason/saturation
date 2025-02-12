@@ -1,8 +1,4 @@
 from typing import Tuple, Dict, NamedTuple
-from collections import OrderedDict
-
-import numba as nb
-from numba.experimental import jitclass
 
 # Type definitions
 # Arc in radians
@@ -10,13 +6,6 @@ Arc = Tuple[float, float]
 
 # (x, y) location
 Location = Tuple[float, float]
-
-spec = OrderedDict({
-    "id": nb.types.int64,
-    "x": nb.types.float32,
-    "y": nb.types.float32,
-    "radius": nb.types.float32,
-})
 
 
 class Crater(NamedTuple):
