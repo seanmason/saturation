@@ -8,9 +8,9 @@ RANDOM_CHUNK_SIZE = 100000
 
 
 @njit(fastmath=True)
-def inv_trunc_pareto(u, alpha, r_min, r_max):
-    cdf_max = 1.0 - (r_min / r_max) ** alpha
-    return r_min / (1.0 - u * cdf_max) ** (1.0 / alpha)
+def inv_trunc_pareto(u, alpha, rmin, rmax):
+    cdf_max = 1.0 - (rmin / rmax) ** alpha
+    return rmin / (1.0 - u * cdf_max) ** (1.0 / alpha)
 
 
 @njit(fastmath=True)
@@ -77,10 +77,10 @@ def run_single_sim(r_subj, alpha, tau, r_dist_min, r_dist_max, surface_size):
 
 @njit(parallel=True, fastmath=True)
 def run_simulations(n_r_values, n_alpha_values, n_tau_values, n_repeats_per_scenario,
-                    r_min, r_max, r_dist_min, r_dist_max, alpha_min, alpha_max, tau_min, tau_max,
+                    rmin, rmax, r_dist_min, r_dist_max, alpha_min, alpha_max, tau_min, tau_max,
                     surface_size, seed):
     np.random.seed(seed)
-    r_values = np.exp(np.linspace(np.log(r_min), np.log(r_max), num=n_r_values)).astype(DTYPE)
+    r_values = np.exp(np.linspace(np.log(rmin), np.log(rmax), num=n_r_values)).astype(DTYPE)
     alpha_values = np.linspace(alpha_min, alpha_max, n_alpha_values).astype(DTYPE)
     tau_values = np.linspace(tau_min, tau_max, n_tau_values + 1).astype(DTYPE)[1:]
 
@@ -116,9 +116,9 @@ def run_simulations(n_r_values, n_alpha_values, n_tau_values, n_repeats_per_scen
 
 def main():
     n_tau_values = 20
-    r_min = 5.0
-    r_max = 1000.0
-    r_dist_max = r_max * 4
+    rmin = 5.0
+    rmax = 1000.0
+    r_dist_max = rmax * 4
     tau_min = 0.1
     tau_max = 1.0
 
@@ -127,15 +127,15 @@ def main():
         n_alpha_values=20,
         n_tau_values=n_tau_values,
         n_repeats_per_scenario=1000,
-        r_min=r_min,
-        r_max=r_max,
-        r_dist_min=r_min ** (tau_min + (tau_max - tau_min) / n_tau_values) / 2.0,
+        rmin=rmin,
+        rmax=rmax,
+        r_dist_min=rmin ** (tau_min + (tau_max - tau_min) / n_tau_values) / 2.0,
         r_dist_max=r_dist_max,
         alpha_min=0.1,
         alpha_max=5.0,
         tau_min=tau_min,
         tau_max=tau_max,
-        surface_size=r_max + r_dist_max,
+        surface_size=rmax + r_dist_max,
         seed=123
     )
 
@@ -147,29 +147,5 @@ def main():
 
 
 if __name__ == "__main__":
-    # alpha = 5.0
-    # for x in range(100):
-    #     r = 3.0 + x / 2
-    #
-    #     res = 0
-    #     for _ in range(100):
-    #         res += run_single_sim(
-    #             r,
-    #             alpha,
-    #             1.0,
-    #             1.0,
-    #             100.0,
-    #             400.0
-    #         )
-    #     expected = r**(alpha - 2) * (alpha - 2) / alpha
-    #     print(
-    #         np.log(r),
-    #         ", ",
-    #         np.log(res / 100),
-    #         ", ",
-    #         np.log(res / 100) / np.log(r),
-    #         ", ",
-    #         expected * 1000 / (res / 100)
-    #     )
     set_num_threads(28)
     main()

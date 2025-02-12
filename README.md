@@ -1,6 +1,6 @@
 # Saturation Equilibrium
 
-Code for simulating and modeling cratered terrains.
+Code for simulating and modeling cratered surfaces.
 
 ## Notation:
 
@@ -14,7 +14,7 @@ Code for simulating and modeling cratered terrains.
 
 **rstat**: The minimum crater radius for which statistics are calculated. Denoted as $R_{stat}* in the thesis.
 
-**ntot**: During a simulation, the total number of craters formed within the study region with $R \geq $R_{stat}$. Denoted as $N_{tot}$ in the thesis.
+**nstat**: During a simulation, the total number of craters formed within the study region with $R \geq $R_{stat}$. Denoted as $N_{tot}$ in the thesis.
 
 **nobs**: During a simulation, the number of observable craters (not destroyed) within the study region with $R \geq $R_{stat}$. Denoted as $N_{obs}$ in the thesis.
 

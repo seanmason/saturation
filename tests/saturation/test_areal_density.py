@@ -14,7 +14,7 @@ def test_calculate_areal_density_no_edges():
     calculator = ArealDensityCalculator(
         study_region_size=study_region_size,
         study_region_padding=study_region_padding,
-        r_stat=3
+        rstat=3
     )
 
     # Act
@@ -35,7 +35,7 @@ def test_calculate_areal_density_uses_margin():
     calculator = ArealDensityCalculator(
         study_region_size=study_region_size,
         study_region_padding=study_region_padding,
-        r_stat=3
+        rstat=3
     )
     crater = Crater(id=1, x=study_region_padding, y=study_region_padding, radius=200)
 
@@ -56,7 +56,7 @@ def test_calculate_areal_density_uses_both_margins():
     calculator = ArealDensityCalculator(
         study_region_size=study_region_size,
         study_region_padding=study_region_padding,
-        r_stat=3
+        rstat=3
     )
     crater1 = Crater(id=1, x=study_region_padding, y=study_region_padding, radius=200)
     crater2 = Crater(id=2, x=study_region_size + study_region_padding - 1, y=study_region_size + study_region_padding - 1, radius=500)
@@ -81,7 +81,7 @@ def test_calculate_areal_density_overlapping_craters():
     calculator = ArealDensityCalculator(
         study_region_size=study_region_size,
         study_region_padding=study_region_padding,
-        r_stat=3
+        rstat=3
     )
     crater1 = Crater(id=1, x=study_region_padding, y=study_region_padding, radius=200)
     crater2 = Crater(id=2, x=study_region_padding, y=study_region_padding, radius=500)
@@ -105,7 +105,7 @@ def test_calculate_areal_density_disjoint_add_and_remove():
     calculator = ArealDensityCalculator(
         study_region_size=study_region_size,
         study_region_padding=study_region_padding,
-        r_stat=3
+        rstat=3
     )
     crater1 = Crater(id=1, x=study_region_padding, y=study_region_padding, radius=200)
     crater2 = Crater(id=2, x=study_region_size + study_region_padding - 1, y=study_region_size + study_region_padding - 1, radius=500)
@@ -131,7 +131,7 @@ def test_calculate_areal_density_overlapping_add_and_remove():
     calculator = ArealDensityCalculator(
         study_region_size=study_region_size,
         study_region_padding=study_region_padding,
-        r_stat=3
+        rstat=3
     )
     crater1 = Crater(id=1, x=study_region_padding + 100, y=study_region_padding + 100, radius=500)
     crater2 = Crater(id=2, x=study_region_padding, y=study_region_padding, radius=200)
@@ -155,7 +155,7 @@ def test_craters_outside_study_region_do_not_affect_areal_density():
     calculator = ArealDensityCalculator(
         study_region_size=study_region_size,
         study_region_padding=study_region_padding,
-        r_stat=3
+        rstat=3
     )
     crater1 = Crater(id=1, x=0, y=0, radius=500)
 
@@ -175,7 +175,7 @@ def test_craters_smaller_than_r_stat_do_not_affect_areal_density():
     calculator = ArealDensityCalculator(
         study_region_size=study_region_size,
         study_region_padding=study_region_padding,
-        r_stat=10
+        rstat=10
     )
     crater1 = Crater(id=1, x=study_region_padding, y=study_region_padding, radius=9)
 

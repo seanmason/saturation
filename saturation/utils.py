@@ -38,7 +38,7 @@ def create_configs_df(configs: pyspark.RDD) -> DataFrame:
         "slope",
         "rmult",
         "mrp",
-        "r_min",
+        "rmin",
         "study_region_size",
         "study_region_padding",
         "rim_erasure_method",
@@ -107,18 +107,19 @@ def get_scientific_notation(
 
 
 def get_state_at_time(
+    *,
     stats_df: DataFrame,
     craters_df: DataFrame,
     removals_df: DataFrame,
     simulation_id: int,
-    target_ntot: int,
+    target_nstat: int,
     study_region_size: int,
     study_region_padding: int,
     spark: SparkSession
 ) -> pd.DataFrame:
     max_crater_id = stats_df.where(
         (F.col("simulation_id") == F.lit(simulation_id))
-        & (F.col("ntot") <= F.lit(target_ntot))
+        & (F.col("nstat") <= F.lit(target_nstat))
     ).select(F.max("crater_id")).collect()[0][0]
     
     stats_df.createOrReplaceTempView("stats")
@@ -145,11 +146,14 @@ def get_state_at_time(
     return spark.sql(query).toPandas()
 
 
-def estimate_cumulative_slope(radii: List[float],
-                              min_radius: float,
-                              max_radius: float,
-                              min_search_slope: float = -10.0,
-                              max_search_slope: float = 0.0) -> Tuple[float, float]:
+def estimate_cumulative_slope(
+    *,
+    radii: List[float],
+    min_radius: float,
+    max_radius: float,
+    min_search_slope: float = -10.0,
+    max_search_slope: float = 0.0
+) -> Tuple[float, float]:
     """
     Returns a tuple of the estimated slope and sigma.
     """
@@ -176,22 +180,22 @@ def estimate_cumulative_slope(radii: List[float],
     return cumulative_slope, sigma
 
 
-def get_states_at_ntots(
+def get_states_at_ntats(
     *,
     simulation_id: int,
     configs_dict: Dict,
     base_path: str,
     spark: SparkSession,
-    target_ntots: Optional[List[int]] = None,
-    max_ntot: Optional[int] = None,
+    target_nstats: Optional[List[int]] = None,
+    max_nstat: Optional[int] = None,
     n_states: int = 25,
 ) -> Dict[int, pd.DataFrame]:
     """
-    Returns a dict from values of ntot (a moment in time) to a dataframe of crater locations and radii at that time.
+    Returns a dict from values of nstat (a moment in time) to a dataframe of crater locations and radii at that time.
     """
-    if not target_ntots:
-        target_ntots = [
-            int(10 ** 2 * 10 ** ((x + 1) / n_states * (np.log10(max_ntot) - 2)))
+    if not target_nstats:
+        target_nstats = [
+            int(10 ** 2 * 10 ** ((x + 1) / n_states * (np.log10(max_nstat) - 2)))
             for x in range(n_states)
         ]
 
@@ -206,37 +210,33 @@ def get_states_at_ntots(
 
     return {
         x: get_state_at_time(
-            stats_df,
-            craters_df,
-            removals_df,
-            simulation_id,
-            x,
-            study_region_size,
-            study_region_padding,
-            spark
+            stats_df=stats_df,
+            craters_df=craters_df,
+            removals_df=removals_df,
+            simulation_id=simulation_id,
+            target_nstat=x,
+            study_region_size=study_region_size,
+            study_region_padding=study_region_padding,
+            spark=spark
         )
-        for x in target_ntots}
+        for x in target_nstats}
 
 
 def estimate_slopes_for_states(
     states: Dict[int, pd.DataFrame],
-    r_min: float
+    rmin: float
 ) -> pd.DataFrame:
     estimates = []
-    for ntot, state in states.items():
-        state = states[ntot]
+    for nstat, state in states.items():
+        state = states[nstat]
         alpha, sigma = estimate_cumulative_slope(
-            state.radius,
-            r_min,
-            state.radius.max(),
+            radii=state.radius,
+            min_radius=rmin,
+            max_radius=state.radius.max(),
             min_search_slope=0.0,
             max_search_slope=10.0
         )
-        estimates.append(
-            {
-                "ntot": ntot, "alpha": alpha, "sigma": sigma,
-            }
-        )
+        estimates.append({"nstat": nstat, "alpha": alpha, "sigma": sigma})
     return pd.DataFrame(estimates)
 
 
@@ -255,17 +255,20 @@ def estimate_intercept(radii: pd.Series, slope: float) -> float:
     return minimize_scalar(create_sfd_loss(radii, -slope), tol=1e-10).x
 
 
-def calculate_areal_density(craters: pd.DataFrame,
-                            study_region_size: int,
-                            study_region_padding: int,
-                            r_stat: float) -> float:
+def calculate_areal_density(
+    craters: pd.DataFrame,
+    study_region_size: int,
+    study_region_padding: int,
+    rstat: float
+) -> float:
     from saturation.areal_density import ArealDensityCalculator
     from saturation.datatypes import Crater
 
     ad_calculator = ArealDensityCalculator(
-        (study_region_size, study_region_size),
-        (study_region_padding, study_region_padding),
-        r_stat)
+        study_region_size=study_region_size,
+        study_region_padding=study_region_padding,
+        rstat=rstat
+    )
     for idx, row in craters.iterrows():
         ad_calculator.add_crater(
             Crater(
@@ -314,12 +317,12 @@ def plot_csfd_with_slope(
     return fig
 
 
-def plot_csfds_for_multiple_ntot(
+def plot_csfds_for_multiple_nstat(
     states: dict[int, pd.DataFrame],
     slope_intercept_line_styles: List[Tuple[float, float, str]]
 ):
     """
-    Plots CSFDs for multiple values of ntot
+    Plots CSFDs for multiple values of nstat
     """
     colors = [
         "blue",
@@ -333,10 +336,10 @@ def plot_csfds_for_multiple_ntot(
     ax = fig.add_subplot(111)
 
     radii = None
-    for idx, (ntot, data) in enumerate(states.items()):
+    for idx, (nstat, data) in enumerate(states.items()):
         radii = data.radius.sort_values()
-        ntot_string = ntot if ntot < 1e5 else get_scientific_notation(ntot, 2)
-        ax.plot(radii, range(len(radii) + 1, 1, -1), label="$N_{tot}" + f"={ntot_string}$", c=colors[idx % len(colors)])
+        nstat_string = nstat if nstat < 1e5 else get_scientific_notation(nstat, 2)
+        ax.plot(radii, range(len(radii) + 1, 1, -1), label="$N_{\\text{stat}}" + f"={nstat_string}$", c=colors[idx % len(colors)])
 
     for slope, intercept, line_style, label in slope_intercept_line_styles:
         expected = intercept * radii ** slope
@@ -533,7 +536,7 @@ def plot_metric(
 
     simulation_ids = data.simulation_id.drop_duplicates()
     for idx, simulation_id in enumerate(simulation_ids):
-        data_subset = data[data.simulation_id == simulation_id].sort_values("ntot")
+        data_subset = data[data.simulation_id == simulation_id].sort_values("nstat")
         ax.plot(
             data_subset[x_var], data_subset[y_var], c=colors[idx % len(colors)], ls=line_styles[idx % len(line_styles)]
         )
@@ -549,56 +552,60 @@ def plot_metric(
 
 
 def plot_metrics(
-    *, df: pd.DataFrame, scenario_name: str, ntot_bound_saturation: int, show_plots: bool = False
+    *,
+    df: pd.DataFrame,
+    scenario_name: str,
+    nstat_bound_saturation: int,
+    show_plots: bool = False
 ):
-    ad_line = df[df.ntot > ntot_bound_saturation].ad.mean()
+    ad_line = df[df.nstat > nstat_bound_saturation].ad.mean()
     print(f"AD line: {ad_line}")
     fig = plot_metric(
-        df, "ntot", "$N_{tot}$", "ad", "$A_d$", dotted_horizontal_lines=[ad_line]
+        df, "nstat", "$N_{\\text{stat}}$", "ad", "$A_d$", dotted_horizontal_lines=[ad_line]
     )
     if show_plots:
         plt.show()
-    fig.savefig(f"figures/{scenario_name}_ntot_ad.png", bbox_inches="tight")
+    fig.savefig(f"figures/{scenario_name}_nstat_ad.png", bbox_inches="tight")
 
-    log_mnnd_line = df[df.ntot > ntot_bound_saturation].log_mnnd.mean()
+    log_mnnd_line = df[df.nstat > nstat_bound_saturation].log_mnnd.mean()
     print(f"log_mnnd line: {log_mnnd_line}")
     fig = plot_metric(
-        df, "ntot", "$N_{tot}$", "log_mnnd", "$log_{10}(\\overline{NN}_d)$", dotted_horizontal_lines=[log_mnnd_line]
+        df, "nstat", "$N_{\\text{stat}}$", "log_mnnd", "$log_{10}(\\overline{NN}_d)$", dotted_horizontal_lines=[log_mnnd_line]
     )
     plt.show()
-    fig.savefig(f"figures/{scenario_name}_ntot_mnnd.png", bbox_inches="tight")
+    fig.savefig(f"figures/{scenario_name}_nstat_mnnd.png", bbox_inches="tight")
 
     fig = plot_metric(
-        df, "ntot", "$N_{tot}$", "z", "$Z$", dotted_horizontal_lines=[-1.96, 1.96]
+        df, "nstat", "$N_{\\text{stat}}$", "z", "$Z$", dotted_horizontal_lines=[-1.96, 1.96]
     )
     if show_plots:
         plt.show()
-    fig.savefig(f"figures/{scenario_name}_ntot_z.png", bbox_inches="tight")
+    fig.savefig(f"figures/{scenario_name}_nstat_z.png", bbox_inches="tight")
 
     fig = plot_metric(
-        df, "ntot", "$N_{tot}$", "za", "$Z_a$", dotted_horizontal_lines=[-1.96, 1.96]
+        df, "nstat", "$N_{\\text{stat}}$", "za", "$Z_a$", dotted_horizontal_lines=[-1.96, 1.96]
     )
     if show_plots:
         plt.show()
-    fig.savefig(f"figures/{scenario_name}_ntot_za.png", bbox_inches="tight")
+    fig.savefig(f"figures/{scenario_name}_nstat_za.png", bbox_inches="tight")
 
-    radius_mean_line = df[df.ntot > ntot_bound_saturation].radius_mean.mean()
+    radius_mean_line = df[df.nstat > nstat_bound_saturation].radius_mean.mean()
     print(f"radius_mean line: {radius_mean_line}")
     fig = plot_metric(
-        df, "ntot", "$N_{tot}$", "radius_mean", "$\\overline{r}$", dotted_horizontal_lines=[radius_mean_line]
+        df, "nstat", "$N_{\\text{stat}}$", "radius_mean", "$\\overline{r}$", dotted_horizontal_lines=[radius_mean_line]
     )
     if show_plots:
         plt.show()
-    fig.savefig(f"figures/{scenario_name}_ntot_radius_mean.png", bbox_inches="tight")
+    fig.savefig(f"figures/{scenario_name}_nstat_radius_mean.png", bbox_inches="tight")
 
-    radius_stdev_line = df[df.ntot > ntot_bound_saturation].radius_stdev.mean()
+    radius_stdev_line = df[df.nstat > nstat_bound_saturation].radius_stdev.mean()
     print(f"radius_stdev line: {radius_stdev_line}")
     fig = plot_metric(
-        df, "ntot", "$N_{tot}$", "radius_stdev", "$\\sigma_r$", dotted_horizontal_lines=[radius_stdev_line]
+        df, "nstat", "$N_{\\text{stat}}$", "radius_stdev", "$\\sigma_r$", dotted_horizontal_lines=[radius_stdev_line]
     )
     if show_plots:
         plt.show()
-    fig.savefig(f"figures/{scenario_name}_ntot_radius_stdev.png", bbox_inches="tight")
+    fig.savefig(f"figures/{scenario_name}_nstat_radius_stdev.png", bbox_inches="tight")
 
 
 def plot_slope_estimates(estimates_df: pd.DataFrame):
@@ -608,9 +615,9 @@ def plot_slope_estimates(estimates_df: pd.DataFrame):
     ax = fig.add_subplot(111)
 
     ax.errorbar(
-        estimates_df.ntot, estimates_df.alpha, estimates_df.sigma, ls="None", marker="+"
+        estimates_df.nstat, estimates_df.alpha, estimates_df.sigma, ls="None", marker="+"
     )
-    ax.set_xlabel("$N_{tot}$", fontsize=font_size)
+    ax.set_xlabel("$N_{\\text{stat}}$", fontsize=font_size)
     ax.set_ylabel("$b$", fontsize=font_size)
     ax.set_xscale("log")
 
@@ -618,6 +625,7 @@ def plot_slope_estimates(estimates_df: pd.DataFrame):
 
 
 def get_statistics_with_lifespans_for_simulations(
+    *,
     simulation_ids: List[int],
     base_path: str,
     configs_df: DataFrame,
@@ -638,7 +646,7 @@ def get_statistics_with_lifespans_for_simulations(
         removals = spark.read.parquet(f"{base_path}/{simulation_id}/crater_removals_*.parquet")
         statistics_for_simulation = spark.read.parquet(f"{base_path}/{simulation_id}/statistics_*.parquet")
 
-        max_n = statistics_for_simulation.select(F.max("ntot")).collect()[0][0]
+        max_n = statistics_for_simulation.select(F.max("nstat")).collect()[0][0]
 
         statistics_for_simulation.createOrReplaceTempView("statistics")
         craters.createOrReplaceTempView("craters")
@@ -650,7 +658,7 @@ def get_statistics_with_lifespans_for_simulations(
             c.y,
             c.radius,
             s.simulation_id,
-            s.ntot AS nstat,
+            s.nstat,
             s.nobs,
             s.areal_density,
             configs.slope,

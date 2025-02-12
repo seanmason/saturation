@@ -13,7 +13,7 @@ def create_configs_for_product_of_parameters(
     rmults: List[float],
     mrps: List[float],
     rim_erasure_methods: List[Dict[str, Any]],
-    stop_ntot: int,
+    nstop: int,
     base_config: Dict[str, Any],
     overrides: Dict[str, Any] = None,
 ) -> List[Dict]:
@@ -21,8 +21,8 @@ def create_configs_for_product_of_parameters(
         "name": "circumference"
     }
     stop_condition = {
-        "name": "ntot",
-        "ntot": stop_ntot
+        "name": "nstat",
+        "nstat": nstop
     }
 
     result = []
@@ -64,9 +64,9 @@ def add_configs(
 def main():
     n_workers = 16
     base_config = {
-        "r_min": 0.5,
-        "r_max": 500,
-        "r_stat": 3,
+        "rmin": 0.5,
+        "rmax": 500,
+        "rstat": 3,
         "study_region_padding": 250,
         "study_region_size": 2000,
         "spatial_hash_cell_size": 5,
@@ -90,10 +90,10 @@ def main():
         rim_erasure_methods=[{"name": "radius_ratio", "ratio": erat}],
         rmults=[1.5],
         mrps=[0.5],
-        stop_ntot=2500000,
+        nstop=2500000,
         base_config=base_config,
         overrides={
-            "r_min": base_config["r_stat"] / erat,
+            "rmin": base_config["rstat"] / erat,
             "calculate_areal_density": True,
             "calculate_nearest_neighbor_stats": True,
         }
@@ -110,10 +110,10 @@ def main():
         rim_erasure_methods=[{"name": "radius_ratio", "ratio": erat}],
         rmults=[1.9],
         mrps=[0.75],
-        stop_ntot=2500000,
+        nstop=2500000,
         base_config=base_config,
         overrides={
-            "r_min": base_config["r_stat"] / erat,
+            "rmin": base_config["rstat"] / erat,
             "calculate_areal_density": True,
             "calculate_nearest_neighbor_stats": True,
             "random_seed": 123
@@ -130,10 +130,10 @@ def main():
         rim_erasure_methods=[{"name": "radius_ratio", "ratio": erat}],
         rmults=[1.1],
         mrps=[0.25],
-        stop_ntot=2500000,
+        nstop=2500000,
         base_config=base_config,
         overrides={
-            "r_min": base_config["r_stat"] / erat,
+            "rmin": base_config["rstat"] / erat,
             "calculate_areal_density": True,
             "calculate_nearest_neighbor_stats": True,
             "random_seed": 123
@@ -150,9 +150,9 @@ def main():
         rim_erasure_methods=[{"name": "radius_ratio", "ratio": erat}],
         rmults=[1.5],
         mrps=[0.5],
-        stop_ntot=50000000,
+        nstop=50000000,
         base_config=base_config,
-        overrides={"r_min": base_config["r_stat"] / erat}
+        overrides={"rmin": base_config["rstat"] / erat}
     )
     run_configurations = add_configs(
         configs=run_configurations,
@@ -169,9 +169,9 @@ def main():
         rim_erasure_methods=[{"name": "radius_ratio", "ratio": 1000000.0}],
         rmults=[1.5],
         mrps=[0.5],
-        stop_ntot=1000000,
+        nstop=1000000,
         base_config=base_config,
-        overrides={"r_min": base_config["r_stat"] / erat}
+        overrides={"rmin": base_config["rstat"] / erat}
     )
     run_configurations = add_configs(
         configs=run_configurations, configs_to_add=configs_to_add
@@ -199,13 +199,13 @@ def main():
             rim_erasure_methods=rim_erasure_methods,
             rmults=[1.0],
             mrps=[0.5],
-            stop_ntot=1000000,
+            nstop=1000000,
             base_config=base_config,
             overrides={
-                "r_min": 1.1 / ratio,
+                "rmin": 1.1 / ratio,
                 "study_region_padding": 125,
                 "study_region_size": 1000,
-                "r_max": 250,
+                "rmax": 250,
             }
         )
         run_configurations = add_configs(
@@ -223,13 +223,13 @@ def main():
         }, ],
         rmults=[1.0],
         mrps=[0.5],
-        stop_ntot=1000000,
+        nstop=1000000,
         base_config=base_config,
         overrides={
-            "r_min": 1.1 / ratio,
+            "rmin": 1.1 / ratio,
             "study_region_padding": 125,
             "study_region_size": 1000,
-            "r_max": 250,
+            "rmax": 250,
         }
     )
     run_configurations = add_configs(
@@ -246,13 +246,13 @@ def main():
         }, ],
         rmults=[1.0],
         mrps=[0.5],
-        stop_ntot=1000000,
+        nstop=1000000,
         base_config=base_config,
         overrides={
-            "r_min": 1.1 / ratio,
+            "rmin": 1.1 / ratio,
             "study_region_padding": 125,
             "study_region_size": 1000,
-            "r_max": 250,
+            "rmax": 250,
         }
     )
     run_configurations = add_configs(
@@ -275,13 +275,13 @@ def main():
         },],
         rmults=[1.0],
         mrps=[0.5],
-        stop_ntot=1000000,
+        nstop=1000000,
         base_config=base_config,
         overrides={
-            "r_min": 1.1 / ratio,
+            "rmin": 1.1 / ratio,
             "study_region_padding": 125,
             "study_region_size": 1000,
-            "r_max": 250,
+            "rmax": 250,
         }
     )
     run_configurations = add_configs(
@@ -311,13 +311,13 @@ def main():
             rim_erasure_methods=rim_erasure_methods,
             rmults=[1.0],
             mrps=[0.5],
-            stop_ntot=5000000,
+            nstop=5000000,
             base_config=base_config,
             overrides={
-                "r_min": 1.1 / ratio,
+                "rmin": 1.1 / ratio,
                 "study_region_padding": 125,
                 "study_region_size": 1000,
-                "r_max": 250,
+                "rmax": 250,
             }
         )
         run_configurations = add_configs(

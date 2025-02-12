@@ -11,7 +11,7 @@ def test_exponent_radius_conditional_overlap_too_small():
         exponent=0.5,
         ratio=1.0,
         rmult=1.0,
-        r_stat=10.0
+        rstat=10.0
     )
     existing = Crater(id=1, x=0, y=0, radius=5**2)
     new = Crater(id=2, x=0, y=existing.radius, radius=4)
@@ -29,7 +29,7 @@ def test_exponent_radius_conditional_overlap_large_enough():
         exponent=0.5,
         ratio=1.0,
         rmult=1.0,
-        r_stat=10.0
+        rstat=10.0
     )
     existing = Crater(id=1, x=0, y=0, radius=5**2)
     new = Crater(id=2, x=0, y=existing.radius, radius=5.1)
@@ -48,7 +48,7 @@ def test_exponent_radius_conditional_overlap_large_enough_with_ratio():
         exponent=0.5,
         ratio=ratio,
         rmult=1.0,
-        r_stat=10.0
+        rstat=10.0
     )
     existing = Crater(id=1, x=0, y=0, radius=5**2 / ratio)
     new = Crater(id=2, x=0, y=existing.radius, radius=5.1)
@@ -67,7 +67,7 @@ def test_get_min_radius_threshold():
         exponent=0.5,
         ratio=ratio,
         rmult=1.0,
-        r_stat=10.0
+        rstat=10.0
     )
 
     # Assert

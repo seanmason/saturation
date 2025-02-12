@@ -10,7 +10,7 @@ from saturation.datatypes import Crater
 spec = OrderedDict({
     "_study_region_size": nb.types.int64,
     "_study_region_padding": nb.types.int64,
-    "_r_stat": nb.types.float32,
+    "_rstat": nb.types.float32,
     "_study_region": nb.types.uint8[:, :],
     "_total_study_region_area": nb.types.int64,
     "_cratered_area": nb.types.int64,
@@ -19,13 +19,15 @@ spec = OrderedDict({
 
 @jitclass(spec=spec)
 class ArealDensityCalculator(object):
-    def __init__(self,
-                 study_region_size: int,
-                 study_region_padding: int,
-                 r_stat: float):
+    def __init__(
+        self,
+        study_region_size: int,
+        study_region_padding: int,
+        rstat: float
+    ):
         self._study_region_size = study_region_size
         self._study_region_padding = study_region_padding
-        self._r_stat = r_stat
+        self._rstat = rstat
 
         self._study_region = np.zeros((self._study_region_size, self._study_region_size), dtype='uint8')
 
@@ -33,7 +35,7 @@ class ArealDensityCalculator(object):
         self._cratered_area = 0
 
     def add_crater(self, new_crater: Crater):
-        if new_crater.radius >= self._r_stat and self._crater_is_in_study_region(new_crater):
+        if new_crater.radius >= self._rstat and self._crater_is_in_study_region(new_crater):
             # Calculate the difference in the cratered area before and after crater addition.
             before = self._get_cratered_area(new_crater)
             self._increment_study_region(new_crater, 1)
@@ -51,7 +53,7 @@ class ArealDensityCalculator(object):
         difference = 0
 
         for erased in new_erased_craters:
-            if erased.radius >= self._r_stat and self._crater_is_in_study_region(erased):
+            if erased.radius >= self._rstat and self._crater_is_in_study_region(erased):
                 # Calculate the difference in the cratered area before and after crater removal.
                 before = self._get_cratered_area(erased)
                 self._increment_study_region(erased, -1)

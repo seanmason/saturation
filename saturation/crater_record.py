@@ -38,7 +38,8 @@ class CraterRecord(object):
     Maintains the record of craters.
     """
     def __init__(self,
-                 r_stat: float,
+                 *,
+                 rstat: float,
                  rim_erasure_calculator: RimErasureCalculator,
                  initial_rim_state_calculator: InitialRimStateCalculator,
                  mrp: float,
@@ -46,8 +47,9 @@ class CraterRecord(object):
                  study_region_size: int,
                  study_region_padding: int,
                  cell_size: int,
-                 calculate_nearest_neighbor_stats: bool):
-        self._r_stat = r_stat
+                 calculate_nearest_neighbor_stats: bool
+        ):
+        self._rstat = rstat
         self._rim_erasure_calculator = rim_erasure_calculator
         self._initial_rim_state_calculator = initial_rim_state_calculator
         self._mrp = mrp
@@ -74,7 +76,7 @@ class CraterRecord(object):
         # Contains all craters with r > r_stat within the study region
         self._craters_in_study_region = CraterDictionary()
 
-        self._ntot = 0
+        self._nstat = 0
 
         self._initial_rims: Dict[int, float] = dict()
         self._remaining_rims: Dict[int, float] = dict()
@@ -84,8 +86,8 @@ class CraterRecord(object):
         self._sum_tracked_squared_radii: float = 0.0
 
     @property
-    def ntot(self) -> int:
-        return self._ntot
+    def nstat(self) -> int:
+        return self._nstat
 
     @property
     def nobs(self) -> int:
@@ -108,7 +110,7 @@ class CraterRecord(object):
         new_y = new_crater.y
         effective_radius = new_crater.radius * self._rmult
 
-        if new_crater.radius >= self._r_stat:
+        if new_crater.radius >= self._rstat:
             initial = self._initial_rim_state_calculator.calculate(new_crater)
             self._remaining_rims[new_crater.id] = initial
             self._initial_rims[new_crater.id] = initial
@@ -152,17 +154,17 @@ class CraterRecord(object):
         :return: A list of craters that were erased as a result of the addition.
         """
         in_study_region = self._is_in_study_region(crater)
-        if crater.radius >= self._r_stat:
+        if crater.radius >= self._rstat:
             self._distances.add(crater, in_study_region)
 
         self._update_rim_arcs(crater)
 
-        if crater.radius >= self._r_stat:
+        if crater.radius >= self._rstat:
             self._all_craters_in_record.add(crater)
 
             if in_study_region:
                 self._craters_in_study_region.add(crater)
-                self._ntot += 1
+                self._nstat += 1
                 self._sum_tracked_radii += crater.radius
                 self._sum_tracked_squared_radii += crater.radius ** 2
 

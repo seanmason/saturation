@@ -43,12 +43,12 @@ class ExponentRadiusConditionalRimOverlapRimErasureCalculator(RimErasureCalculat
         exponent: float,
         ratio: float,
         rmult: float,
-        r_stat: float
+        rstat: float
     ):
         self._exponent = exponent
         self._ratio = ratio
         self._rmult = rmult
-        self._min_radius_threshold = r_stat ** exponent / self._ratio
+        self._min_radius_threshold = rstat ** exponent / self._ratio
 
     def get_min_radius_threshold(self) -> float:
         return self._min_radius_threshold
@@ -87,7 +87,7 @@ def get_rim_erasure_calculator(
     *,
     config: Dict[str, any],
     rmult: float,
-    r_stat: float
+    rstat: float
 ) -> RimErasureCalculator:
     name = config["name"]
 
@@ -96,7 +96,7 @@ def get_rim_erasure_calculator(
             exponent=config["exponent"],
             ratio=config["ratio"],
             rmult=rmult,
-            r_stat=r_stat
+            rstat=rstat
         )
     else:
         raise Exception(f"Unknown rim erasure calculator {name}")

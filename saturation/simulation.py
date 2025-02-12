@@ -33,9 +33,9 @@ class SimulationConfig:
     rmult: float
     study_region_size: int
     study_region_padding: int
-    r_min: float
-    r_stat: float
-    r_max: float
+    rmin: float
+    rstat: float
+    rmax: float
     stop_condition: Dict
     calculate_areal_density: bool
     calculate_nearest_neighbor_stats: bool
@@ -55,9 +55,9 @@ class SimulationConfig:
             "slope": self.slope,
             "rim_erasure_method": self.rim_erasure_method,
             "initial_rim_calculation_method": self.initial_rim_calculation_method,
-            "r_min": self.r_min,
-            "r_stat": self.r_stat,
-            "r_max": self.r_max,
+            "rmin": self.rmin,
+            "rstat": self.rstat,
+            "rmax": self.rmax,
             "mrp": self.mrp,
             "rmult": self.rmult,
             "study_region_size": self.study_region_size,
@@ -169,22 +169,22 @@ def run_simulation(base_output_path: str, config: SimulationConfig):
 
         full_region_size = config.study_region_size + 2 * config.study_region_padding
         size_distribution = ParetoProbabilityDistribution(alpha=-config.slope,
-                                                          x_min=config.r_min,
-                                                          x_max=config.r_max)
+                                                          x_min=config.rmin,
+                                                          x_max=config.rmax)
 
         # The crater record handles removal of craters rims and the record
         # of what craters remain at a given point in time.
-        r_stat = config.r_stat
-        rim_erasure_effectiveness_function = get_rim_erasure_calculator(
+        rstat = config.rstat
+        rim_erasure_calculator = get_rim_erasure_calculator(
             config=config.rim_erasure_method,
             rmult=config.rmult,
-            r_stat=r_stat
+            rstat=rstat
         )
 
         crater_generator = get_craters(
             size_distribution=size_distribution,
             region_size=full_region_size,
-            min_radius_threshold=rim_erasure_effectiveness_function.get_min_radius_threshold(),
+            min_radius_threshold=rim_erasure_calculator.get_min_radius_threshold(),
             random_seed=config.random_seed
         )
 
@@ -207,27 +207,27 @@ def run_simulation(base_output_path: str, config: SimulationConfig):
 
         initial_rim_state_calculator = get_initial_rim_state_calculator(config.initial_rim_calculation_method)
         crater_record = CraterRecord(
-            config.r_stat,
-            rim_erasure_effectiveness_function,
-            initial_rim_state_calculator,
-            config.mrp,
-            config.rmult,
-            config.study_region_size,
-            config.study_region_padding,
-            config.spatial_hash_cell_size,
-            calculate_nearest_neighbor_stats
+            rstat=config.rstat,
+            rim_erasure_calculator=rim_erasure_calculator,
+            initial_rim_state_calculator=initial_rim_state_calculator,
+            mrp=config.mrp,
+            rmult=config.rmult,
+            study_region_size=config.study_region_size,
+            study_region_padding=config.study_region_padding,
+            cell_size=config.spatial_hash_cell_size,
+            calculate_nearest_neighbor_stats=calculate_nearest_neighbor_stats
         )
 
         areal_density_calculator = ArealDensityCalculator(
             (config.study_region_size, config.study_region_size),
             (config.study_region_padding, config.study_region_padding),
-            r_stat
+            rstat
         )
 
-        last_ntot = 0
+        last_nstat = 0
         for crater in crater_generator:
             # This check is an optimization; it is redundant with other checks.
-            if not rim_erasure_effectiveness_function.can_affect_rims(crater.radius):
+            if not rim_erasure_calculator.can_affect_rims(crater.radius):
                 continue
 
             removed_craters = crater_record.add(crater)
@@ -240,13 +240,13 @@ def run_simulation(base_output_path: str, config: SimulationConfig):
                     areal_density_calculator.remove_craters(removed_craters)
                 crater_removals_writer.write(removed_craters, crater)
 
-            if crater.radius >= r_stat:
+            if crater.radius >= rstat:
                 crater_writer.write(crater)
 
             # Only perform updates if the study region crater count ticked up
-            ntot_current = crater_record.ntot
-            if last_ntot != ntot_current:
-                last_ntot = ntot_current
+            nstat_current = crater_record.nstat
+            if last_nstat != nstat_current:
+                last_nstat = nstat_current
 
                 areal_density = areal_density_calculator.areal_density
 
@@ -266,7 +266,7 @@ def run_simulation(base_output_path: str, config: SimulationConfig):
                 # Save stats
                 statistics_row = StatisticsRow(
                     crater_id=crater.id,
-                    ntot=ntot_current,
+                    nstat=nstat_current,
                     nobs=crater_record.nobs,
                     areal_density=areal_density,
                     mnnd=crater_record.get_mnnd(),
@@ -280,12 +280,12 @@ def run_simulation(base_output_path: str, config: SimulationConfig):
                 )
                 statistics_writer.write(statistics_row)
 
-                if config.write_state_cadence != 0 and ntot_current % config.write_state_cadence == 0:
-                    state_snapshot_writer.write_state_snapshot(crater_record, crater, ntot_current)
+                if config.write_state_cadence != 0 and nstat_current % config.write_state_cadence == 0:
+                    state_snapshot_writer.write_state_snapshot(crater_record, crater, nstat_current)
 
-                if ntot_current in config.write_image_points \
-                        or config.write_image_cadence != 0 and ntot_current % config.write_image_cadence == 0:
-                    png_name = output_path / f"study_region_{ntot_current}.png"
+                if nstat_current in config.write_image_points \
+                        or config.write_image_cadence != 0 and nstat_current % config.write_image_cadence == 0:
+                    png_name = output_path / f"study_region_{nstat_current}.png"
                     save_study_region(areal_density_calculator, png_name)
 
                 if stop_condition.should_stop(statistics_row):

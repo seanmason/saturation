@@ -13,12 +13,12 @@ def test_crater_record_integration():
     Integration/regression test for the crater record.
     """
     # Arrange
-    ntot = 5000
+    nstop = 5000
     study_region_size = 1000
     study_region_padding = 125
-    r_stat = 15
+    rstat = 15
     ratio = 5.0
-    rmult=1.5
+    rmult = 1.5
     exponent = 0.5
 
     rim_erasure_calculator = get_rim_erasure_calculator(
@@ -28,7 +28,7 @@ def test_crater_record_integration():
             "exponent": exponent
         },
         rmult=rmult,
-        r_stat=r_stat,
+        rstat=rstat,
     )
     min_radius_threshold = rim_erasure_calculator.get_min_radius_threshold()
 
@@ -40,7 +40,7 @@ def test_crater_record_integration():
         random_seed=123
     )
     record = CraterRecord(
-        r_stat=r_stat,
+        rstat=rstat,
         rim_erasure_calculator=rim_erasure_calculator,
         initial_rim_state_calculator=CircumferenceInitialRimStateCalculator(),
         mrp=0.5,
@@ -53,7 +53,7 @@ def test_crater_record_integration():
     areal_density_calculator = ArealDensityCalculator(
         study_region_size=study_region_size,
         study_region_padding=study_region_padding,
-        r_stat=r_stat
+        rstat=rstat
     )
 
     # Act
@@ -68,12 +68,12 @@ def test_crater_record_integration():
             areal_density_calculator.remove_craters(removed_craters)
 
         counter += 1
-        if record.ntot == ntot:
+        if record.nstat == nstop:
             break
 
     # Assert
-    print(f"{counter}, {removed_counter}, {record.nobs}, {record.ntot}, {areal_density_calculator.areal_density}, {crater.id}")
-    assert record.ntot == ntot
+    print(f"{counter}, {removed_counter}, {record.nobs}, {record.nstat}, {areal_density_calculator.areal_density}, {crater.id}")
+    assert record.nstat == nstop
     assert record.nobs == 71
     assert removed_counter == 6242
     assert areal_density_calculator.areal_density == 0.300981

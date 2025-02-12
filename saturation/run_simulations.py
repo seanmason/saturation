@@ -1,4 +1,4 @@
-import multiprocessing
+from joblib import Parallel, delayed
 import sys
 from typing import Dict, List
 
@@ -14,8 +14,8 @@ def get_simulation_configs(config: Dict) -> List[SimulationConfig]:
     """
     result = []
 
-    # Start high r_max/r_min ratio first, they take longer
-    key_func = lambda x: (x[1]["r_min"] / x[1]["r_max"] , x[1]["slope"])
+    # Start high rmax/rmin ratio first, they take longer
+    key_func = lambda x: (x[1]["rmin"] / x[1]["rmax"] , x[1]["slope"])
     run_configurations = sorted(config["run_configurations"].items(), key=key_func)
     for simulation_id, values in run_configurations:
         result.append(
@@ -28,9 +28,9 @@ def get_simulation_configs(config: Dict) -> List[SimulationConfig]:
                 rmult=values["rmult"],
                 rim_erasure_method=values["rim_erasure_method"],
                 initial_rim_calculation_method=values["initial_rim_calculation_method"],
-                r_min=values["r_min"],
-                r_stat=values["r_stat"],
-                r_max=values["r_max"],
+                rmin=values["rmin"],
+                rstat=values["rstat"],
+                rmax=values["rmax"],
                 study_region_size=values["study_region_size"],
                 study_region_padding=values["study_region_padding"],
                 stop_condition=values["stop_condition"],
@@ -53,20 +53,18 @@ def main(base_output_path: str, config_filename: str):
     with open(config_filename) as config_file:
         config = yaml.safe_load(config_file)
 
-    n_workers = config['n_workers']
+    n_workers = config["n_workers"]
     simulation_configs = get_simulation_configs(config)
 
     if n_workers > 1:
-        with multiprocessing.Pool(processes=n_workers) as pool:
-            for simulation_config in simulation_configs:
-                pool.apply_async(run_simulation, (base_output_path, simulation_config))
-                sys.stdout.flush()
-
-            pool.close()
-            pool.join()
+        Parallel(n_jobs=n_workers)(
+            delayed(run_simulation)(base_output_path, simulation_config)
+            for simulation_config in simulation_configs
+        )
     else:
         for simulation_config in simulation_configs:
             run_simulation(base_output_path, simulation_config)
+
 
 
 if __name__ == '__main__':
