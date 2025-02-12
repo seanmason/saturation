@@ -58,7 +58,11 @@ def test_crater_record_integration():
     # Act
     counter = 0
     removed_counter = 0
+    should_exit = False
     for crater_group, geq_rstat in crater_generator:
+        if should_exit:
+            break
+
         if not geq_rstat:
             removed_craters, removed_by_ids = crater_record.add_craters_smaller_than_rstat(crater_group)
             removed_counter += len(removed_craters)
@@ -76,13 +80,14 @@ def test_crater_record_integration():
 
                 counter += 1
                 if crater_record.nstat == nstop:
+                    should_exit = True
                     break
 
     # Assert
     print(len(crater_record.all_craters_in_record))
     print(f"{counter}, {removed_counter}, {crater_record.nobs}, {crater_record.nstat}, {areal_density_calculator.areal_density}, {crater.id}")
     assert crater_record.nstat == nstop
-    assert crater_record.nobs == 71
-    assert removed_counter == 6242
-    assert areal_density_calculator.areal_density == 0.300981
-    assert crater.id == 1533914
+    assert crater_record.nobs == 48
+    assert removed_counter == 6224
+    assert areal_density_calculator.areal_density == 0.259896
+    assert crater.id == 1553841
