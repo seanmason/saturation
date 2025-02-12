@@ -75,30 +75,69 @@ class SimulationConfig:
         }
 
 
-def get_craters(size_distribution: ProbabilityDistribution,
-                full_region_size: float) -> Generator[Crater, None, None]:
+def get_craters(
+    *,
+    size_distribution: ProbabilityDistribution,
+    region_size: float,
+    min_radius_threshold: float,
+    random_seed: int,
+) -> Generator[Crater, None, None]:
     """
-    Infinite generator for craters. full_region_size determines the size of the study region being impacted,
-    including padding.
+    Infinite generator for craters. Generates craters only if their radius is above min_radius_threshold.
+    Assumes valid craters are extremely rare (e.g., 1 in 1000).
     """
     CHUNK_SIZE = 100000
+    BATCH_SIZE = CHUNK_SIZE
+    DTYPE = np.float32
 
-    full_region_size = np.float32(full_region_size)
+    rng = np.random.default_rng(seed=random_seed)
 
+    uniform_threshold = DTYPE(size_distribution.cdf(min_radius_threshold))
+
+    region_size = DTYPE(region_size)
     crater_id = 1
-    while True:
-        index = (crater_id - 1) % CHUNK_SIZE
-        if index == 0:
-            xy = np.random.rand(CHUNK_SIZE, 2).astype("float32") * full_region_size
-            radii = size_distribution.pullback(np.random.rand(CHUNK_SIZE)).astype("float32")
+    index = CHUNK_SIZE
 
-        yield Crater(
-            id=crater_id,
-            x=xy[index, 0],
-            y=xy[index, 1],
-            radius=radii[index]
-        )
-        crater_id += 1
+    xy = np.empty(shape=(CHUNK_SIZE, 2), dtype=DTYPE)
+    radii = np.empty(shape=CHUNK_SIZE, dtype=DTYPE)
+    uniform = np.empty(shape=BATCH_SIZE, dtype=DTYPE)
+    crater_ids = np.empty(shape=BATCH_SIZE, dtype=np.int64)
+
+    while True:
+        if index >= CHUNK_SIZE:
+            rng.random(dtype=DTYPE, out=xy)
+            np.multiply(xy, region_size, out=xy)
+            rng.random(dtype=DTYPE, out=uniform)
+            count = 0
+
+            while count < CHUNK_SIZE:
+                rng.random(dtype=DTYPE, out=uniform)
+                indexes_over_threshold = np.where(uniform >= uniform_threshold)[0]
+                n_over_threshold = indexes_over_threshold.size
+
+                if count + n_over_threshold > CHUNK_SIZE:
+                    n_over_threshold = CHUNK_SIZE - count
+
+                upper_index = min(count + n_over_threshold, CHUNK_SIZE)
+                n_entries = upper_index - count
+                radii[count:upper_index] = uniform[indexes_over_threshold][:n_entries]
+                crater_ids[count:upper_index] = crater_id + indexes_over_threshold[:n_entries]
+
+                count += n_entries
+                crater_id += BATCH_SIZE
+
+            radii = size_distribution.pullback(radii).astype("float32")
+            index = 0
+
+        while index < CHUNK_SIZE:
+            yield Crater(
+                id=crater_ids[index],
+                x=xy[index, 0],
+                y=xy[index, 1],
+                radius=radii[index]
+            )
+            index += 1
+
 
 
 def run_simulation(base_output_path: str, config: SimulationConfig):
@@ -132,7 +171,22 @@ def run_simulation(base_output_path: str, config: SimulationConfig):
         size_distribution = ParetoProbabilityDistribution(alpha=-config.slope,
                                                           x_min=config.r_min,
                                                           x_max=config.r_max)
-        crater_generator = get_craters(size_distribution, full_region_size)
+
+        # The crater record handles removal of craters rims and the record
+        # of what craters remain at a given point in time.
+        r_stat = config.r_stat
+        rim_erasure_effectiveness_function = get_rim_erasure_calculator(
+            config=config.rim_erasure_method,
+            rmult=config.rmult,
+            r_stat=r_stat
+        )
+
+        crater_generator = get_craters(
+            size_distribution=size_distribution,
+            region_size=full_region_size,
+            min_radius_threshold=rim_erasure_effectiveness_function.get_min_radius_threshold(),
+            random_seed=config.random_seed
+        )
 
         # Write out the config file
         with open(output_path / "config.yaml", 'w') as config_output:
@@ -149,14 +203,7 @@ def run_simulation(base_output_path: str, config: SimulationConfig):
 
         study_region_area = config.study_region_size ** 2
 
-        # The crater record handles removal of craters rims and the record
-        # of what craters remain at a given point in time.
-        r_stat = config.r_stat
-        rim_erasure_effectiveness_function = get_rim_erasure_calculator(
-            config=config.rim_erasure_method,
-            rmult=config.rmult,
-            r_stat=r_stat
-        )
+
 
         initial_rim_state_calculator = get_initial_rim_state_calculator(config.initial_rim_calculation_method)
         crater_record = CraterRecord(

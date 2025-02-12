@@ -13,7 +13,10 @@ def get_simulation_configs(config: Dict) -> List[SimulationConfig]:
     creates a set of SimulationConfigs, one per run.
     """
     result = []
-    run_configurations = sorted(config["run_configurations"].items(), key=lambda x: x[1]["slope"])
+
+    # Start high r_max/r_min ratio first, they take longer
+    key_func = lambda x: (x[1]["r_min"] / x[1]["r_max"] , x[1]["slope"])
+    run_configurations = sorted(config["run_configurations"].items(), key=key_func)
     for simulation_id, values in run_configurations:
         result.append(
             SimulationConfig(

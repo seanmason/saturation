@@ -56,3 +56,13 @@ def test_pareto_distribution_pdf_sums_to_1():
     # Assert
     # Should be within .1%
     assert_almost_equal(result, 1, 3)
+
+
+def test_cdf():
+    # Arrange
+    min_value = 5
+    max_value = 100
+    distribution = ParetoProbabilityDistribution(alpha=3, x_min=min_value, x_max=max_value)
+
+    # Assert
+    assert_almost_equal(distribution.cdf(6), 0.4213, 3)

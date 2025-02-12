@@ -11,9 +11,11 @@ def test_calculate_areal_density_no_edges():
     crater = Crater(id=1, x=100, y=100, radius=100)
     study_region_size = 1000
     study_region_padding = 0
-    calculator = ArealDensityCalculator((study_region_size, study_region_size),
-                                        (study_region_padding, study_region_padding),
-                                        3)
+    calculator = ArealDensityCalculator(
+        study_region_size=study_region_size,
+        study_region_padding=study_region_padding,
+        r_stat=3
+    )
 
     # Act
     calculator.add_crater(crater)
@@ -30,9 +32,11 @@ def test_calculate_areal_density_uses_margin():
     # A single crater that has a quarter of its area within the study region
     study_region_size = 5000
     study_region_padding = 100
-    calculator = ArealDensityCalculator((study_region_size, study_region_size),
-                                        (study_region_padding, study_region_padding),
-                                        3)
+    calculator = ArealDensityCalculator(
+        study_region_size=study_region_size,
+        study_region_padding=study_region_padding,
+        r_stat=3
+    )
     crater = Crater(id=1, x=study_region_padding, y=study_region_padding, radius=200)
 
     # Act
@@ -49,9 +53,11 @@ def test_calculate_areal_density_uses_both_margins():
     # Two craters that have a quarter of each's area within the study region
     study_region_size = 5000
     study_region_padding = 100
-    calculator = ArealDensityCalculator((study_region_size, study_region_size),
-                                        (study_region_padding, study_region_padding),
-                                        3)
+    calculator = ArealDensityCalculator(
+        study_region_size=study_region_size,
+        study_region_padding=study_region_padding,
+        r_stat=3
+    )
     crater1 = Crater(id=1, x=study_region_padding, y=study_region_padding, radius=200)
     crater2 = Crater(id=2, x=study_region_size + study_region_padding - 1, y=study_region_size + study_region_padding - 1, radius=500)
 
@@ -72,9 +78,11 @@ def test_calculate_areal_density_overlapping_craters():
     # Completely overlapping craters
     study_region_size = 5000
     study_region_padding = 100
-    calculator = ArealDensityCalculator((study_region_size, study_region_size),
-                                        (study_region_padding, study_region_padding),
-                                        3)
+    calculator = ArealDensityCalculator(
+        study_region_size=study_region_size,
+        study_region_padding=study_region_padding,
+        r_stat=3
+    )
     crater1 = Crater(id=1, x=study_region_padding, y=study_region_padding, radius=200)
     crater2 = Crater(id=2, x=study_region_padding, y=study_region_padding, radius=500)
 
@@ -94,9 +102,11 @@ def test_calculate_areal_density_disjoint_add_and_remove():
     # Two craters that have a quarter of each's area within the margin
     study_region_size = 5000
     study_region_padding = 100
-    calculator = ArealDensityCalculator((study_region_size, study_region_size),
-                                        (study_region_padding, study_region_padding),
-                                        3)
+    calculator = ArealDensityCalculator(
+        study_region_size=study_region_size,
+        study_region_padding=study_region_padding,
+        r_stat=3
+    )
     crater1 = Crater(id=1, x=study_region_padding, y=study_region_padding, radius=200)
     crater2 = Crater(id=2, x=study_region_size + study_region_padding - 1, y=study_region_size + study_region_padding - 1, radius=500)
 
@@ -118,9 +128,11 @@ def test_calculate_areal_density_overlapping_add_and_remove():
     # The first crater gets removed, exposing the second as the only cratered area.
     study_region_size = 5000
     study_region_padding = 100
-    calculator = ArealDensityCalculator((study_region_size, study_region_size),
-                                        (study_region_padding, study_region_padding),
-                                        3)
+    calculator = ArealDensityCalculator(
+        study_region_size=study_region_size,
+        study_region_padding=study_region_padding,
+        r_stat=3
+    )
     crater1 = Crater(id=1, x=study_region_padding + 100, y=study_region_padding + 100, radius=500)
     crater2 = Crater(id=2, x=study_region_padding, y=study_region_padding, radius=200)
 
@@ -140,9 +152,11 @@ def test_craters_outside_study_region_do_not_affect_areal_density():
     # Single crater outside the study region, but with a radius that is inside the study region.
     study_region_size = 5000
     study_region_padding = 100
-    calculator = ArealDensityCalculator((study_region_size, study_region_size),
-                                        (study_region_padding, study_region_padding),
-                                        3)
+    calculator = ArealDensityCalculator(
+        study_region_size=study_region_size,
+        study_region_padding=study_region_padding,
+        r_stat=3
+    )
     crater1 = Crater(id=1, x=0, y=0, radius=500)
 
     # Act
@@ -158,9 +172,11 @@ def test_craters_smaller_than_r_stat_do_not_affect_areal_density():
     # Single crater that is too small
     study_region_size = 5000
     study_region_padding = 100
-    calculator = ArealDensityCalculator((study_region_size, study_region_size),
-                                        (study_region_padding, study_region_padding),
-                                        10)
+    calculator = ArealDensityCalculator(
+        study_region_size=study_region_size,
+        study_region_padding=study_region_padding,
+        r_stat=10
+    )
     crater1 = Crater(id=1, x=study_region_padding, y=study_region_padding, radius=9)
 
     # Act

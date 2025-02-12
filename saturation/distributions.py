@@ -1,4 +1,7 @@
 from abc import ABC, abstractmethod
+from typing import Union
+
+import numpy as np
 
 
 class ProbabilityDistribution(ABC):
@@ -7,21 +10,21 @@ class ProbabilityDistribution(ABC):
     """
 
     @abstractmethod
-    def pullback(self, u: float) -> float:
+    def pullback(self, u: Union[float, np.array]) -> Union[float, np.array]:
         """
         Converts a random uniform value on [0, 1] to a value from the distribution
         """
         pass
 
     @abstractmethod
-    def cdf(self, x: float) -> float:
+    def cdf(self, x: Union[float, np.array]) -> Union[float, np.array]:
         """
         Returns the CDF at x
         """
         pass
 
     @abstractmethod
-    def pdf(self, x: float) -> float:
+    def pdf(self, x: Union[float, np.array]) -> Union[float, np.array]:
         """
         Returns the PDF at x
         """
@@ -38,10 +41,10 @@ class ParetoProbabilityDistribution(ProbabilityDistribution):
         self._x_max = x_max
         self._u_max = 1 - (x_min / x_max) ** alpha
 
-    def pullback(self, u: float) -> float:
+    def pullback(self, u: Union[float, np.array]) -> Union[float, np.array]:
         return (1 - (u * self._u_max)) ** (-1. / self._alpha) * self._x_min
 
-    def cdf(self, x: float) -> float:
+    def cdf(self, x: Union[float, np.array]) -> Union[float, np.array]:
         if x < self._x_min:
             return 0.0
         elif x > self._x_max:
@@ -49,7 +52,7 @@ class ParetoProbabilityDistribution(ProbabilityDistribution):
 
         return 1 - (self._x_min / x) ** self._alpha
 
-    def pdf(self, x: float) -> float:
+    def pdf(self, x: Union[float, np.array]) -> Union[float, np.array]:
         if x < self._x_min:
             return 0.0
 

@@ -1,7 +1,6 @@
 from typing import List, Dict
 
 import numpy as np
-import numba as nb
 from saturation.datatypes import Crater
 from saturation.distances import Distances
 from saturation.initial_rim_state_calculators import InitialRimStateCalculator
@@ -22,7 +21,7 @@ class CraterDictionary(object):
         del self._craters[crater.id]
 
     def get_craters(self) -> List[Crater]:
-        return nb.typed.List(self._craters.values())
+        return list(self._craters.values())
 
     def __getitem__(self, crater_id: int) -> Crater:
         return self._craters[crater_id]
@@ -58,8 +57,8 @@ class CraterRecord(object):
 
         self._min_x = study_region_padding
         self._min_y = study_region_padding
-        self._max_x = study_region_size + study_region_padding - 1
-        self._max_y = study_region_size + study_region_padding - 1
+        self._max_x = study_region_size + study_region_padding
+        self._max_y = study_region_size + study_region_padding
         self._calculate_nearest_neighbor_stats = calculate_nearest_neighbor_stats
 
         self._distances = Distances(
@@ -174,7 +173,10 @@ class CraterRecord(object):
         return removed
 
     def _is_in_study_region(self, crater):
-        return self._min_x <= crater.x <= self._max_x and self._min_y <= crater.y <= self._max_y
+        return (
+            self._min_x <= crater.x <= self._max_x
+            and self._min_y <= crater.y <= self._max_y
+        )
 
     def get_crater(self, crater_id: int) -> Crater:
         """
