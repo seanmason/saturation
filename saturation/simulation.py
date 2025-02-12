@@ -181,10 +181,11 @@ def run_simulation(base_output_path: str, config: SimulationConfig):
             rstat=rstat
         )
 
+        min_radius_threshold = rim_erasure_calculator.get_min_radius_threshold()
         crater_generator = get_craters(
             size_distribution=size_distribution,
             region_size=full_region_size,
-            min_radius_threshold=rim_erasure_calculator.get_min_radius_threshold(),
+            min_radius_threshold=min_radius_threshold,
             random_seed=config.random_seed
         )
 
@@ -219,17 +220,13 @@ def run_simulation(base_output_path: str, config: SimulationConfig):
         )
 
         areal_density_calculator = ArealDensityCalculator(
-            (config.study_region_size, config.study_region_size),
-            (config.study_region_padding, config.study_region_padding),
-            rstat
+            study_region_size=config.study_region_size,
+            study_region_padding=config.study_region_padding,
+            rstat=rstat
         )
 
         last_nstat = 0
         for crater in crater_generator:
-            # This check is an optimization; it is redundant with other checks.
-            if not rim_erasure_calculator.can_affect_rims(crater.radius):
-                continue
-
             removed_craters = crater_record.add(crater)
 
             if calculate_areal_density:
