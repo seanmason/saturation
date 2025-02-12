@@ -1,5 +1,6 @@
 import numpy as np
 import numba as nb
+from numba.experimental import jitclass
 
 from typing import Tuple, Dict, NamedTuple
 
@@ -11,27 +12,26 @@ Arc = Tuple[float, float]
 Location = Tuple[float, float]
 
 
-class Crater(NamedTuple):
-    id: int
-    x: float
-    y: float
-    radius: float
+spec = [
+    ('id', nb.int64),
+    ('x', nb.float32),
+    ('y', nb.float32),
+    ('radius', nb.float32),
+]
+@jitclass(spec)
+class Crater(object):
+    def __init__(self, id, x, y, radius):
+        self.id = id
+        self.x = x
+        self.y = y
+        self.radius = radius
 
-    def __hash__(self) -> int:
-        return int(self.id)
-
-    def __eq__(self, other) -> bool:
-        return other.id == self.id
-
-    def to_dict(self) -> Dict:
-        return dict(
-            [
-                ("id", self.id),
-                ("x", self.x),
-                ("y", self.y),
-                ("radius", self.radius)
-            ]
-        )
-
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "x": self.x,
+            "y": self.y,
+            "radius": self.radius,
+        }
 
 CraterType = nb.typeof(Crater(np.int64(1), np.float32(1.0), np.float32(1.0), np.float32(1.0)))

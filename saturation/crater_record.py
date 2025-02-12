@@ -1,8 +1,9 @@
-from typing import List, Dict
+from typing import List, Tuple
 
 import numpy as np
 import numba as nb
 from numba.experimental import jitclass
+
 from saturation.datatypes import Crater, CraterType
 from saturation.distances import Distances
 from saturation.initial_rim_state_calculators import InitialRimStateCalculator, CircumferenceInitialRimStateCalculator
@@ -65,7 +66,7 @@ spec = {
 }
 
 
-@jitclass(spec)
+# @jitclass(spec)
 class CraterRecord(object):
     """
     Maintains the record of craters.
@@ -113,7 +114,7 @@ class CraterRecord(object):
 
         self._initial_rims = nb.typed.Dict.empty(key_type=nb.int64, value_type=nb.float64)
         self._remaining_rims = nb.typed.Dict.empty(key_type=nb.int64, value_type=nb.float64)
-        self._crater_ids_to_remove = nb.typed.Dict.empty(key_type=nb.int64, value_type=nb.boolean)
+        self._crater_ids_to_remove = nb.typed.Dict.empty(key_type=nb.int64, value_type=nb.int64)
 
         self._sum_tracked_radii: float = 0.0
         self._sum_tracked_squared_radii: float = 0.0
@@ -166,26 +167,30 @@ class CraterRecord(object):
 
                 self._remaining_rims[old_crater_id] = updated_rim
                 if updated_rim / initial_rim < self._mrp:
-                    self._crater_ids_to_remove[old_crater_id] = True
+                    self._crater_ids_to_remove[old_crater_id] = new_crater.id
 
-    def _remove_craters_with_destroyed_rims(self) -> nb.typed.List[Crater]:
-        removed = nb.typed.List.empty_list(CraterType)
+    def _remove_craters_with_destroyed_rims(self) -> Tuple[List[Crater], List[int]]:
+        removed_craters = nb.typed.List()
+        removed_by_ids = nb.typed.List()
+
         for crater_id in self._crater_ids_to_remove:
+            removed_by_id = self._crater_ids_to_remove[crater_id]
             crater = self._all_craters_in_record[crater_id]
-            removed.append(crater)
+            removed_craters.append(crater)
+            removed_by_ids.append(removed_by_id)
 
-            del self._remaining_rims[crater_id]
-            del self._initial_rims[crater_id]
-            self._all_craters_in_record.remove(crater_id)
-            if crater_id in self._craters_in_study_region:
-                self._craters_in_study_region.remove(crater_id)
+            del self._remaining_rims[crater.id]
+            del self._initial_rims[crater.id]
+            self._all_craters_in_record.remove(crater.id)
+            if crater.id in self._craters_in_study_region:
+                self._craters_in_study_region.remove(crater.id)
                 self._sum_tracked_radii -= crater.radius
                 self._sum_tracked_squared_radii -= crater.radius ** 2
 
-        self._crater_ids_to_remove = nb.typed.Dict.empty(key_type=nb.int64, value_type=nb.boolean)
-        return removed
+        self._crater_ids_to_remove = nb.typed.Dict.empty(key_type=nb.int64, value_type=nb.int64)
+        return removed_craters, removed_by_ids
 
-    def add_craters_smaller_than_rstat(self, craters: List[Crater]) -> nb.typed.List[Crater]:
+    def add_craters_smaller_than_rstat(self, craters: List[Crater]) -> Tuple[List[Crater], List[int]]:
         """
         Adds the supplied crater to the record, possibly destroying other craters.
         All craters must be smaller than rstat.
@@ -194,13 +199,13 @@ class CraterRecord(object):
         """
         self._update_rim_arcs(craters)
 
-        removed = self._remove_craters_with_destroyed_rims()
-        if removed:
-            self._distances.remove(removed)
+        removed_craters, removed_by_ids = self._remove_craters_with_destroyed_rims()
+        if len(removed_craters) > 0:
+            self._distances.remove(removed_craters)
 
-        return removed
+        return removed_craters, removed_by_ids
 
-    def add_crater_geq_rstat(self, crater: Crater) -> nb.typed.List[Crater]:
+    def add_crater_geq_rstat(self, crater: Crater) -> Tuple[List[Crater], List[int]]:
         """
         Adds the supplied crater to the record, possibly destroying other craters.
         The crater must be larger than rstat.
@@ -219,11 +224,11 @@ class CraterRecord(object):
 
         self._update_rim_arcs(nb.typed.List([crater]))
 
-        removed = self._remove_craters_with_destroyed_rims()
-        if removed:
-            self._distances.remove(removed)
+        removed_craters, removed_by_ids = self._remove_craters_with_destroyed_rims()
+        if len(removed_craters) > 0:
+            self._distances.remove(removed_craters)
 
-        return removed
+        return removed_craters, removed_by_ids
 
     def _is_in_study_region(self, crater: Crater):
         return (

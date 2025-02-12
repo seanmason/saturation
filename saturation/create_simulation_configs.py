@@ -62,7 +62,7 @@ def add_configs(
 
 
 def main():
-    n_workers = 24
+    n_workers = 28
     base_config = {
         "rmin": 0.5,
         "rmax": 500,
@@ -72,13 +72,14 @@ def main():
         "spatial_hash_cell_size": 10,
         "calculate_areal_density": False,
         "calculate_nearest_neighbor_stats": False,
-        "write_crater_removals_cadence": 50000,
-        "write_craters_cadence": 50000,
+        "write_crater_removals_cadence": 250000,
+        "write_craters_cadence": 250000,
         "write_image_cadence": 0,
         "write_image_points": [],
         "write_state_cadence": 0,
-        "write_statistics_cadence": 50000,
+        "write_statistics_cadence": 250000,
     }
+    nstop = 2500000
 
     ratio = 3.0
 
@@ -95,7 +96,7 @@ def main():
                              }],
         rmults=[1.0],
         mrps=[0.5],
-        nstop=2500000,
+        nstop=nstop,
         base_config=base_config,
         overrides={
             "rmin": base_config["rstat"] / ratio,
@@ -119,7 +120,7 @@ def main():
                              }],
         rmults=[1.0],
         mrps=[0.5],
-        nstop=2500000,
+        nstop=nstop,
         base_config=base_config,
         overrides={"rmin": base_config["rstat"] / ratio}
     )
@@ -148,13 +149,10 @@ def main():
             rim_erasure_methods=rim_erasure_methods,
             rmults=[1.0],
             mrps=[0.5],
-            nstop=2500000,
+            nstop=nstop,
             base_config=base_config,
             overrides={
                 "rmin": 0.35,
-                "study_region_padding": 125,
-                "study_region_size": 1000,
-                "rmax": 250,
             }
         )
         run_configurations = add_configs(configs=run_configurations, configs_to_add=configs_to_add)
@@ -172,13 +170,10 @@ def main():
         ],
         rmults=[1.0],
         mrps=[0.5],
-        nstop=2500000,
+        nstop=nstop,
         base_config=base_config,
         overrides={
             "rmin": 0.35,
-            "study_region_padding": 125,
-            "study_region_size": 1000,
-            "rmax": 250,
         }
     )
     run_configurations = add_configs(configs=run_configurations, configs_to_add=configs_to_add)

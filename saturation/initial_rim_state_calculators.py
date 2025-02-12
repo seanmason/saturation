@@ -27,7 +27,7 @@ class CircumferenceInitialRimStateCalculator(InitialRimStateCalculator):
         return crater.radius * 2 * np.pi
 
 
-@jitclass(spec={"_exponent": nb.float32})
+@jitclass(spec={"_exponent": nb.float64})
 class ExponentInitialRimStateCalculator(InitialRimStateCalculator):
     """
     Uses the crater's radius raised to an exponent as the initial state.

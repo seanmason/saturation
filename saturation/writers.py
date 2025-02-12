@@ -94,6 +94,14 @@ class StateSnapshotWriter:
         state_df.to_parquet(state_filename, index=False)
 
 
+def _crater_to_dict(crater: Crater) -> dict:
+    return {
+        "id": crater.id,
+        "x": crater.x,
+        "y": crater.y,
+        "radius": crater.radius,
+    }
+
 class CraterWriter:
     """
     Writes records of craters generated.
@@ -108,7 +116,7 @@ class CraterWriter:
 
     def _flush(self) -> None:
         if self._craters:
-            out_df = pd.DataFrame([x.to_dict() for x in self._craters])
+            out_df = pd.DataFrame([_crater_to_dict(x) for x in self._craters])
             out_df["simulation_id"] = self._simulation_id
             output_filename = f"{self._output_path}/craters_{self._total_craters}.parquet"
             out_df.to_parquet(output_filename)
@@ -143,6 +151,7 @@ class CraterRemovalWriter:
         self._output_path = output_path
 
         self._total_removals = 0
+        self._last_flush = 0
         self._removals: List[CraterRemoval] = []
 
     def _flush(self) -> None:
@@ -154,15 +163,21 @@ class CraterRemovalWriter:
 
             self._removals = []
 
-    def write(self, removed_craters: List[Crater], removed_by_crater: Crater) -> None:
+    def write(self, removed_crater_ids: List[int], removed_by_crater_ids: List[int]) -> None:
         if self._output_cadence != 0:
-            for removed_crater in removed_craters:
-                self._removals.append(CraterRemoval(removed_crater_id=removed_crater.id,
-                                                    removed_by_crater_id=removed_by_crater.id))
-                self._total_removals += 1
+            removals = [
+                CraterRemoval(
+                    removed_crater_id=removed_crater.id,
+                    removed_by_crater_id=removed_by_crater_id
+                )
+                for removed_crater, removed_by_crater_id in zip(removed_crater_ids, removed_by_crater_ids)
+            ]
+            self._removals.extend(removals)
+            self._total_removals += len(removals)
 
-                if self._total_removals % self._output_cadence == 0:
-                    self._flush()
+            if (self._total_removals - self._last_flush) > self._output_cadence:
+                self._last_flush = self._total_removals
+                self._flush()
 
     def close(self):
         self._flush()

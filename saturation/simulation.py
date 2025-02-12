@@ -10,6 +10,7 @@ import numpy as np
 import yaml
 
 from saturation.areal_density import ArealDensityCalculator
+from saturation.crater_generation import get_grouped_craters
 from saturation.crater_record import CraterRecord
 from saturation.distributions import ProbabilityDistribution, ParetoProbabilityDistribution
 from saturation.initial_rim_state_calculators import get_initial_rim_state_calculator
@@ -18,7 +19,6 @@ from saturation.plotting import save_study_region
 from saturation.stop_conditions import get_stop_condition
 from saturation.writers import StatisticsWriter, StateSnapshotWriter, StatisticsRow, CraterWriter, CraterRemovalWriter
 from saturation.z_stats import calculate_z_statistic, calculate_za_statistic
-from saturation.datatypes import Crater
 
 
 @dataclass(frozen=True, kw_only=True)
@@ -75,71 +75,6 @@ class SimulationConfig:
         }
 
 
-def get_craters(
-    *,
-    size_distribution: ProbabilityDistribution,
-    region_size: float,
-    min_radius_threshold: float,
-    random_seed: int,
-) -> Generator[Crater, None, None]:
-    """
-    Infinite generator for craters. Generates craters only if their radius is above min_radius_threshold.
-    Assumes valid craters are extremely rare (e.g., 1 in 1000).
-    """
-    CHUNK_SIZE = int(1e6)
-    BATCH_SIZE = CHUNK_SIZE
-    DTYPE = np.float32
-
-    rng = np.random.default_rng(seed=random_seed)
-
-    uniform_threshold = DTYPE(size_distribution.cdf(min_radius_threshold))
-
-    region_size = DTYPE(region_size)
-    crater_id = 1
-    index = CHUNK_SIZE
-
-    xy = np.empty(shape=(CHUNK_SIZE, 2), dtype=DTYPE)
-    radii = np.empty(shape=CHUNK_SIZE, dtype=DTYPE)
-    uniform = np.empty(shape=BATCH_SIZE, dtype=DTYPE)
-    crater_ids = np.empty(shape=BATCH_SIZE, dtype=np.int64)
-
-    while True:
-        if index >= CHUNK_SIZE:
-            rng.random(dtype=DTYPE, out=xy)
-            np.multiply(xy, region_size, out=xy)
-            rng.random(dtype=DTYPE, out=uniform)
-            count = 0
-
-            while count < CHUNK_SIZE:
-                rng.random(dtype=DTYPE, out=uniform)
-                indexes_over_threshold = np.where(uniform >= uniform_threshold)[0]
-                n_over_threshold = indexes_over_threshold.size
-
-                if count + n_over_threshold > CHUNK_SIZE:
-                    n_over_threshold = CHUNK_SIZE - count
-
-                upper_index = min(count + n_over_threshold, CHUNK_SIZE)
-                n_entries = upper_index - count
-                radii[count:upper_index] = uniform[indexes_over_threshold][:n_entries]
-                crater_ids[count:upper_index] = crater_id + indexes_over_threshold[:n_entries]
-
-                count += n_entries
-                crater_id += BATCH_SIZE
-
-            radii = size_distribution.pullback(radii).astype("float32")
-            index = 0
-
-        while index < CHUNK_SIZE:
-            yield Crater(
-                id=crater_ids[index],
-                x=xy[index, 0],
-                y=xy[index, 1],
-                radius=radii[index]
-            )
-            index += 1
-
-
-
 def run_simulation(base_output_path: str, config: SimulationConfig):
     """
     Runs a simulation.
@@ -182,8 +117,9 @@ def run_simulation(base_output_path: str, config: SimulationConfig):
         )
 
         min_radius_threshold = rim_erasure_calculator.get_min_radius_threshold()
-        crater_generator = get_craters(
+        crater_generator = get_grouped_craters(
             size_distribution=size_distribution,
+            rstat=rstat,
             region_size=full_region_size,
             min_radius_threshold=min_radius_threshold,
             random_seed=config.random_seed
@@ -198,9 +134,11 @@ def run_simulation(base_output_path: str, config: SimulationConfig):
                                              config.write_statistics_cadence)
         state_snapshot_writer = StateSnapshotWriter(config.simulation_id, output_path)
         crater_writer = CraterWriter(config.write_craters_cadence, config.simulation_id, output_path)
-        crater_removals_writer = CraterRemovalWriter(config.write_crater_removals_cadence,
-                                                     config.simulation_id,
-                                                     output_path)
+        crater_removals_writer = CraterRemovalWriter(
+            config.write_crater_removals_cadence,
+            config.simulation_id,
+            output_path
+        )
 
         study_region_area = config.study_region_size ** 2
 
@@ -224,80 +162,79 @@ def run_simulation(base_output_path: str, config: SimulationConfig):
         )
 
         last_nstat = 0
-        craters_smaller_than_rstat = []
-        for crater in crater_generator:
-            if crater.radius < rstat:
-                craters_smaller_than_rstat.append(crater)
-            else:
-                if craters_smaller_than_rstat:
-                    removed_craters = crater_record.add_craters_smaller_than_rstat(craters_smaller_than_rstat)
-                    craters_smaller_than_rstat = []
+        should_exit = False
+        for crater_group, geq_rstat in crater_generator:
+            if should_exit:
+                break
 
-                    if removed_craters:
-                        if calculate_areal_density:
-                            areal_density_calculator.remove_craters(removed_craters)
-                        crater_removals_writer.write(removed_craters, crater)
-
-                removed_craters = crater_record.add_crater_geq_rstat(crater)
-
-                if calculate_areal_density:
-                    areal_density_calculator.add_crater(crater)
-                    if removed_craters:
+            if not geq_rstat:
+                removed_craters, removed_by_ids = crater_record.add_craters_smaller_than_rstat(crater_group)
+                if len(removed_craters) > 0:
+                    if calculate_areal_density:
                         areal_density_calculator.remove_craters(removed_craters)
 
-                if removed_craters:
-                    crater_removals_writer.write(removed_craters, crater)
+                    crater_removals_writer.write(removed_craters, removed_by_ids)
+            else:
+                for crater in crater_group:
+                    removed_craters, removed_by_ids = crater_record.add_crater_geq_rstat(crater)
 
-                crater_writer.write(crater)
+                    if calculate_areal_density:
+                        areal_density_calculator.add_crater(crater)
+                        if len(removed_craters) > 0:
+                            areal_density_calculator.remove_craters(removed_craters)
 
-                # Only perform updates if the nstat ticked up
-                nstat_current = crater_record.nstat
-                if last_nstat != nstat_current:
-                    last_nstat = nstat_current
+                    crater_removals_writer.write(removed_craters, removed_by_ids)
+                    crater_writer.write(crater)
 
-                    areal_density = areal_density_calculator.areal_density
+                    # Only perform updates if the nstat ticked up
+                    nstat_current = crater_record.nstat
+                    if last_nstat != nstat_current:
+                        last_nstat = nstat_current
 
-                    if crater_record.nobs > 1:
-                        mean_nn_distance = crater_record.get_mnnd()
-                        z = calculate_z_statistic(
-                            mean_nn_distance, crater_record.nobs, study_region_area
+                        areal_density = areal_density_calculator.areal_density
+
+                        if crater_record.nobs > 1:
+                            mean_nn_distance = crater_record.get_mnnd()
+                            z = calculate_z_statistic(
+                                mean_nn_distance, crater_record.nobs, study_region_area
+                            )
+                            za = calculate_za_statistic(
+                                mean_nn_distance,
+                                crater_record.nobs,
+                                areal_density_calculator.area_covered,
+                                study_region_area
+                            )
+                        else:
+                            z = np.nan
+                            za = np.nan
+
+                        # Save stats
+                        statistics_row = StatisticsRow(
+                            crater_id=crater.id,
+                            nstat=nstat_current,
+                            nobs=crater_record.nobs,
+                            areal_density=areal_density,
+                            mnnd=crater_record.get_mnnd(),
+                            nnd_stdev=crater_record.get_nnd_stdev(),
+                            nnd_min=crater_record.get_nnd_min(),
+                            nnd_max=crater_record.get_nnd_max(),
+                            radius_mean=crater_record.get_mean_radius(),
+                            radius_stdev=crater_record.get_radius_stdev(),
+                            z=z,
+                            za=za
                         )
-                        za = calculate_za_statistic(
-                            mean_nn_distance,
-                            crater_record.nobs,
-                            areal_density_calculator.area_covered,
-                            study_region_area
-                        )
-                    else:
-                        z = np.nan
-                        za = np.nan
+                        statistics_writer.write(statistics_row)
 
-                    # Save stats
-                    statistics_row = StatisticsRow(
-                        crater_id=crater.id,
-                        nstat=nstat_current,
-                        nobs=crater_record.nobs,
-                        areal_density=areal_density,
-                        mnnd=crater_record.get_mnnd(),
-                        nnd_stdev=crater_record.get_nnd_stdev(),
-                        nnd_min=crater_record.get_nnd_min(),
-                        nnd_max=crater_record.get_nnd_max(),
-                        radius_mean=crater_record.get_mean_radius(),
-                        radius_stdev=crater_record.get_radius_stdev(),
-                        z=z,
-                        za=za
-                    )
-                    statistics_writer.write(statistics_row)
+                        if config.write_state_cadence != 0 and nstat_current % config.write_state_cadence == 0:
+                            state_snapshot_writer.write_state_snapshot(crater_record, crater, nstat_current)
 
-                    if config.write_state_cadence != 0 and nstat_current % config.write_state_cadence == 0:
-                        state_snapshot_writer.write_state_snapshot(crater_record, crater, nstat_current)
+                        if nstat_current in config.write_image_points or config.write_image_cadence != 0 and nstat_current % config.write_image_cadence == 0:
+                            png_name = output_path / f"study_region_{nstat_current}.png"
+                            save_study_region(areal_density_calculator, png_name)
 
-                    if nstat_current in config.write_image_points or config.write_image_cadence != 0 and nstat_current % config.write_image_cadence == 0:
-                        png_name = output_path / f"study_region_{nstat_current}.png"
-                        save_study_region(areal_density_calculator, png_name)
-
-                    if stop_condition.should_stop(statistics_row):
-                        break
+                        if stop_condition.should_stop(statistics_row):
+                            should_exit = True
+                            break
 
         statistics_writer.close()
         crater_writer.close()
