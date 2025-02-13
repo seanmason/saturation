@@ -14,9 +14,9 @@ Location = Tuple[float, float]
 
 spec = [
     ('id', nb.int64),
-    ('x', nb.float32),
-    ('y', nb.float32),
-    ('radius', nb.float32),
+    ('x', nb.float64),
+    ('y', nb.float64),
+    ('radius', nb.float64),
 ]
 @jitclass(spec)
 class Crater(object):
@@ -34,4 +34,4 @@ class Crater(object):
             "radius": self.radius,
         }
 
-CraterType = nb.typeof(Crater(np.int64(1), np.float32(1.0), np.float32(1.0), np.float32(1.0)))
+CraterType = nb.typeof(Crater(np.int64(1), np.float64(1.0), np.float64(1.0), np.float64(1.0)))

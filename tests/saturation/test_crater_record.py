@@ -10,7 +10,7 @@ from saturation.rim_erasure_calculators import (
 
 
 def _create_crater(id: int, x: float, y: float, radius: float) -> Crater:
-    return Crater(id=np.int64(id), x=np.float32(x), y=np.float32(y), radius=np.float32(radius))
+    return Crater(id=np.int64(id), x=np.float64(x), y=np.float64(y), radius=np.float64(radius))
 
 
 def effectiveness_function(existing: Crater, new: Crater) -> float:

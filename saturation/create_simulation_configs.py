@@ -79,7 +79,7 @@ def main():
         "write_state_cadence": 0,
         "write_statistics_cadence": 250000,
     }
-    nstop = 2500000
+    nstop = 10000000
 
     ratio = 3.0
 

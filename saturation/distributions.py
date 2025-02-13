@@ -34,10 +34,10 @@ class ProbabilityDistribution(object):
 
 
 @jitclass(spec={
-    "_alpha": nb.types.float32,
-    "_x_min": nb.types.float32,
-    "_x_max": nb.types.float32,
-    "_u_max": nb.types.float32
+    "_alpha": nb.types.float64,
+    "_x_min": nb.types.float64,
+    "_x_max": nb.types.float64,
+    "_u_max": nb.types.float64
 })
 class ParetoProbabilityDistribution(ProbabilityDistribution):
     """

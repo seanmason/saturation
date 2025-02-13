@@ -9,7 +9,7 @@ from saturation.datatypes import Crater
 
 
 tuple_type = nb.types.UniTuple(nb.types.int64, 2)
-crater_type = nb.typeof(Crater(np.int64(1), np.float32(1.0), np.float32(1.0), np.float32(1.0)))
+crater_type = nb.typeof(Crater(np.int64(1), np.float64(1.0), np.float64(1.0), np.float64(1.0)))
 crater_set_type = nb.types.DictType(
     keyty=nb.int64,
     valty=nb.types.boolean

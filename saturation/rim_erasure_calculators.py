@@ -29,10 +29,10 @@ class RimErasureCalculator(object):
 
 
 @jitclass(spec={
-    "_exponent": nb.types.float32,
-    "_ratio": nb.types.float32,
-    "_rmult": nb.types.float32,
-    "_min_radius_threshold": nb.types.float32
+    "_exponent": nb.types.float64,
+    "_ratio": nb.types.float64,
+    "_rmult": nb.types.float64,
+    "_min_radius_threshold": nb.types.float64
 })
 class ExponentRadiusConditionalRimOverlapRimErasureCalculator(RimErasureCalculator):
     """

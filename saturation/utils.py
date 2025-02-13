@@ -87,7 +87,7 @@ def get_configs(
     configs_pdf["rim_erasure_radius_ratio"] = configs_pdf.rim_erasure_method.apply(lambda x: x.get("ratio", -1))
 
     configs_dict = dict()
-    for config_file in glob.glob(f"{base_path}/config/config*.yaml"):
+    for config_file in glob.glob(f"{base_path}/config/*config*.yaml"):
         configs_dict.update(read_config(Path(config_file))["run_configurations"])
 
     return configs_pdf, configs_df, configs_dict

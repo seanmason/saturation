@@ -15,7 +15,7 @@ def _generate_craters_chunk(
     rng: np.random.Generator,
 ) -> Tuple[TypedList, int]:
     CHUNK_SIZE = int(1e6)
-    DTYPE = np.float32
+    DTYPE = np.float64
 
     uniform_threshold = DTYPE(size_distribution.cdf(min_radius_threshold))
 

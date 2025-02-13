@@ -10,7 +10,7 @@ from saturation.datatypes import Crater
 spec = OrderedDict({
     "_study_region_size": nb.types.int64,
     "_study_region_padding": nb.types.int64,
-    "_rstat": nb.types.float32,
+    "_rstat": nb.types.float64,
     "_study_region": nb.types.uint8[:, :],
     "_total_study_region_area": nb.types.int64,
     "_cratered_area": nb.types.int64,
