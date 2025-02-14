@@ -1,5 +1,5 @@
 import numpy as np
-import numba as nb
+from saturation.numba_utils import *
 from typing import Tuple
 
 import pandas as pd

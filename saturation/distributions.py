@@ -2,8 +2,7 @@ from abc import abstractmethod
 from typing import Union
 
 import numpy as np
-import numba as nb
-from numba.experimental import jitclass
+from saturation.numba_utils import *
 
 
 class ProbabilityDistribution(object):
@@ -33,7 +32,7 @@ class ProbabilityDistribution(object):
         pass
 
 
-@jitclass(spec={
+@nb.experimental.jitclass(spec={
     "_alpha": nb.types.float64,
     "_x_min": nb.types.float64,
     "_x_max": nb.types.float64,

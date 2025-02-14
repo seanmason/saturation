@@ -2,8 +2,7 @@ from typing import Tuple, List
 from collections import OrderedDict
 
 import numpy as np
-import numba as nb
-from numba.experimental import jitclass
+from saturation.numba_utils import *
 
 from saturation.datatypes import Crater
 

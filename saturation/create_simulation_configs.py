@@ -63,25 +63,29 @@ def add_configs(
 
 def main():
     n_workers = 28
+
+    rstat = 3.0
+    ratio = 3.0
     base_config = {
-        "rmin": 0.5,
-        "rmax": 3000,
-        "rstat": 3,
-        "study_region_padding": 1500,
-        "study_region_size": 12000,
+        "rstat": rstat,
+        "rmin": rstat / ratio,
+        # "rmax": 3000,
+        # "study_region_padding": 1500,
+        # "study_region_size": 12000,
+        "rmax": 500,
+        "study_region_padding": 125,
+        "study_region_size": 2000,
         "spatial_hash_cell_size": 10,
         "calculate_areal_density": False,
         "calculate_nearest_neighbor_stats": False,
-        "write_crater_removals_cadence": 250000,
-        "write_craters_cadence": 250000,
+        "write_crater_removals_cadence": 50000,
+        "write_craters_cadence": 50000,
         "write_image_cadence": 0,
         "write_image_points": [],
         "write_state_cadence": 0,
-        "write_statistics_cadence": 250000,
+        "write_statistics_cadence": 50000,
     }
-    nstop = 10000000
-
-    ratio = 5.0
+    nstop = 5000000
 
     run_configurations = dict()
     np.random.seed(123)

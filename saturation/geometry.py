@@ -2,8 +2,7 @@ from typing import Tuple, List, Optional
 
 import pandas as pd
 import numpy as np
-import numba as nb
-from numba import njit
+from saturation.numba_utils import *
 
 from saturation.datatypes import Location, Arc
 
@@ -11,11 +10,13 @@ from saturation.datatypes import Location, Arc
 arc_type = nb.types.UniTuple(nb.float64, 2)
 
 
-@njit(fastmath=True)
-def get_xy_intersection(center1: Location,
-                        center2: Location,
-                        r1: float,
-                        r2: float) -> Tuple[Location, Location]:
+@nb.njit(fastmath=True)
+def get_xy_intersection(
+    center1: Location,
+    center2: Location,
+    r1: float,
+    r2: float
+) -> Tuple[Location, Location]:
     """
     Returns the (x, y) intersection locations of two circles.
     Does not handle the case where the circles do not intersect.
@@ -43,11 +44,13 @@ def get_xy_intersection(center1: Location,
     return (fx + gx, fy + gy), (fx - gx, fy - gy)
 
 
-@njit(fastmath=True)
-def get_intersection_arc(center1: Location,
-                         r1: float,
-                         center2: Location,
-                         r2: float) -> Arc:
+@nb.njit(fastmath=True)
+def get_intersection_arc(
+    center1: Location,
+    r1: float,
+    center2: Location,
+    r2: float
+) -> Arc:
     """
     Returns the intersection arc (in radians) of the circle defined by center2 and r2 on the circle
     defined by center1 and r1.

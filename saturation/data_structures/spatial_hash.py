@@ -2,14 +2,12 @@ from typing import *
 from collections import OrderedDict
 
 import numpy as np
-import numba as nb
-from numba.experimental import jitclass
+from saturation.numba_utils import *
 
-from saturation.datatypes import Crater
+from saturation.datatypes import Crater, CraterType
 
 
 tuple_type = nb.types.UniTuple(nb.types.int64, 2)
-crater_type = nb.typeof(Crater(np.int64(1), np.float64(1.0), np.float64(1.0), np.float64(1.0)))
 crater_set_type = nb.types.DictType(
     keyty=nb.int64,
     valty=nb.types.boolean
@@ -25,7 +23,7 @@ spatial_hash_spec = OrderedDict({
     "_boundary_max_cell": nb.types.int64,
     "_crater_lookup": nb.types.DictType(
         keyty=nb.int64,
-        valty=crater_type
+        valty=CraterType
     ),
     "_rim_contents": nb.types.DictType(
         keyty=tuple_type,
@@ -72,7 +70,7 @@ class SpatialHash:
 
         self._crater_lookup: Dict[int, Crater] = nb.typed.Dict.empty(
             key_type=nb.int64,
-            value_type=crater_type
+            value_type=CraterType
         )
 
         # Tracking of crater rims

@@ -1,9 +1,8 @@
 from typing import Dict, Tuple, List, Set
 from collections import OrderedDict
 
-import numba as nb
 import numpy as np
-from numba.experimental import jitclass
+from saturation.numba_utils import *
 
 from saturation.data_structures.spatial_hash import SpatialHash
 from saturation.datatypes import Crater, CraterType
@@ -17,36 +16,39 @@ int_set_type = nb.types.DictType(
     valty=nb.boolean
 )
 
-spec = OrderedDict({
-    "_absolute_max_search_distance": nb.int64,
-    "_spatial_hash": SpatialHash.class_type.instance_type,
-    "_calculate_nearest_neighbor_stats": nb.boolean,
-    "_all_craters": nb.types.DictType(
-        keyty=nb.int64,
-        valty=CraterType
-    ),
-    "_nnds": nb.types.DictType(
-        keyty=nb.int64,
-        valty=nb.float64
-    ),
-    "_nns": nb.types.DictType(
-        keyty=nb.int64,
-        valty=nb.int64
-    ),
-    "_tracked_nns": int_set_type,
-    "_sum_tracked_nnds": nb.float64,
-    "_sum_tracked_squared_nnds": nb.float64,
-    "_tracked_nn_count": nb.int64,
-    "_nn_reverse_lookup": nb.types.DictType(
-        keyty=nb.int64,
-        valty=int_set_type
-    ),
-    "_min_nnd": nb.float64,
-    "_max_nnd": nb.float64,
-    "_max_current_search_distance": nb.float64,
-    "_recalculate_min_nnd": nb.boolean,
-    "_recalculate_max_nnd": nb.boolean,
-})
+if "DISABLE_NUMBA" not in os.environ:
+    spec = OrderedDict({
+        "_absolute_max_search_distance": nb.int64,
+        "_spatial_hash": SpatialHash.class_type.instance_type,
+        "_calculate_nearest_neighbor_stats": nb.boolean,
+        "_all_craters": nb.types.DictType(
+            keyty=nb.int64,
+            valty=CraterType
+        ),
+        "_nnds": nb.types.DictType(
+            keyty=nb.int64,
+            valty=nb.float64
+        ),
+        "_nns": nb.types.DictType(
+            keyty=nb.int64,
+            valty=nb.int64
+        ),
+        "_tracked_nns": int_set_type,
+        "_sum_tracked_nnds": nb.float64,
+        "_sum_tracked_squared_nnds": nb.float64,
+        "_tracked_nn_count": nb.int64,
+        "_nn_reverse_lookup": nb.types.DictType(
+            keyty=nb.int64,
+            valty=int_set_type
+        ),
+        "_min_nnd": nb.float64,
+        "_max_nnd": nb.float64,
+        "_max_current_search_distance": nb.float64,
+        "_recalculate_min_nnd": nb.boolean,
+        "_recalculate_max_nnd": nb.boolean,
+    })
+else:
+    spec = OrderedDict({})
 
 
 @jitclass(spec=spec)
@@ -203,8 +205,7 @@ class Distances:
         for crater in craters:
             self._spatial_hash.remove(crater)
 
-        if self._calculate_nearest_neighbor_stats:
-            for crater in craters:
+            if self._calculate_nearest_neighbor_stats:
                 if crater.id in self._tracked_nns:
                     if crater.id in self._nnds:
                         nn_dist = self._nnds[crater.id]
@@ -221,24 +222,18 @@ class Distances:
                     elif self._min_nnd == nn_dist:
                         self._recalculate_min_nnd = True
 
-            # Fix up affected neighbors' nearest neighbors
-            removed_set = set([x.id for x in craters])
-            for removed_crater in craters:
-                if removed_crater.id in self._nn_reverse_lookup:
-                    items = list(self._nn_reverse_lookup[removed_crater.id].keys())
+                # Fix up affected neighbors' nearest neighbors
+                if crater.id in self._nn_reverse_lookup:
+                    items = list(self._nn_reverse_lookup[crater.id].keys())
                     for neighbor_id in items:
-                        if neighbor_id in removed_set:
-                            continue
-
                         neighbor = self._all_craters[neighbor_id]
                         new_nn_id, nn_dist = self._spatial_hash.get_nnd(neighbor)
 
                         tracked = neighbor_id in self._tracked_nns
                         self._update_nn(neighbor_id, new_nn_id, nn_dist, force=True, tracked=tracked)
 
-                    del self._nn_reverse_lookup[removed_crater.id]
+                    del self._nn_reverse_lookup[crater.id]
 
-            for crater in craters:
                 nn_id = self._nns.get(crater.id, 0)
                 if nn_id != 0 and nn_id in self._nn_reverse_lookup and crater.id in self._nn_reverse_lookup[nn_id]:
                     del self._nn_reverse_lookup[nn_id][crater.id]
@@ -250,15 +245,15 @@ class Distances:
                 if crater.id in self._tracked_nns:
                     del self._tracked_nns[crater.id]
 
-            if self._recalculate_min_nnd:
-                self._min_nnd = (
-                    min([x[1] for x in self._nnds.items() if x[0] in self._tracked_nns])
-                    if len(self._nnds) > 0
-                    else 0.0
-                )
-                self._recalculate_min_nnd = False
+                if self._recalculate_min_nnd:
+                    self._min_nnd = (
+                        min([x[1] for x in self._nnds.items() if x[0] in self._tracked_nns])
+                        if len(self._nnds) > 0
+                        else 0.0
+                    )
+                    self._recalculate_min_nnd = False
 
-            self._recalculate_max_nnd_if_necessary()
+                self._recalculate_max_nnd_if_necessary()
 
         for crater in craters:
             del self._all_craters[crater.id]

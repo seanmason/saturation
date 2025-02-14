@@ -1,7 +1,6 @@
 from typing import Dict
 
-import numba as nb
-from numba.experimental import jitclass
+from saturation.numba_utils import *
 import numpy as np
 
 from saturation.datatypes import Crater
@@ -28,7 +27,7 @@ class RimErasureCalculator(object):
         raise NotImplementedError("Not implemented")
 
 
-@jitclass(spec={
+@nb.experimental.jitclass(spec={
     "_exponent": nb.types.float64,
     "_ratio": nb.types.float64,
     "_rmult": nb.types.float64,

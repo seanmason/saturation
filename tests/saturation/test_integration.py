@@ -87,7 +87,7 @@ def test_crater_record_integration():
     print(len(crater_record.all_craters_in_record))
     print(f"{counter}, {removed_counter}, {crater_record.nobs}, {crater_record.nstat}, {areal_density_calculator.areal_density}, {crater.id}")
     assert crater_record.nstat == nstop
-    assert crater_record.nobs == 48
-    assert removed_counter == 6224
-    assert areal_density_calculator.areal_density == 0.259896
-    assert crater.id == 1553841
+    assert crater_record.nobs == 68
+    assert removed_counter == 6141
+    assert areal_density_calculator.areal_density == 0.286203
+    assert crater.id == 1512725

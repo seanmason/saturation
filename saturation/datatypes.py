@@ -1,8 +1,9 @@
 import numpy as np
-import numba as nb
-from numba.experimental import jitclass
 
-from typing import Tuple, Dict, NamedTuple
+# We explicitly do not use the numba utils here.
+import numba as nb
+
+from typing import Tuple
 
 # Type definitions
 # Arc in radians
@@ -18,7 +19,7 @@ spec = [
     ('y', nb.float64),
     ('radius', nb.float64),
 ]
-@jitclass(spec)
+@nb.experimental.jitclass(spec)
 class Crater(object):
     def __init__(self, id, x, y, radius):
         self.id = id

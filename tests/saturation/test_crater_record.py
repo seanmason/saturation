@@ -1,3 +1,5 @@
+from typing import List
+
 import numpy as np
 
 from saturation.crater_record import CraterRecord
@@ -18,6 +20,16 @@ def effectiveness_function(existing: Crater, new: Crater) -> float:
         return existing.radius * np.pi * 2
 
     return 0.0
+
+def assert_crater_lists_equal(
+    first: List[Crater],
+    second: List[Crater]
+):
+    assert len(first) == len(second)
+    first_ids = {x.id for x in first}
+    second_ids = {x.id for x in second}
+    assert first_ids == second_ids
+
 
 
 def test_add_in_study_region():
@@ -41,15 +53,16 @@ def test_add_in_study_region():
     )
 
     # Act
-    removed = record.add_crater_geq_rstat(crater)
+    removed_craters, removed_by_ids = record.add_crater_geq_rstat(crater)
     all_craters = record.all_craters_in_record
     craters_in_study_region = record.craters_in_study_region
     nstat = record.nstat
 
     # Assert
-    assert not removed
-    assert [crater] == list(all_craters)
-    assert [crater] == list(craters_in_study_region)
+    assert_crater_lists_equal([], removed_craters)
+    assert len(removed_by_ids) == 0
+    assert_crater_lists_equal([crater], all_craters)
+    assert_crater_lists_equal([crater], craters_in_study_region)
     assert nstat == 1
 
 
@@ -80,8 +93,8 @@ def test_add_outside_study_region():
     nstat = record.nstat
 
     # Assert
-    assert [crater] == list(all_craters)
-    assert not craters_in_study_region
+    assert_crater_lists_equal([crater], all_craters)
+    assert_crater_lists_equal([], craters_in_study_region)
     assert nstat == 0
 
 
@@ -109,13 +122,13 @@ def test_add_removes_obliterated_craters():
 
     # Act
     record.add_crater_geq_rstat(crater1)
-    removed = record.add_crater_geq_rstat(crater2)
+    removed_craters, removed_by_ids = record.add_crater_geq_rstat(crater2)
     all_craters = record.all_craters_in_record
     nstat = record.nstat
 
     # Assert
-    assert [crater2] == list(all_craters)
-    assert [crater1] == list(removed)
+    assert_crater_lists_equal([crater2], all_craters)
+    assert_crater_lists_equal([crater1], removed_craters)
     assert nstat == 2
 
 
@@ -143,13 +156,13 @@ def test_add_leaves_partially_removed_craters():
 
     # Act
     record.add_crater_geq_rstat(crater1)
-    removed = record.add_crater_geq_rstat(crater2)
+    removed_craters, removed_by_ids = record.add_crater_geq_rstat(crater2)
     all_craters = record.all_craters_in_record
     nstat = record.nstat
 
     # Assert
-    assert {crater1, crater2} == set(all_craters)
-    assert not removed
+    assert_crater_lists_equal([crater1, crater2], all_craters)
+    assert_crater_lists_equal([], removed_craters)
     assert nstat == 2
 
 
@@ -185,7 +198,7 @@ def test_crater_radius_ratio_respected():
     all_craters = record.all_craters_in_record
 
     # Assert
-    assert list(all_craters) == [crater1]
+    assert_crater_lists_equal([crater1], all_craters)
 
 
 def test_get_mnnd_empty_from():
@@ -451,7 +464,7 @@ def test_removal_percentage_too_low():
         small_craters.append(crater)
     record.add_craters_smaller_than_rstat(small_craters)
 
-    assert crater1 in record.all_craters_in_record
+    assert crater1.id in [x.id for x in record.all_craters_in_record]
 
 
 def test_removal_percentage_high_enough():
@@ -501,4 +514,4 @@ def test_removal_percentage_high_enough():
         small_craters.append(crater)
     record.add_craters_smaller_than_rstat(small_craters)
 
-    assert crater1 not in record.all_craters_in_record
+    assert crater1.id not in [x.id for x in record.all_craters_in_record]

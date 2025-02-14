@@ -1,8 +1,7 @@
 from typing import Any, Dict
 
 import numpy as np
-import numba as nb
-from numba.experimental import jitclass
+from saturation.numba_utils import *
 
 from saturation.datatypes import Crater
 
@@ -15,7 +14,7 @@ class InitialRimStateCalculator(object):
         raise NotImplementedError("Not implemented")
 
 
-@jitclass()
+@nb.experimental.jitclass()
 class CircumferenceInitialRimStateCalculator(InitialRimStateCalculator):
     """
     Uses the crater's circumference as the initial state.
@@ -27,7 +26,7 @@ class CircumferenceInitialRimStateCalculator(InitialRimStateCalculator):
         return crater.radius * 2 * np.pi
 
 
-@jitclass(spec={"_exponent": nb.float64})
+@nb.experimental.jitclass(spec={"_exponent": nb.float64})
 class ExponentInitialRimStateCalculator(InitialRimStateCalculator):
     """
     Uses the crater's radius raised to an exponent as the initial state.

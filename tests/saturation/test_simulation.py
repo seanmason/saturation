@@ -2,38 +2,20 @@ import itertools
 
 import numpy as np
 
-from saturation.distributions import ProbabilityDistribution
-from saturation.simulation import get_craters
-
-
-class DummyProbabilityDistribution(ProbabilityDistribution):
-    def __init__(self):
-        self.inverse_cdf_result = np.array([0] * 100)
-        self.pdf_result = 0
-        self.cdf_result = 0
-
-    def pullback(self, uniform: float) -> float:
-        return self.inverse_cdf_result
-
-    def pdf(self, x: float) -> float:
-        return self.pdf_result
-
-    def cdf(self, p: float) -> float:
-        return self.cdf_result
+from saturation.distributions import ParetoProbabilityDistribution
+from saturation.simulation import get_grouped_craters
 
 
 def test_get_craters_ids_increase():
-    # Arrange
-    distribution = DummyProbabilityDistribution()
-
     # Act
-    craters = get_craters(
-        size_distribution=distribution,
+    craters = get_grouped_craters(
+        size_distribution=ParetoProbabilityDistribution(1.0, 1.0, 10.0),
+        rstat=3.0,
         region_size=2,
         min_radius_threshold=1,
         random_seed=123
     )
-    result = list(itertools.islice(craters, 10))
+    result = list(itertools.chain(*[x[0] for x in itertools.islice(craters, 10)]))[:10]
 
     # Assert
     ids = [x.id for x in result]

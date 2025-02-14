@@ -1,9 +1,10 @@
+from collections import OrderedDict
+
 from typing import List, Tuple
 
 import numpy as np
-import numba as nb
-from numba.experimental import jitclass
 
+from saturation.numba_utils import *
 from saturation.datatypes import Crater, CraterType
 from saturation.distances import Distances
 from saturation.initial_rim_state_calculators import InitialRimStateCalculator, CircumferenceInitialRimStateCalculator
@@ -41,30 +42,32 @@ class CraterDictionary(object):
         return len(self._craters)
 
 
-spec = {
-    "_rstat": nb.float64,
-    "_rim_erasure_calculator": ExponentRadiusConditionalRimOverlapRimErasureCalculator.class_type.instance_type,
-    "_initial_rim_state_calculator": CircumferenceInitialRimStateCalculator.class_type.instance_type,
-    "_mrp": nb.float64,
-    "_rmult": nb.float64,
-    "_study_region_size": nb.int64,
-    "_study_region_padding": nb.int64,
-    "_min_x": nb.int64,
-    "_min_y": nb.int64,
-    "_max_x": nb.int64,
-    "_max_y": nb.int64,
-    "_calculate_nearest_neighbor_stats": nb.boolean,
-    "_distances": Distances.class_type.instance_type,
-    "_all_craters_in_record": CraterDictionary.class_type.instance_type,
-    "_craters_in_study_region": CraterDictionary.class_type.instance_type,
-    "_nstat": nb.int64,
-    "_initial_rims": nb.types.DictType(nb.int64, nb.float64),
-    "_remaining_rims": nb.types.DictType(nb.int64, nb.float64),
-    "_crater_ids_to_remove": nb.types.DictType(nb.int64, nb.int64),
-    "_sum_tracked_radii": nb.float64,
-    "_sum_tracked_squared_radii": nb.float64,
-}
-
+if "DISABLE_NUMBA" not in os.environ:
+    spec = OrderedDict({
+        "_rstat": nb.float64,
+        "_rim_erasure_calculator": ExponentRadiusConditionalRimOverlapRimErasureCalculator.class_type.instance_type,
+        "_initial_rim_state_calculator": CircumferenceInitialRimStateCalculator.class_type.instance_type,
+        "_mrp": nb.float64,
+        "_rmult": nb.float64,
+        "_study_region_size": nb.int64,
+        "_study_region_padding": nb.int64,
+        "_min_x": nb.int64,
+        "_min_y": nb.int64,
+        "_max_x": nb.int64,
+        "_max_y": nb.int64,
+        "_calculate_nearest_neighbor_stats": nb.boolean,
+        "_distances": Distances.class_type.instance_type,
+        "_all_craters_in_record": CraterDictionary.class_type.instance_type,
+        "_craters_in_study_region": CraterDictionary.class_type.instance_type,
+        "_nstat": nb.int64,
+        "_initial_rims": nb.types.DictType(nb.int64, nb.float64),
+        "_remaining_rims": nb.types.DictType(nb.int64, nb.float64),
+        "_crater_ids_to_remove": nb.types.DictType(nb.int64, nb.int64),
+        "_sum_tracked_radii": nb.float64,
+        "_sum_tracked_squared_radii": nb.float64,
+    })
+else:
+    spec = OrderedDict({})
 
 @jitclass(spec)
 class CraterRecord(object):
