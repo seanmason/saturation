@@ -60,13 +60,13 @@ spec = {
     "_nstat": nb.int64,
     "_initial_rims": nb.types.DictType(nb.int64, nb.float64),
     "_remaining_rims": nb.types.DictType(nb.int64, nb.float64),
-    "_crater_ids_to_remove": nb.types.DictType(nb.int64, nb.boolean),
+    "_crater_ids_to_remove": nb.types.DictType(nb.int64, nb.int64),
     "_sum_tracked_radii": nb.float64,
     "_sum_tracked_squared_radii": nb.float64,
 }
 
 
-# @jitclass(spec)
+@jitclass(spec)
 class CraterRecord(object):
     """
     Maintains the record of craters.
@@ -230,10 +230,10 @@ class CraterRecord(object):
 
         return removed_craters, removed_by_ids
 
-    def _is_in_study_region(self, crater: Crater):
+    def _is_in_study_region(self, crater: Crater) -> bool:
         return (
-            self._min_x <= crater.x <= self._max_x
-            and self._min_y <= crater.y <= self._max_y
+            (self._min_x <= crater.x <= self._max_x)
+            and (self._min_y <= crater.y <= self._max_y)
         )
 
     def get_crater(self, crater_id: int) -> Crater:
@@ -252,7 +252,7 @@ class CraterRecord(object):
 
     def get_mean_radius(self) -> float:
         n = self.nobs
-        if not n:
+        if n == 0:
             return 0.0
 
         return self._sum_tracked_radii / n

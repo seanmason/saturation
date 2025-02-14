@@ -65,10 +65,10 @@ def main():
     n_workers = 28
     base_config = {
         "rmin": 0.5,
-        "rmax": 500,
+        "rmax": 3000,
         "rstat": 3,
-        "study_region_padding": 250,
-        "study_region_size": 2000,
+        "study_region_padding": 1500,
+        "study_region_size": 12000,
         "spatial_hash_cell_size": 10,
         "calculate_areal_density": False,
         "calculate_nearest_neighbor_stats": False,
@@ -81,7 +81,7 @@ def main():
     }
     nstop = 10000000
 
-    ratio = 3.0
+    ratio = 5.0
 
     run_configurations = dict()
     np.random.seed(123)
@@ -152,7 +152,7 @@ def main():
             nstop=nstop,
             base_config=base_config,
             overrides={
-                "rmin": 0.35,
+                "rmin": 0.22,
             }
         )
         run_configurations = add_configs(configs=run_configurations, configs_to_add=configs_to_add)
@@ -173,7 +173,7 @@ def main():
         nstop=nstop,
         base_config=base_config,
         overrides={
-            "rmin": 0.35,
+            "rmin": 0.22,
         }
     )
     run_configurations = add_configs(configs=run_configurations, configs_to_add=configs_to_add)

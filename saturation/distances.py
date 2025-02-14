@@ -162,7 +162,7 @@ class Distances:
 
     def _recalculate_max_nnd_if_necessary(self):
         if self._recalculate_max_nnd:
-            if not self._tracked_nns:
+            if self._tracked_nn_count == 0:
                 self._max_nnd = 0.0
             else:
                 self._max_nnd = (
@@ -263,17 +263,19 @@ class Distances:
         for crater in craters:
             del self._all_craters[crater.id]
 
-    def get_craters_with_overlapping_rims(self,
-                                          x: float,
-                                          y: float,
-                                          radius: float) -> Set[int]:
+    def get_craters_with_overlapping_rims(
+        self,
+        x: float,
+        y: float,
+        radius: float
+    ) -> Set[int]:
         return self._spatial_hash.get_craters_with_intersecting_rims(x, y, radius)
 
     def get_nn(self, crater: Crater) -> Tuple[int, float]:
         return self._spatial_hash.get_nnd(crater)
 
     def get_mnnd(self) -> float:
-        if not self._nnds:
+        if self._tracked_nn_count == 0:
             return 0.0
 
         return self._sum_tracked_nnds / self._tracked_nn_count
