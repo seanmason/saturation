@@ -42,7 +42,7 @@ class CraterDictionary(object):
         return len(self._craters)
 
 
-if "DISABLE_NUMBA" not in os.environ:
+if NUMBA_ENABLED:
     spec = OrderedDict({
         "_rstat": nb.float64,
         "_rim_erasure_calculator": ExponentRadiusConditionalRimOverlapRimErasureCalculator.class_type.instance_type,

@@ -90,4 +90,4 @@ def test_crater_record_integration():
     assert crater_record.nobs == 68
     assert removed_counter == 6141
     assert areal_density_calculator.areal_density == 0.286203
-    assert crater.id == 1512725
+    assert crater.id == 1512726

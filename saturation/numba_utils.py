@@ -4,7 +4,10 @@ import logging
 
 # Use of numba jitting controlled by this environment variable.
 # Enabled by default
-if "DISABLE_NUMBA" not in os.environ:
+NUMBA_ENABLED = "DISABLE_NUMBA" not in os.environ or os.environ["DISABLE_NUMBA"] in {"0", "false", "False", "FALSE"}
+
+
+if NUMBA_ENABLED:
     jitclass = nb.experimental.jitclass
     njit = nb.njit
     jit = nb.jit

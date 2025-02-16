@@ -16,7 +16,7 @@ int_set_type = nb.types.DictType(
     valty=nb.boolean
 )
 
-if "DISABLE_NUMBA" not in os.environ:
+if NUMBA_ENABLED:
     spec = OrderedDict({
         "_absolute_max_search_distance": nb.int64,
         "_spatial_hash": SpatialHash.class_type.instance_type,

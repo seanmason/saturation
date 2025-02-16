@@ -57,10 +57,12 @@ class SpatialHash:
     Structure for fast collision checking.
     """
 
-    def __init__(self,
-                 cell_size: int,
-                 boundary_min: float,
-                 boundary_max: float):
+    def __init__(
+        self,
+        cell_size: int,
+        boundary_min: float,
+        boundary_max: float
+    ):
         self._cell_size: int = cell_size
         self._max_search_distance = int(1.5 * (boundary_max - boundary_min))
         self._max_search_radius_cells = int(self._max_search_distance / self._cell_size + 1)
@@ -120,10 +122,12 @@ class SpatialHash:
     def _get_point_within_boundary(self, point: Tuple[int, int]) -> Tuple[int, int]:
         return self._get_within_boundary(point[0]), self._get_within_boundary(point[1])
 
-    def _get_hash_min_and_max(self,
-                              x: float,
-                              y: float,
-                              radius: float) -> Tuple[Tuple[int, int], Tuple[int, int]]:
+    def _get_hash_min_and_max(
+        self,
+        x: float,
+        y: float,
+        radius: float
+    ) -> Tuple[Tuple[int, int], Tuple[int, int]]:
         return self._get_point_within_boundary(self._hash(x - radius, y - radius)), \
             self._get_point_within_boundary(self._hash(x + radius, y + radius))
 
@@ -150,33 +154,44 @@ class SpatialHash:
         self._buckets_for_crater_centers[crater.id] = bucket
 
     def add(self, crater: Crater):
-        """
-        Insert a crater.
-        """
         self._add_to_crater_centers(crater)
         self._add_to_crater_rims(crater)
         self._crater_lookup[crater.id] = crater
 
     def remove(self, crater: Crater):
-        """
-        Remove a crater.
-        """
         crater_id = crater.id
         if crater_id in self._buckets_for_crater_rims:
             for bucket in self._buckets_for_crater_rims[crater_id]:
-                del bucket[crater_id]
+                if crater_id in bucket:
+                    del bucket[crater_id]
             del self._buckets_for_crater_rims[crater_id]
 
+        # Remove from center buckets:
+        # First, remove from the bucket stored in _buckets_for_crater_centers (if any)
         if crater_id in self._buckets_for_crater_centers:
-            del self._buckets_for_crater_centers[crater_id][crater_id]
+            # The bucket stored here is the same as the one in _center_contents for the hashed point.
+            bucket = self._buckets_for_crater_centers[crater_id]
+            if crater_id in bucket:
+                del bucket[crater_id]
             del self._buckets_for_crater_centers[crater_id]
 
-        del self._crater_lookup[crater_id]
+        # Additionally, ensure removal from _center_contents directly.
+        center = self._hash(crater.x, crater.y)
+        if center in self._center_contents:
+            bucket = self._center_contents[center]
+            if crater_id in bucket:
+                del bucket[crater_id]
 
-    def get_craters_with_intersecting_rims(self, x: float, y: float, radius: float) -> Set[int]:
-        """
-        Returns overlapping craters.
-        """
+        # Finally, remove from the crater lookup.
+        if crater_id in self._crater_lookup:
+            del self._crater_lookup[crater_id]
+
+    def get_craters_with_intersecting_rims(
+        self,
+        x: float,
+        y: float,
+        radius: float
+    ) -> Set[int]:
         min_point, max_point = self._get_hash_min_and_max(x, y, radius)
 
         results: Set[int] = set()
@@ -281,6 +296,10 @@ class SpatialHash:
             for x, y in self._get_perimeter_cells(crater.x, crater.y, radius):
                 if (x, y) in self._center_contents:
                     for candidate_id in self._center_contents[(x, y)]:
+                        # Guard against stale IDs
+                        if candidate_id not in self._crater_lookup:
+                            continue
+
                         candidate = self._crater_lookup[candidate_id]
                         distance = _get_distance(candidate.x, candidate.y, crater.x, crater.y)
                         if distance != 0 and distance < closest_distance:

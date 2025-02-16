@@ -14,7 +14,7 @@ def _generate_craters_chunk(
     start_crater_id: int,
     rng: np.random.Generator,
 ) -> Tuple[nb.typed.List, int]:
-    CHUNK_SIZE = int(1e6)
+    CHUNK_SIZE = int(5e6)
     DTYPE = np.float64
 
     uniform_threshold = DTYPE(size_distribution.cdf(min_radius_threshold))
@@ -38,7 +38,7 @@ def _generate_craters_chunk(
                 radius
             ))
 
-    return craters, crater_id
+    return craters, crater_id + 1
 
 
 @nb.njit()
