@@ -85,7 +85,7 @@ def main():
     n_workers = 28
 
     rstat = 3.0
-    rmax_multiplier = 500 / rstat
+    rmax_multiplier = 300 / rstat
     ratio = 3.0
     min_slope = -4.5
     max_slope = -1.0
@@ -94,21 +94,15 @@ def main():
     n_exponents = 10
     nstop = 2500000
 
-    default_rmin = rstat / ratio
     exponent_rmin = int(rstat ** min_exponent / ratio * 100) / 100
     rmax = rstat * rmax_multiplier
     study_region_size = int(rmax * 4)
     study_region_padding = int(study_region_size * 0.125)
     exponents = generate_exponents(min_exponent, max_exponent, n_exponents)
-    default_rim_erasure_method = {
-        "name": "exponent_radius_ratio",
-        "ratio": ratio,
-        "exponent": 1.0
-    }
 
     base_config = {
         "rstat": rstat,
-        "rmin": default_rmin,
+        "rmin": exponent_rmin,
         "rmax": rmax,
         "study_region_padding": study_region_padding,
         "study_region_size": study_region_size,
@@ -126,49 +120,27 @@ def main():
     run_configurations = dict()
     np.random.seed(123)
 
-    # Add configs for steep vs shallow slope
-    configs_to_add = create_configs_for_product_of_parameters(
-        slopes=[min_slope, max_slope],
-        rim_erasure_methods=[default_rim_erasure_method],
-        nstop=nstop,
-        base_config=base_config,
-        overrides={
-            "calculate_areal_density": True,
-            "calculate_nearest_neighbor_stats": True,
-        }
-    )
-    run_configurations = add_configs(configs=run_configurations, configs_to_add=configs_to_add)
-
-    # Add configs for infinite ratio (no erasure threshold) by a range of slopes
-    configs_to_add = create_configs_for_product_of_parameters(
-        slopes=generate_slopes(min_slope, max_slope, 15),
-        rim_erasure_methods=[{
-                                 "name": "exponent_radius_ratio",
-                                 "ratio": 1000000.0,
-                                 "exponent": 1.0
-                             }],
-        nstop=nstop,
-        base_config=base_config
-    )
-    run_configurations = add_configs(configs=run_configurations, configs_to_add=configs_to_add)
-
     # Add configs for exponents and slopes, restricting rmin, smaller area
-    for exponent in exponents:
-        rim_erasure_methods = [{
-            "name": "exponent_radius_ratio",
-            "exponent": exponent,
-            "ratio": ratio
-        }, ]
-        configs_to_add = create_configs_for_product_of_parameters(
-            slopes=generate_slopes(min_slope, max_slope, 15),
-            rim_erasure_methods=rim_erasure_methods,
-            nstop=nstop,
-            base_config=base_config,
-            overrides={"rmin": exponent_rmin}
-        )
-        run_configurations = add_configs(configs=run_configurations, configs_to_add=configs_to_add)
+    for slope in generate_slopes(min_slope, max_slope, 15):
+        for exponent in exponents:
+            rim_erasure_methods = [{
+                "name": "exponent_radius_ratio",
+                "exponent": exponent,
+                "ratio": ratio
+            }, ]
+            configs_to_add = create_configs_for_product_of_parameters(
+                slopes=[slope],
+                rim_erasure_methods=rim_erasure_methods,
+                nstop=nstop,
+                base_config=base_config,
+                overrides={
+                    "calculate_areal_density": exponent == 1.0,
+                    "calculate_nearest_neighbor_stats": exponent == 1.0,
+                }
+            )
+            run_configurations = add_configs(configs=run_configurations, configs_to_add=configs_to_add)
 
-    # Add configs for simulations to "test" the developed kappa model.
+    # Add configs for simulations to "test" the developed tau model.
     configs_to_add = create_configs_for_product_of_parameters(
         slopes=[-2.65, -3.15, -4.7, -5],
         rim_erasure_methods=[
