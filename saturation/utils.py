@@ -37,6 +37,7 @@ def create_configs_df(configs: pyspark.RDD) -> DataFrame:
         "simulation_id",
         "slope",
         "rmult",
+        "rstat",
         "mrp",
         "rmin",
         "study_region_size",
@@ -111,39 +112,63 @@ def get_state_at_time(
     stats_df: DataFrame,
     craters_df: DataFrame,
     removals_df: DataFrame,
-    simulation_id: int,
     target_nstat: int,
     study_region_size: int,
     study_region_padding: int,
-    spark: SparkSession
+    spark: SparkSession,
+    max_radius: Optional[float] = None,
+    result_columns: Optional[List[str]] = None,
 ) -> pd.DataFrame:
-    max_crater_id = stats_df.where(
-        (F.col("simulation_id") == F.lit(simulation_id))
-        & (F.col("nstat") <= F.lit(target_nstat))
-    ).select(F.max("crater_id")).collect()[0][0]
-    
+    if max_radius:
+        craters_df = craters_df.where(F.col("radius") <= max_radius)
+
     stats_df.createOrReplaceTempView("stats")
     craters_df.createOrReplaceTempView("craters")
     removals_df.createOrReplaceTempView("removals")
 
     query = f"""
     SELECT
+        c.simulation_id,
         c.x,
         c.y,
         c.radius
     FROM
-        craters c
+        stats s
+        INNER JOIN craters c ON
+            c.id = s.crater_id
+            AND c.simulation_id = s.simulation_id
         LEFT JOIN removals r ON
             r.simulation_id = c.simulation_id
             AND r.removed_crater_id = c.id
+            AND r.simulation_id = s.simulation_id
     WHERE
-        c.simulation_id == {simulation_id}
-        AND c.id <= {max_crater_id}
-        AND (r.removed_by_crater_id IS NULL OR r.removed_by_crater_id > {max_crater_id})
+        c.id <= (
+            SELECT
+                MAX(crater_id)
+            FROM
+                stats
+            WHERE
+                nstat <= {target_nstat}
+                AND stats.simulation_id = s.simulation_id
+        )
+        AND (r.removed_by_crater_id IS NULL OR r.removed_by_crater_id >
+            (
+                SELECT
+                    MAX(crater_id)
+                FROM
+                    stats
+                WHERE
+                    nstat <= {target_nstat}
+                    AND stats.simulation_id = s.simulation_id
+            )
+        )
         AND c.x >= {study_region_padding} AND c.x < {study_region_padding + study_region_size}
         AND c.y >= {study_region_padding} AND c.y < {study_region_padding + study_region_size}
     """
-    return spark.sql(query).toPandas()
+    result = spark.sql(query)
+    if result_columns:
+        result = result.select(*result_columns)
+    return result.toPandas()
 
 
 def estimate_cumulative_slope(
@@ -189,6 +214,7 @@ def get_states_at_ntats(
     target_nstats: Optional[List[int]] = None,
     max_nstat: Optional[int] = None,
     n_states: int = 25,
+    max_radius: Optional[float] = None
 ) -> Dict[int, pd.DataFrame]:
     """
     Returns a dict from values of nstat (a moment in time) to a dataframe of crater locations and radii at that time.
@@ -213,11 +239,11 @@ def get_states_at_ntats(
             stats_df=stats_df,
             craters_df=craters_df,
             removals_df=removals_df,
-            simulation_id=simulation_id,
             target_nstat=x,
             study_region_size=study_region_size,
             study_region_padding=study_region_padding,
-            spark=spark
+            spark=spark,
+            max_radius=max_radius
         )
         for x in target_nstats}
 
@@ -406,73 +432,6 @@ def plot_terrain(data: pd.DataFrame):
     plt.show()
 
 
-def setup_dataset(data: DataFrame,
-                  configs: DataFrame,
-                  predictor_variables: List[str],
-                  target: str,
-                  spark: SparkSession):
-    data.createOrReplaceTempView("data")
-    configs.createOrReplaceTempView("configs")
-    
-    # Join data and config
-    data_and_config_select_clause = ",\n".join(["data.simulation_id AS simulation_id"] + predictor_variables)
-    data_and_config_select_clause += f",\n {target} as target"
-    query = f"""
-    SELECT
-        {data_and_config_select_clause}
-    FROM
-        data
-        INNER JOIN configs
-            ON data.simulation_id = configs.simulation_id
-    """
-    data_and_configs = spark.sql(query)
-
-    return data_and_configs
-
-
-def setup_datasets_for_model(
-    data: DataFrame,
-    configs: DataFrame,
-    test_simulations_fraction: float,
-    predictor_variables: List[str],
-    target: str,
-    train_sample_fraction: float,
-    n_test_observations: int,
-    spark: SparkSession,
-    cache_train: bool = True,
-    cache_test: bool = True
-):
-    """
-    Joins data and configs, splits data into train and test datasets.
-    `train_sample_fraction` specifies the fraction of simulations to use in the test set.
-    `n_test_observations` specifies the maximum number of observations to use in the test set.
-    """
-    simulation_ids = list(configs.select("simulation_id").toPandas().drop_duplicates().simulation_id.sort_values())
-    test_simulation_ids = set(np.random.choice(simulation_ids, int(configs.count() * test_simulations_fraction), replace=False))
-    
-    train = setup_dataset(data, configs.where(~F.col("simulation_id").isin(test_simulation_ids)), predictor_variables, target, spark)
-    train = train.sample(train_sample_fraction)
-
-    if cache_train:
-        train = train.cache()
-        train.count()
-    train.createOrReplaceTempView("train")
-
-    test = setup_dataset(data, configs.where(F.col("simulation_id").isin(test_simulation_ids)), predictor_variables, target, spark)
-    test = test.drop("simulation_id")
-    test_count = test.count()
-
-    # Need to sample a few more because Spark's sampling is not precise
-    test = test.sample(min(n_test_observations / test_count * 1.5, 1.0)).limit(n_test_observations)
-    
-    if cache_test:
-        test = test.cache()
-        test.count()
-    test.createOrReplaceTempView("test")
-    
-    return train, test
-
-
 def get_lifespans_for_simulation(
     *,
     simulation_id: int,
@@ -630,7 +589,10 @@ def get_statistics_with_lifespans_for_simulations(
     base_path: str,
     configs_df: DataFrame,
     spark: SparkSession,
-    n_samples_per_sim: Optional[int]=None
+    n_samples_per_sim: Optional[int]=None,
+    max_radius: Optional[float]=None,
+    max_nstat: Optional[int]=None,
+    result_columns: Optional[List[str]]=None,
 ) -> pd.DataFrame:
     """
     Returns statistics and lifespans for each simulation id specified.
@@ -639,16 +601,13 @@ def get_statistics_with_lifespans_for_simulations(
     """
     F.broadcast(configs_df).createOrReplaceTempView("configs")
 
-    results = []
-
+    result = None
     for simulation_id in simulation_ids:
         craters = spark.read.parquet(f"{base_path}/{simulation_id}/craters_*.parquet")
         removals = spark.read.parquet(f"{base_path}/{simulation_id}/crater_removals_*.parquet")
-        statistics_for_simulation = spark.read.parquet(f"{base_path}/{simulation_id}/statistics_*.parquet")
+        statistics = spark.read.parquet(f"{base_path}/{simulation_id}/statistics_*.parquet")
 
-        max_n = statistics_for_simulation.select(F.max("nstat")).collect()[0][0]
-
-        statistics_for_simulation.createOrReplaceTempView("statistics")
+        statistics.createOrReplaceTempView("statistics")
         craters.createOrReplaceTempView("craters")
         removals.createOrReplaceTempView("removals")
 
@@ -681,13 +640,20 @@ def get_statistics_with_lifespans_for_simulations(
                 configs.simulation_id = s.simulation_id
         """
         result_for_simulation = spark.sql(query)
-
+        if max_radius:
+            result_for_simulation = result_for_simulation.where(F.col("radius") <= max_radius)
+        if max_nstat:
+            result_for_simulation = result_for_simulation.where(F.col("nstat") <= max_nstat)
         if n_samples_per_sim:
-            result_for_simulation = result_for_simulation.where(result_for_simulation.nstat <= int(max_n * 0.75))
-            results_count = result_for_simulation.count()
-            result_for_simulation = result_for_simulation.sample((n_samples_per_sim * 1.1) / results_count)
-            result_for_simulation = result_for_simulation.limit(n_samples_per_sim)
+            result_for_simulation = (
+                result_for_simulation.orderBy(F.rand())
+                .limit(n_samples_per_sim)
+                .select(*result_columns)
+            )
 
-        results.append(result_for_simulation.orderBy("nstat").toPandas())
+        if result is None:
+            result = result_for_simulation.toPandas()
+        else:
+            result = pd.concat([result, result_for_simulation.toPandas()])
 
-    return pd.concat(results, axis=0)
+    return result
