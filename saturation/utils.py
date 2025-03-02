@@ -1,5 +1,4 @@
 import glob
-
 import pandas as pd
 import numpy as np
 from pathlib import Path
@@ -107,6 +106,73 @@ def get_scientific_notation(
     return f"{a} \\cdot 10^{b}"
 
 
+def get_states(
+    *,
+    stats_df: DataFrame,
+    craters_df: DataFrame,
+    removals_df: DataFrame,
+    nstats: List[int],
+    study_region_size: int,
+    study_region_padding: int,
+    spark: SparkSession,
+    max_radius: Optional[float] = None,
+    result_columns: Optional[List[str]] = None,
+) -> pd.DataFrame:
+    # Optionally filter out craters with radius exceeding max_radius.
+    if max_radius:
+        craters_df = craters_df.where(F.col("radius") <= max_radius)
+
+    # Register the input DataFrames as temporary views.
+    stats_df.createOrReplaceTempView("stats")
+    craters_df.createOrReplaceTempView("craters")
+    removals_df.createOrReplaceTempView("removals")
+
+    # Create a cross-product of simulation_ids and nstats.
+    nstats = pd.DataFrame(nstats, columns=["nstat"])
+    targets_spark_df = spark.createDataFrame(nstats)
+    targets_spark_df.createOrReplaceTempView("nstats")
+
+    # Using a CTE, precompute the maximum crater_id for each simulation and target_nstat.
+    query = f"""
+    WITH
+    target_max AS
+    (
+        SELECT
+            t.nstat,
+            MAX(s.crater_id) AS max_crater_id
+        FROM
+            stats s
+            JOIN nstats t
+        WHERE
+            s.nstat <= t.nstat
+        GROUP BY
+            t.nstat
+    )
+    SELECT
+        tm.nstat,
+        c.id as crater_id,
+        c.x,
+        c.y,
+        c.radius
+    FROM
+        craters c
+        LEFT JOIN removals r ON
+            r.removed_crater_id = c.id
+        INNER JOIN target_max tm ON
+            c.id <= tm.max_crater_id
+    WHERE
+        (r.removed_by_crater_id IS NULL OR r.removed_by_crater_id > tm.max_crater_id)
+        AND c.x >= {study_region_padding} AND c.x < {study_region_padding + study_region_size}
+        AND c.y >= {study_region_padding} AND c.y < {study_region_padding + study_region_size}
+    """
+    result = spark.sql(query)
+
+    if result_columns:
+        result = result.select(*result_columns)
+
+    return result.toPandas()
+
+
 def get_state_at_time(
     *,
     stats_df: DataFrame,
@@ -174,34 +240,43 @@ def get_state_at_time(
 def estimate_cumulative_slope(
     *,
     radii: List[float],
-    min_radius: float,
-    max_radius: float,
+    rmin: float,
+    rmax: float,
     min_search_slope: float = -10.0,
     max_search_slope: float = 0.0
 ) -> Tuple[float, float]:
     """
-    Returns a tuple of the estimated slope and sigma.
+    Returns a tuple of the estimated cumulative slope (a, positive) and its standard error sigma.
     """
-    N_GUESSES = 100000
+    N_GUESSES = 1000
 
     # Filter craters to only those between min and max
-    radii = np.array([x for x in radii if min_radius <= x <= max_radius])
-
-    summation = np.sum(np.log(radii / min_radius))
+    radii = np.array([x for x in radii if rmin <= x <= rmax])
     nobs = radii.shape[0]
 
-    guesses = min_search_slope + np.array([x * (max_search_slope - min_search_slope) / N_GUESSES for x in range(1, N_GUESSES + 1)])
+    summation = np.sum(np.log(radii / rmin))
 
-    min_max_ratio = min_radius / max_radius
-    guesses = nobs / guesses + nobs * min_max_ratio**guesses * np.log(min_max_ratio) / (1 - min_max_ratio**guesses) - summation
-    
-    min_index = np.argmin(np.abs(guesses))
-    alpha = min_search_slope + min_index * (max_search_slope - min_search_slope) / N_GUESSES
-    cumulative_slope = -alpha
-    
-    sigma = min_max_ratio**alpha * np.log(min_max_ratio)**2 / (1 - min_max_ratio**alpha)**2
-    sigma = np.sqrt(1 / (1 / alpha**2 - sigma) / nobs)
-    
+    # Generate candidate guesses for the slope parameter
+    guess_values = np.linspace(min_search_slope, max_search_slope, N_GUESSES)
+
+    # Evaluate the MLE equation for each guess:
+    # N/alpha + N*(min_radius/max_radius)**alpha * ln(min_radius/max_radius) / (1 - (min_radius/max_radius)**alpha) - summation = 0
+    min_max_ratio = rmin / rmax
+    mle_equation = (
+        nobs / -guess_values +
+        nobs * (min_max_ratio ** -guess_values) * np.log(min_max_ratio) /
+        (1 - min_max_ratio ** -guess_values) -
+        summation
+    )
+
+    min_index = np.argmin(np.abs(mle_equation))
+    cumulative_slope = guess_values[min_index]
+
+    # Now, compute the standard error for a using the variance formula for a truncated Pareto.
+    alpha = -cumulative_slope
+    sigma = min_max_ratio ** alpha * np.log(min_max_ratio) ** 2 / (1 - min_max_ratio ** alpha) ** 2
+    sigma = np.sqrt(1 / (1 / alpha ** 2 - sigma) / nobs)
+
     return cumulative_slope, sigma
 
 
@@ -257,10 +332,10 @@ def estimate_slopes_for_states(
         state = states[nstat]
         alpha, sigma = estimate_cumulative_slope(
             radii=state.radius,
-            min_radius=rmin,
-            max_radius=state.radius.max(),
-            min_search_slope=0.0,
-            max_search_slope=10.0
+            rmin=rmin,
+            rmax=state.radius.max(),
+            min_search_slope=-10.0,
+            max_search_slope=-0.1
         )
         estimates.append({"nstat": nstat, "alpha": alpha, "sigma": sigma})
     return pd.DataFrame(estimates)
