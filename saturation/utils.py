@@ -21,6 +21,16 @@ def read_config(path: Path) -> Dict:
     return config
 
 
+def read_configs_pandas(
+    *,
+    base_path: str
+) -> pd.DataFrame:
+    completed_filenames = list(Path(base_path).glob("*/config.yaml"))
+    configs = map(lambda x: x.parent / "config.yaml", completed_filenames)
+    configs = map(read_config, configs)
+    return pd.DataFrame.from_dict(configs, orient="columns")
+
+
 def read_configs(base_path: str, spark_session: SparkSession, completed_only: bool=True) -> pyspark.RDD:
     if completed_only:
         completed_filenames = list(Path(base_path).glob("*/completed.txt"))
@@ -86,11 +96,7 @@ def get_configs(
     configs_pdf["rim_erasure_exponent"] = configs_pdf.rim_erasure_method.apply(lambda x: x.get("exponent", -1))
     configs_pdf["rim_erasure_radius_ratio"] = configs_pdf.rim_erasure_method.apply(lambda x: x.get("ratio", -1))
 
-    configs_dict = dict()
-    for config_file in glob.glob(f"{base_path}/config/*config*.yaml"):
-        configs_dict.update(read_config(Path(config_file))["run_configurations"])
-
-    return configs_pdf, configs_df, configs_dict
+    return configs_pdf, configs_df, configs_pdf.set_index("simulation_id").to_dict(orient="index")
 
 
 def get_scientific_notation(
@@ -723,8 +729,10 @@ def get_statistics_with_lifespans_for_simulations(
             result_for_simulation = (
                 result_for_simulation.orderBy(F.rand())
                 .limit(n_samples_per_sim)
-                .select(*result_columns)
             )
+
+        if result_columns:
+            result_for_simulation = result_for_simulation.select(*result_columns)
 
         if result is None:
             result = result_for_simulation.toPandas()
